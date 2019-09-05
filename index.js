@@ -1,0 +1,141 @@
+const fs = require("fs")
+const {printSchema, parse, GraphQLSchema, buildSchema} = require("graphql")
+const path = require("path")
+const generateGraphqlSchema = require("./generators").generateGraphqlSchema
+
+let type = fs.readFileSync("./schema.graphql").toString()
+const schema = parse(printSchema(buildSchema(type)));
+const graphqlDirectiory = './outputs/graphql/';
+const featherDirectory = './outputs/services/';
+
+let defaultConfigService = { 
+    host: 'localhost',
+    port: 3031,
+    paginate: { default: 10, max: 50 },
+    mongodb: 'mongodb://localhost:27017/' 
+}
+const writeFile = (dir, fileName, file)=> {
+    //create folder if not exists
+    if(!fs.existsSync(dir)){
+        fs.mkdirSync(dir)
+    }
+    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}`), file, () => {
+        console.log('Outputs generated!');
+    });
+}
+
+const primitiveTypes = ["String", "Number", "Float", "Double"]
+const convertToFeatherTypes = (type)=>{
+    if(type == "Float"){
+        return "String"
+    }
+    return type
+}
+
+function camelize(text) {
+    return text.replace(/^([A-Z])|[\s-_]+(\w)/g, function(match, p1, p2, offset) {
+        if (p2) return p2.toUpperCase();
+        return p1.toLowerCase();        
+    });
+}
+async function main(){
+    if(!fs.existsSync("./outputs")){
+        fs.mkdirSync("./outputs")
+    }
+
+    let types = []
+    schema.definitions.map((def)=>{
+        fields = []
+        def.fields.map((e)=>{
+            fields.push({
+                name: e.name.value,
+                type: e.type.kind == "NamedType" ? e.type.name.value : e.type.type.name.value,
+                required: e.type.kind == "NamedType" ? false: true
+            })
+        })
+        types.push({
+            name: def.name.value,
+            fields
+        })
+    })
+
+
+    // graphql
+    let outputGraphqlSchema = generateGraphqlSchema(schema)
+    outputGraphqlSchema.map((s, index)=>{
+        writeFile(graphqlDirectiory, `${types[index].name}.js`, s)
+    })
+    //end of graphql
+    types.map((e, index)=>{
+        //feathers
+        if(!fs.existsSync(featherDirectory)){
+            fs.mkdirSync(featherDirectory)
+        }
+        const path = featherDirectory+e.name.toLowerCase()+"/"
+        if(!fs.existsSync(path)){
+            fs.mkdirSync(path)
+        }
+
+
+        const schemaExampleFeather = "./schema/example/"
+        fs.readdir(schemaExampleFeather, function(err, fileName){
+            const configPath = schemaExampleFeather+"config/"
+            fs.readdir(configPath, (err, file)=>{
+                fs.readFile(configPath+file, 'utf-8', (err,content)=>{
+                    const config = JSON.parse(content)
+                    config.port = defaultConfigService.port+index
+                    config.host = defaultConfigService.host
+                    config.mongodb = defaultConfigService.mongodb+e.name.toLowerCase()+"_services"
+                    if(!fs.existsSync(path+"config/")){
+                        fs.mkdirSync(path+"config/")
+                    }
+                    fs.writeFileSync(path+"config/default.json", JSON.stringify(config)) 
+                })
+            })
+            fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
+                content = content.toString()
+                content = content.replace(/example/g, e.name.toLowerCase()).replace(/Example/g, e.name)
+                fs.writeFileSync(path+"index.js", content) 
+            })
+
+            const srcPath = schemaExampleFeather+"src/"
+            //read src
+            fs.readdir(srcPath, (err, file)=>{
+                if(!fs.existsSync(path+"src/")){
+                    fs.mkdirSync(path+"src/")
+                }
+
+                file.map((fileName)=>{
+                    fs.readFile(srcPath+fileName, (err, content)=>{
+                        content = content.toString().replace(/example/g, e.name.toLowerCase())
+                        if(fileName == "model.js"){
+                            content = "module.exports = function (app) {\n"
+                            content += "const mongooseClient = app.get('mongooseClient');\n"
+                            content += `const ${e.name.toLowerCase()} = new mongooseClient.Schema({\n`
+                            //fields
+                            e.fields.map((f)=>{
+                                types.map((t)=>{
+                                    if(t.name == f.type){
+                                        content += `        ${t.name.toLowerCase()+"Id"}: { type: String, required: false },\n`
+                                    }
+                                })
+                                if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)){
+                                    content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },\n`
+                                }
+                            })
+                            content += "    },{\n"
+                            content += "        timestamps: true\n"
+                            content += "    })\n"
+                            content += `        return mongooseClient.model("${e.name.toLowerCase()}s", ${e.name.toLowerCase()})\n`
+                            content += "    }"
+                        }
+                        // console.log(content)
+                        fs.writeFileSync(path+"src/"+fileName, content)
+                    })
+                })
+            })
+        })
+        //end of feathers
+    })
+}
+main()

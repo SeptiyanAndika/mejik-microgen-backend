@@ -1,0 +1,18 @@
+type Order {
+    _id: String
+    event: Event
+    ticket: Ticket
+    qty: Float
+    price: Float
+}
+        
+type Event {
+    _id: String!
+    price: Float
+    name: String
+}
+
+type Ticket {
+    _id: String!
+    event: Event
+}
