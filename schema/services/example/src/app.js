@@ -18,6 +18,6 @@ app.configure(express.rest())
 
 app.configure(configuration())
 app.configure(mongoose)
-app.use('/examples', service({Model: Model(app)}))
+app.use('/examples', service({Model: Model(app), whitelist: [ '$regex', '$populate' ]}))
 
 module.exports = app

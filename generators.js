@@ -151,7 +151,6 @@ const generateGraphqlSchema = (schema)=>{
             }
             //hasmany
             if(types.includes(e.name.value.substr(0, e.name.value.length-1))){
-                console.log("hasmany", e.type)
                 relationTypes.push({
                     name: e.name.value,
                     type: e.type.kind
