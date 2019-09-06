@@ -2,7 +2,7 @@ const fs = require("fs")
 const {printSchema, parse, GraphQLSchema, buildSchema} = require("graphql")
 const path = require("path")
 const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON} = require("./generators")
-
+const ncp = require('ncp').ncp;
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 let type = fs.readFileSync("./schema.graphql").toString()
 const schema = parse(printSchema(buildSchema(type)));
@@ -39,10 +39,29 @@ function camelize(text) {
         return p1.toLowerCase();        
     });
 }
+
+function generateAuthentiations(){
+    const authServices = "./schema/services/user"
+    const authGraphql =  "./schema/graphql/user.js"
+    ncp(authServices, "./outputs/services/user", function (err) {
+        if (err) {
+            return console.error(err);
+        }
+        console.log('done!');
+    });
+    ncp(authGraphql, "./outputs/graphql/user.js", function (err) {
+        if (err) {
+            return console.error(err);
+        }
+        console.log('done!');
+    })
+}
+
 async function main(){
     if(!fs.existsSync("./outputs")){
         fs.mkdirSync("./outputs")
     }
+    generateAuthentiations()
 
     let types = []
     schema.definitions.map((def)=>{
@@ -84,7 +103,7 @@ async function main(){
         }
 
 
-        const schemaExampleFeather = "./schema/example/"
+        const schemaExampleFeather = "./schema/services/example/"
         fs.readdir(schemaExampleFeather, function(err, fileName){
             const configPath = schemaExampleFeather+"config/"
             fs.readdir(configPath, (err, file)=>{

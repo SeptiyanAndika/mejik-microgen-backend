@@ -33,11 +33,12 @@ const generatePackageJSON = (types) =>{
     let packageJSON = fs.readFileSync("./schema/package.json")
     packageJSON = JSON.parse(packageJSON.toString())
     packageJSON["scripts"]["graphql"] = "nodemon --exec babel-node graphql --presets env"
+    packageJSON["scripts"]["user-services"] = "cd "+config.services.src+"/user && npm run start"
     types.map((type)=>{
         packageJSON["scripts"][`${type.toLowerCase()}-services`] = "cd "+config.services.src+type.toLowerCase()+ " && node index.js"
     })
 
-    packageJSON["scripts"]["dev"] = `npm-run-all graphql ${types.map((type)=> `${type.toLowerCase()}-services`).join(" ")}`
+    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql user-services ${types.map((type)=> `${type.toLowerCase()}-services`).join(" ")}`
 
     fs.writeFileSync(config.src+"package.json", JSON.stringify(packageJSON,null,4))
 }
@@ -48,6 +49,8 @@ const generateGraphqlServer = (types) =>{
     content += `import { ApolloServer, makeExecutableSchema, gql } from 'apollo-server'\n`
     content += `import { GraphQLScalarType } from 'graphql'\n`
     content += `import GraphQLJSON from 'graphql-type-json'\n\n`
+
+    content += `import { typeDef as User, resolvers as userResolvers } from './graphql/user'\n`
     //import all type and resolvers
     types.map((type)=>{
         content += `import { typeDef as ${type}, resolvers as ${type.toLowerCase()}Resolvers } from './graphql/${type.toLowerCase()}'\n`
@@ -83,11 +86,17 @@ const resolver = {
     content += 
     `
 const schema = makeExecutableSchema({
-    typeDefs: [ typeDefs, ${types.join(", ")}],
-    resolvers: merge(resolver,  ${types.map((t)=> t.toLowerCase()+"Resolvers").join(", ")}),
+    typeDefs: [ typeDefs, User, ${types.join(", ")}],
+    resolvers: merge(resolver,  userResolvers, ${types.map((t)=> t.toLowerCase()+"Resolvers").join(", ")}),
 });
     `
     
+    content += `
+const userRequester = new cote.Requester({ 
+    name: 'User Requester', 
+    key: 'user',
+})      
+    ` 
     //requster
     types.map((t)=>{
         content += `
@@ -104,6 +113,7 @@ const ${t.toLowerCase()+"Requester"} = new cote.Requester({
 const context = ({req}) => {
     return {
         headers: req.headers,
+        userRequester,
         ${types.map((e)=> e.toLowerCase()+"Requester").join(", ")}
     }
 }\n`
@@ -177,7 +187,7 @@ const generateGraphqlSchema = (schema)=>{
             let typeName = schema.definitions[i].name.value
             typeNames.push(typeName)
         }
-
+        
         let requester = typeName.toLowerCase()+"Requester"
         //findall
         resolverQueries += `        ${typeName.toLowerCase()+"s"}: async(_, { query }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
