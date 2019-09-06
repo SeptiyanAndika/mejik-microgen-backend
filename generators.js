@@ -33,9 +33,9 @@ const generatePackageJSON = (types) =>{
     let packageJSON = fs.readFileSync("./schema/package.json")
     packageJSON = JSON.parse(packageJSON.toString())
     packageJSON["scripts"]["graphql"] = "nodemon --exec babel-node graphql --presets env"
-    packageJSON["scripts"]["user-services"] = "cd "+config.services.src+"/user && npm run start"
+    packageJSON["scripts"]["user-services"] = "cd "+config.services.src+"user && npm run start"
     types.map((type)=>{
-        packageJSON["scripts"][`${type.toLowerCase()}-services`] = "cd "+config.services.src+type.toLowerCase()+ " && node index.js"
+        packageJSON["scripts"][`${type.toLowerCase()}-services`] = "cd "+config.services.src+type.toLowerCase()+ " && nodemon index.js"
     })
 
     packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql user-services ${types.map((type)=> `${type.toLowerCase()}-services`).join(" ")}`
