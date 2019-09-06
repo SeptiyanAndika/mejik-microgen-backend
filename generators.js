@@ -181,6 +181,9 @@ const generateGraphqlSchema = (schema)=>{
         input += "    }\n\n"
         queriesPrepend+= `\n        ${typeName.toLowerCase() + "s"} (query: JSON): [${typeName}]`
         mutationPrepend+= `\n       create${typeName}(input: ${typeName}Input): ${typeName}`
+        mutationPrepend+= `\n       update${typeName}(input: ${typeName}Input, _id: String): ${typeName}`
+        mutationPrepend+= `\n       delete${typeName}(_id: String): ${typeName}`
+
         const queries = queriesPrepend+queriesAppend
         const mutations = mutationPrepend+mutationAppend
         let result = type+ "\n" + queries + "\n" + input + mutations
@@ -219,9 +222,22 @@ const generateGraphqlSchema = (schema)=>{
             resolverRelations += `    },\n`
         }
 
+
+  
+
+
         resolverMutations += `       create${typeName}: async(_, { input }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
         resolverMutations += `           return await ${requester}.send({ type: 'store', body: input, headers})\n`
         resolverMutations += "       }, \n"
+
+        resolverMutations += `       update${typeName}: async(_, { input, _id }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `           return await ${requester}.send({ type: 'update', body: input, _id, headers})\n`
+        resolverMutations += "       }, \n"
+
+        resolverMutations += `       delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `           return await ${requester}.send({ type: 'destroy', _id,  headers})\n`
+        resolverMutations += "       }, \n"
+
 
         resolverQueries += "    }, \n"
         resolverMutations += "   }, \n"

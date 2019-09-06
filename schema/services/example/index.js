@@ -36,6 +36,30 @@ exampleService.on("store", async (req, cb) => {
     }
 })
 
+exampleService.on("update", async (req, cb) => {
+    try{
+        let token = req.headers.token
+        let create = await app.service("events").patch(req._id, req.body, {
+            accessToken: token
+        })
+        cb(null, create)
+    }catch(error){
+        cb(error.message, null)
+    }
+})
+
+exampleService.on("destroy", async (req, cb) => {
+    try{
+        let token = req.headers.token
+        let create = await app.service("events").remove(req._id, {
+            accessToken: token
+        })
+        cb(null, create)
+    }catch(error){
+        cb(error.message, null)
+    }
+})
+
 exampleService.on("show", async (req, cb) => {
     try{
         let example = await app.service("examples").get(req._id)
