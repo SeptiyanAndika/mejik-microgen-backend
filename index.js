@@ -111,7 +111,7 @@ async function main(){
                     const config = JSON.parse(content)
                     config.port = defaultConfigService.port+index
                     config.host = defaultConfigService.host
-                    config.mongodb = defaultConfigService.mongodb+e.name.toLowerCase()+"_service"
+                    config.mongodb = defaultConfigService.mongodb+e.name.toLowerCase()+"_services"
                     if(!fs.existsSync(path+"config/")){
                         fs.mkdirSync(path+"config/")
                     }
