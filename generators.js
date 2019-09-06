@@ -155,8 +155,12 @@ const generateGraphqlSchema = (schema)=>{
                     name: e.name.value,
                     type: e.type.kind
                 })
+
+                type += `       ${e.name.value} (query: JSON): ${fieldType(e.type)} \n`
+            }else{
+                type += `       ${e.name.value}: ${fieldType(e.type)} \n`
             }
-            type += `       ${e.name.value}: ${fieldType(e.type)} \n`
+
         })
         type += "    }\n"
         let queriesPrepend = "    extend type Query {"
@@ -198,14 +202,12 @@ const generateGraphqlSchema = (schema)=>{
         resolverQueries += `        ${typeName.toLowerCase()+"s"}: async(_, { query }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
         resolverQueries += `            return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "        }, \n"
-        console.log("ttt", typeName, relationTypes)
         if(relationTypes.length > 0){
-            console.log("relations", relationTypes, typeName)
             resolverRelations += `    ${typeName}: {\n`
             relationTypes.map((e)=>{
                 if(e.type == "ListType"){
-                    resolverRelations += `        ${e.name}: async ({ _id }, args, { headers, ${e.name.substr(0, e.name.length - 1)}Requester })=>{\n`
-                    resolverRelations += `            return await ${e.name.substr(0, e.name.length - 1)}Requester.send({ type: 'index', query: { ${typeName.toLowerCase()}Id: _id } })\n`
+                    resolverRelations += `        ${e.name}: async ({ _id }, { query }, { headers, ${e.name.substr(0, e.name.length - 1)}Requester })=>{\n`
+                    resolverRelations += `            return await ${e.name.substr(0, e.name.length - 1)}Requester.send({ type: 'index', query: Object.assign({ ${typeName.toLowerCase()}Id: _id }, query) })\n`
                     resolverRelations += `        },\n`
                 }else{
                     resolverRelations += `        ${e}: async ({ ${e}Id }, args, { headers, ${e}Requester })=>{\n`
