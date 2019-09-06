@@ -205,7 +205,7 @@ const generateGraphqlSchema = (schema)=>{
         }
 
         resolverMutations += `       create${typeName}: async(_, { input }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
-        resolverMutations += `           return await ${requester}.send({ type: 'store', body: input, query, headers})\n`
+        resolverMutations += `           return await ${requester}.send({ type: 'store', body: input, headers})\n`
         resolverMutations += "       }, \n"
 
         resolverQueries += "    }, \n"
