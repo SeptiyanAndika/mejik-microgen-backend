@@ -135,14 +135,12 @@ server.listen().then(({url})=>{
 const generateGraphqlSchema = (schema)=>{
     let contents =  []
     let types = []
-
     for(let i =0; i < schema.definitions.length; i++){
         let typeName = schema.definitions[i].name.value
         types.push(typeName.toLowerCase())
     }
     for(let i =0; i < schema.definitions.length; i++){
         let typeName = schema.definitions[i].name.value
-
         let content = "export const typeDef = `\n"
         let type = `    type ${typeName} {\n`
 
@@ -150,6 +148,14 @@ const generateGraphqlSchema = (schema)=>{
         schema.definitions[i].fields.map((e)=>{
             if(types.includes(e.name.value)){
                 relationTypes.push(e.name.value)
+            }
+            //hasmany
+            if(types.includes(e.name.value.substr(0, e.name.value.length-1))){
+                console.log("hasmany", e.type)
+                relationTypes.push({
+                    name: e.name.value,
+                    type: e.type.kind
+                })
             }
             type += `       ${e.name.value}: ${fieldType(e.type)} \n`
         })
@@ -193,13 +199,21 @@ const generateGraphqlSchema = (schema)=>{
         resolverQueries += `        ${typeName.toLowerCase()+"s"}: async(_, { query }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
         resolverQueries += `            return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "        }, \n"
-
+        console.log("ttt", typeName, relationTypes)
         if(relationTypes.length > 0){
+            console.log("relations", relationTypes, typeName)
             resolverRelations += `    ${typeName}: {\n`
             relationTypes.map((e)=>{
-                resolverRelations += `        ${e}: async ({ ${e}Id }, args, { headers, ${e}Requester })=>{\n`
-                resolverRelations += `            return await ${e}Requester.send({ type: 'show', _id: ${e}Id })\n`
-                resolverRelations += `        },\n`
+                if(e.type == "ListType"){
+                    resolverRelations += `        ${e.name}: async ({ _id }, args, { headers, ${e.name.substr(0, e.name.length - 1)}Requester })=>{\n`
+                    resolverRelations += `            return await ${e.name.substr(0, e.name.length - 1)}Requester.send({ type: 'index', query: { ${typeName.toLowerCase()}Id: _id } })\n`
+                    resolverRelations += `        },\n`
+                }else{
+                    resolverRelations += `        ${e}: async ({ ${e}Id }, args, { headers, ${e}Requester })=>{\n`
+                    resolverRelations += `            return await ${e}Requester.send({ type: 'show', _id: ${e}Id })\n`
+                    resolverRelations += `        },\n`
+                }
+
             })
             resolverRelations += `    },\n`
         }
