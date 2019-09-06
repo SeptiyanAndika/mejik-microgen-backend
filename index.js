@@ -121,6 +121,7 @@ async function main(){
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()
                 content = content.replace(/example/g, e.name.toLowerCase()).replace(/Example/g, e.name)
+                console.log("cc", content)
                 fs.writeFileSync(path+"index.js", content) 
             })
 
