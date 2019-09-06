@@ -61,6 +61,10 @@ async function main(){
     if(!fs.existsSync("./outputs")){
         fs.mkdirSync("./outputs")
     }
+
+    //copy readme.me
+    ncp("./schema/README.md", "./outputs/README.md")
+
     generateAuthentiations()
 
     let types = []
