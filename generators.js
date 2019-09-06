@@ -1,3 +1,7 @@
+const fs = require("fs")
+
+const config = JSON.parse(fs.readFileSync("./config.json").toString())
+
 const isRelation = (types, name) =>{
     if(types.includes(name)){
         console.log(name.toLowerCase()+"Id")
@@ -23,6 +27,99 @@ const fieldType = (field)=>{
         return `[${field.type.name.value}]`
     }
     return field.name.value
+}
+
+const generatePackageJSON = (types) =>{
+    let packageJSON = fs.readFileSync("./schema/package.json")
+    packageJSON = JSON.parse(packageJSON.toString())
+    packageJSON["scripts"]["graphql"] = "nodemon --exec babel-node graphql --presets env"
+    types.map((type)=>{
+        packageJSON["scripts"][`${type.toLowerCase()}-services`] = "cd "+config.services.src+type.toLowerCase()+ " && node index.js"
+    })
+
+    packageJSON["scripts"]["dev"] = `npm-run-all graphql ${types.map((type)=> `${type.toLowerCase()}-services`).join(" ")}`
+
+    fs.writeFileSync(config.src+"package.json", JSON.stringify(packageJSON,null,4))
+}
+
+const generateGraphqlServer = (types) =>{
+    let content = ""
+    content += `import { merge } from 'lodash'\n`
+    content += `import { ApolloServer, makeExecutableSchema, gql } from 'apollo-server'\n`
+    content += `import { GraphQLScalarType } from 'graphql'\n`
+    content += `import GraphQLJSON from 'graphql-type-json'\n\n`
+    //import all type and resolvers
+    types.map((type)=>{
+        content += `import { typeDef as ${type}, resolvers as ${type.toLowerCase()}Resolvers } from './graphql/${type.toLowerCase()}'\n`
+    })
+
+    content += 
+    `\nconst cote = require('cote')({ redis: { host: "${config.cote.redis.host}", port: ${config.cote.redis.port} } })\n`+
+    "const typeDefs = gql`\n"+
+    "   type Query { anything: String }\n"+
+    "   type Mutation { anything: String }\n"+
+    "   scalar JSON\n"+
+    "   scalar Date\n`"+
+`
+const resolver = {
+    JSON: GraphQLJSON,
+    Date: new GraphQLScalarType({
+        name: 'Date',
+        description: 'Date custom scalar type',
+        parseValue(value) {
+            return new Date(value); // value from the client
+        },
+        serialize(value) {
+            return new Date(value).toString() // value sent to the client
+        },
+        parseLiteral(ast) {
+            if (ast.kind === Kind.INT) {
+                return parseInt(ast.value, 10); // ast value is always in string format
+            }
+            return null;
+        },
+    }),
+}`
+    content += 
+    `
+const schema = makeExecutableSchema({
+    typeDefs: [ typeDefs, ${types.join(", ")}],
+    resolvers: merge(resolver,  ${types.map((t)=> t.toLowerCase()+"Resolvers").join(", ")}),
+});
+    `
+    
+    //requster
+    types.map((t)=>{
+        content += `
+const ${t.toLowerCase()+"Requester"} = new cote.Requester({ 
+    name: '${t} Requester', 
+    key: '${t.toLowerCase()}',
+})
+        `
+    })
+
+    //create context
+
+    content += `
+const context = ({req}) => {
+    return {
+        headers: req.headers,
+        ${types.map((e)=> e.toLowerCase()+"Requester").join(", ")}
+    }
+}\n`
+
+    content += `
+const server = new ApolloServer({
+    schema, 
+    context
+})
+
+
+server.listen().then(({url})=>{
+    console.log("Server ready at"+url)
+})
+    `
+    return content
 }
 
 const generateGraphqlSchema = (schema)=>{
@@ -113,5 +210,7 @@ const generateGraphqlSchema = (schema)=>{
 }
 
 module.exports = {
-    generateGraphqlSchema
+    generateGraphqlSchema,
+    generateGraphqlServer,
+    generatePackageJSON
 }

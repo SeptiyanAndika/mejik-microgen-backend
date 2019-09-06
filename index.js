@@ -1,8 +1,9 @@
 const fs = require("fs")
 const {printSchema, parse, GraphQLSchema, buildSchema} = require("graphql")
 const path = require("path")
-const generateGraphqlSchema = require("./generators").generateGraphqlSchema
+const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON} = require("./generators")
 
+const config = JSON.parse(fs.readFileSync("./config.json").toString())
 let type = fs.readFileSync("./schema.graphql").toString()
 const schema = parse(printSchema(buildSchema(type)));
 const graphqlDirectiory = './outputs/graphql/';
@@ -19,7 +20,7 @@ const writeFile = (dir, fileName, file)=> {
     if(!fs.existsSync(dir)){
         fs.mkdirSync(dir)
     }
-    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}`), file, () => {
+    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}`), file, (err) => {
         console.log('Outputs generated!');
     });
 }
@@ -59,12 +60,18 @@ async function main(){
         })
     })
 
+    let outputGraphqlServer = generateGraphqlServer(types.map((t)=> t.name))
+    writeFile("./outputs/", "graphql.js", outputGraphqlServer)
 
     // graphql
     let outputGraphqlSchema = generateGraphqlSchema(schema)
     outputGraphqlSchema.map((s, index)=>{
         writeFile(graphqlDirectiory, `${types[index].name}.js`, s)
     })
+
+    generatePackageJSON(types.map((t)=> t.name))
+
+    
     //end of graphql
     types.map((e, index)=>{
         //feathers
@@ -89,7 +96,7 @@ async function main(){
                     if(!fs.existsSync(path+"config/")){
                         fs.mkdirSync(path+"config/")
                     }
-                    fs.writeFileSync(path+"config/default.json", JSON.stringify(config)) 
+                    fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4)) 
                 })
             })
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
