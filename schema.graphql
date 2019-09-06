@@ -10,6 +10,7 @@ type Event {
     _id: String!
     price: Float
     name: String
+    tickets: [Ticket]
 }
 
 type Ticket {
