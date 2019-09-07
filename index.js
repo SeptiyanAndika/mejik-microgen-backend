@@ -40,7 +40,7 @@ function camelize(text) {
     });
 }
 
-function generateAuthentiations(){
+function generateAuthentiations(types){
     const authServices = "./schema/services/user"
     const authGraphql =  "./schema/graphql/user.js"
     ncp(authServices, "./outputs/services/user", function (err) {
@@ -55,6 +55,27 @@ function generateAuthentiations(){
         }
         console.log('done!');
     })
+
+    let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
+
+    const permissions =
+`const permissions = {
+    admin: ['admin:*'],
+    authenticated: [
+        ${types.map((t)=>{
+            return actions.map((a)=>{
+                return `'${t.name.toLowerCase()}:${a}'`
+            }).join(", ")
+        })}
+    ]
+}
+module.exports = {
+    permissions
+}
+    `
+
+    // //generate permissions
+    fs.writeFileSync("./outputs/services/user/src/permissions.js", permissions)
 }
 
 async function main(){
@@ -65,7 +86,7 @@ async function main(){
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
 
-    generateAuthentiations()
+
 
     let types = []
     schema.definitions.map((def)=>{
@@ -82,6 +103,8 @@ async function main(){
             fields
         })
     })
+
+    generateAuthentiations(types)
 
     let outputGraphqlServer = generateGraphqlServer(types.map((t)=> t.name))
     writeFile("./outputs/", "graphql.js", outputGraphqlServer)

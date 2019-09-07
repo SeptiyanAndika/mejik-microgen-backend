@@ -1,7 +1,7 @@
 const app = require('./app');
 const port = app.get('port');
 const server = app.listen(port);
-
+const {permissions} = require('./permissions')
 const cote = require('cote')({ redis: { host: 'localhost', port: "6379" } })
 const userService = new cote.Responder({ 
     name: 'User Service',
@@ -46,7 +46,19 @@ userService.on("register", async (req, cb) => {
 
 userService.on("verifyToken", async (req, cb) => {
   try{
+    // console.log("verify token", app.service("authentication"))
     let verify = await app.service("authentication").verifyAccessToken(req.accessToken)
+    let user = await app.service("users").get(verify.sub, {
+      query: {
+        $select: ['_id', 'email', 'firstName', 'lastName', 'role']
+      }
+    })
+    user.permissions = permissions[user.role]
+    if(!user.permissions){
+      cb(null, null)
+      return
+    }
+    verify.user = user
     cb(null, verify)
   }catch(error){
     cb(error, null)

@@ -210,11 +210,11 @@ const generateGraphqlSchema = (schema)=>{
             relationTypes.map((e)=>{
                 if(e.type == "ListType"){
                     resolverRelations += `        ${e.name}: async ({ _id }, { query }, { headers, ${e.name.substr(0, e.name.length - 1)}Requester })=>{\n`
-                    resolverRelations += `            return await ${e.name.substr(0, e.name.length - 1)}Requester.send({ type: 'index', query: Object.assign({ ${typeName.toLowerCase()}Id: _id }, query) })\n`
+                    resolverRelations += `            return await ${e.name.substr(0, e.name.length - 1)}Requester.send({ type: 'index', query: Object.assign({ ${typeName.toLowerCase()}Id: _id }, query), headers })\n`
                     resolverRelations += `        },\n`
                 }else{
                     resolverRelations += `        ${e}: async ({ ${e}Id }, args, { headers, ${e}Requester })=>{\n`
-                    resolverRelations += `            return await ${e}Requester.send({ type: 'show', _id: ${e}Id })\n`
+                    resolverRelations += `            return await ${e}Requester.send({ type: 'show', _id: ${e}Id, headers })\n`
                     resolverRelations += `        },\n`
                 }
 
