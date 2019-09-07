@@ -17,9 +17,9 @@ const userRequester = new cote.Requester({
 
 exampleService.on("index", async (req,cb) => {
     try{
-        let token = req.headers.token
+        let token = req.headers.authorization
         let examples = await app.service("examples").find({query: req.query,
-            accessToken: token
+            token
         })
         cb(null, examples)
     }catch(error){
@@ -29,9 +29,9 @@ exampleService.on("index", async (req,cb) => {
 
 exampleService.on("store", async (req, cb) => {
     try{
-        let token = req.headers.token
+        let token = req.headers.authorization
         let create = await app.service("examples").create(req.body, {
-            accessToken: token
+            token
         })
         cb(null, create)
     }catch(error){
@@ -41,9 +41,9 @@ exampleService.on("store", async (req, cb) => {
 
 exampleService.on("update", async (req, cb) => {
     try{
-        let token = req.headers.token
+        let token = req.headers.authorization
         let create = await app.service("examples").patch(req._id, req.body, {
-            accessToken: token
+            token
         })
         cb(null, create)
     }catch(error){
@@ -53,9 +53,9 @@ exampleService.on("update", async (req, cb) => {
 
 exampleService.on("destroy", async (req, cb) => {
     try{
-        let token = req.headers.token
+        let token = req.headers.authorization
         let create = await app.service("examples").remove(req._id, {
-            accessToken: token
+            token
         })
         cb(null, create)
     }catch(error){
@@ -65,9 +65,9 @@ exampleService.on("destroy", async (req, cb) => {
 
 exampleService.on("show", async (req, cb) => {
     try{
-        let token = req.headers.token
+        let token = req.headers.authorization
         let example = await app.service("examples").get(req._id, {
-            accessToken: token
+            token
         })
         cb(null, example)
     }catch(error){
@@ -77,16 +77,15 @@ exampleService.on("show", async (req, cb) => {
 
 
 const checkAuthentication = (token)=>{
-    return userRequester.send({ type: 'verifyToken', accessToken: token})
+    return userRequester.send({ type: 'verifyToken', token})
 }
-
 
 
 app.service('examples').hooks({
     before: {
         find: async (context)=>{
             try{
-                let auth = await checkAuthentication(context.params.accessToken)
+                let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
                 
@@ -104,7 +103,7 @@ app.service('examples').hooks({
         },
         get: async (context)=>{
             try{
-                let auth = await checkAuthentication(context.params.accessToken)
+                let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
                 
@@ -122,7 +121,7 @@ app.service('examples').hooks({
         },
         create: async (context)=>{
             try{
-                let auth = await checkAuthentication(context.params.accessToken)
+                let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
                 
@@ -140,7 +139,7 @@ app.service('examples').hooks({
         },
         update: async (context)=>{
             try{
-                let auth = await checkAuthentication(context.params.accessToken)
+                let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
                 
@@ -158,7 +157,7 @@ app.service('examples').hooks({
         },
         patch: async (context)=>{
             try{
-                let auth = await checkAuthentication(context.params.accessToken)
+                let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
                 
@@ -176,7 +175,7 @@ app.service('examples').hooks({
         },
         remove: async (context)=>{
             try{
-                let auth = await checkAuthentication(context.params.accessToken)
+                let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
                 

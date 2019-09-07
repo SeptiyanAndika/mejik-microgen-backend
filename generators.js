@@ -107,12 +107,18 @@ const ${t.toLowerCase()+"Requester"} = new cote.Requester({
         `
     })
 
-    //create context
 
+    content += `
+const parseBearerToken = (headers)=>{
+    return Object.assign(headers, {
+        authorization: headers.authorization ? headers.authorization.split(" ")[1] : null
+    })
+}\n`
+    //create context
     content += `
 const context = ({req}) => {
     return {
-        headers: req.headers,
+        headers: parseBearerToken(req.headers),
         userRequester,
         ${types.map((e)=> e.toLowerCase()+"Requester").join(", ")}
     }

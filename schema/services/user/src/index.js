@@ -25,7 +25,7 @@ userService.on("login", async (req, cb)=>{
       strategy: "local",
       ...req.body
     })
-    console.log(user)
+    user.token = user.accessToken
     cb(null, user)
   }catch(error){
     console.log(error)
@@ -35,8 +35,10 @@ userService.on("login", async (req, cb)=>{
 
 userService.on("register", async (req, cb) => {
   try{
+    console.log(req.body)
     const user = await app.service("users").create({
-      ...req.body
+      ...req.body,
+      role:"authenticated"
     })
     cb(null, user)
   }catch(error){
@@ -47,7 +49,15 @@ userService.on("register", async (req, cb) => {
 userService.on("verifyToken", async (req, cb) => {
   try{
     // console.log("verify token", app.service("authentication"))
-    let verify = await app.service("authentication").verifyAccessToken(req.accessToken)
+    if(!req.token){
+      cb(null, {
+        user:{
+          permissions: permissions["public"]
+        }
+      })
+      return 
+    }
+    let verify = await app.service("authentication").verifyAccessToken(req.token)
     let user = await app.service("users").get(verify.sub, {
       query: {
         $select: ['_id', 'email', 'firstName', 'lastName', 'role']

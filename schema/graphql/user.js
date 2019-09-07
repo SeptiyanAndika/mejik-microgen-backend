@@ -8,8 +8,7 @@ export const typeDef = `
         email: String!,
         password: String!,
         firstName: String!,
-        lastName: String!
-        role: String,
+        lastName: String
     }
 
     extend type Query {
@@ -25,11 +24,10 @@ export const typeDef = `
     type User {
         _id: ID!
         email: String
-        role: String
     }
 
     type Login {
-        accessToken: String
+        token: String
         user: User
     }
 `;
