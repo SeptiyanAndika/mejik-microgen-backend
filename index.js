@@ -47,18 +47,11 @@ function generateAuthentiations(types){
         if (err) {
             return console.error(err);
         }
-        console.log('done!');
-    });
-    ncp(authGraphql, "./outputs/graphql/user.js", function (err) {
-        if (err) {
-            return console.error(err);
-        }
-        console.log('done!');
-    })
 
-    let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
 
-    const permissions =
+        let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
+
+        const permissions =
 `const permissions = {
     admin: ['admin:*'],
     authenticated: [
@@ -72,10 +65,18 @@ function generateAuthentiations(types){
 module.exports = {
     permissions
 }
-    `
+        `
 
-    // //generate permissions
-    fs.writeFileSync("./outputs/services/user/src/permissions.js", permissions)
+        // //generate permissions
+        fs.writeFileSync("./outputs/services/user/src/permissions.js", permissions)
+        console.log('done!');
+    });
+    ncp(authGraphql, "./outputs/graphql/user.js", function (err) {
+        if (err) {
+            return console.error(err);
+        }
+        console.log('done!');
+    })
 }
 
 async function main(){
