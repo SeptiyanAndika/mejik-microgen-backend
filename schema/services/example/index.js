@@ -97,7 +97,6 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                console.log("error" ,err)
                 throw Error(err.message)
             }
         },
@@ -115,7 +114,6 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                console.log("error" ,err)
                 throw Error(err.message)
             }
         },
@@ -133,7 +131,6 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                console.log("error" ,err)
                 throw Error(err.message)
             }
         },
@@ -151,7 +148,6 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                console.log("error" ,err)
                 throw Error(err.message)
             }
         },
@@ -169,7 +165,6 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                console.log("error" ,err)
                 throw Error(err.message)
             }
         },
@@ -187,7 +182,6 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                console.log("error" ,err)
                 throw Error(err.message)
             }
         }

@@ -34,8 +34,11 @@ const writeFile = (dir, fileName, file)=> {
     if(!fs.existsSync(dir)){
         fs.mkdirSync(dir)
     }
-    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}`), file, (err) => {
-        console.log('Outputs generated!');
+    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}.js`), file, (err) => {
+        if(err){
+            console.log(err)
+        }
+        console.log("Successfuly generated", camelize(fileName))
     });
 }
 
@@ -89,13 +92,11 @@ module.exports = {
         `
         // //generate permissions
         fs.writeFileSync("./outputs/services/user/src/permissions.js", permissions)
-        console.log('done!');
     });
     ncp(authGraphql, "./outputs/graphql/user.js", function (err) {
         if (err) {
             return console.error(err);
         }
-        console.log('done!');
     })
 }
 
@@ -125,13 +126,14 @@ async function main(){
     generateAuthentiations(types)
 
     let outputGraphqlServer = generateGraphqlServer(types.map((t)=> t.name))
-    writeFile("./outputs/", "graphql.js", outputGraphqlServer)
+    writeFile("./outputs/", "graphql", outputGraphqlServer)
 
     // graphql
     let outputGraphqlSchema = generateGraphqlSchema(schema)
     outputGraphqlSchema.map((s, index)=>{
-        writeFile(graphqlDirectiory, `${types[index].name}.js`, s)
+        writeFile(graphqlDirectiory, `${types[index].name}`, s)
     })
+
 
     generatePackageJSON(types.map((t)=> t.name))
 

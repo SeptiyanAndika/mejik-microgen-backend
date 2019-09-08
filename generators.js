@@ -33,7 +33,7 @@ const generatePackageJSON = (types) =>{
     let packageJSON = fs.readFileSync("./schema/package.json")
     packageJSON = JSON.parse(packageJSON.toString())
     packageJSON["scripts"]["graphql"] = "nodemon --exec babel-node graphql --presets env"
-    packageJSON["scripts"]["user-services"] = "cd "+config.services.src+"user && npm run start"
+    packageJSON["scripts"]["user-services"] = "cd "+config.services.src+"user && nodemon index.js"
     types.map((type)=>{
         packageJSON["scripts"][`${type.toLowerCase()}-services`] = "cd "+config.services.src+type.toLowerCase()+ " && nodemon index.js"
     })
@@ -165,7 +165,6 @@ const generateGraphqlSchema = (schema)=>{
             // }
             //hasmany
             if(types.includes(pluralize.singular(e.name.value))){
-                console.log("hasmany", e.name.value, e.type.kind)
                 relationTypes.push({
                     name: e.name.value,
                     type: e.type.kind
