@@ -2,18 +2,20 @@ const fs = require("fs")
 const {printSchema, parse, GraphQLSchema} = require("graphql")
 const { makeExecutableSchema } = require("apollo-server")
 const path = require("path")
-const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON} = require("./generators")
+const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes} = require("./generators")
 const ncp = require('ncp').ncp;
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
+const pluralize = require('pluralize')
 let type = fs.readFileSync("./schema.graphql").toString()
 
 const { UpperCaseDirective } = require('./directives')
+const scalars = require('./scalars')
 
 let buildSchema = makeExecutableSchema({
-    typeDefs: type,
+    typeDefs: [scalars, type ],
     schemaDirectives: {
         upper: UpperCaseDirective
-    }
+    },
 })
 
 const schema = parse(printSchema(buildSchema));
@@ -105,10 +107,7 @@ async function main(){
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
     let types = []
-    schema.definitions.map((def)=>{
-        if(def.kind == "DirectiveDefinition"){
-            return
-        }
+    schema.definitions.filter((def)=> !whitelistTypes.includes(def.kind)).map((def)=>{
         fields = []
         def.fields.map((e)=>{
             fields.push({
@@ -118,7 +117,7 @@ async function main(){
             })
         })
         types.push({
-            name: def.name.value,
+            name: pluralize.singular(def.name.value),
             fields
         })
     })
@@ -184,7 +183,7 @@ async function main(){
                         if(fileName == "model.js"){
                             content = "module.exports = function (app) {\n"
                             content += "const mongooseClient = app.get('mongooseClient');\n"
-                            content += `const ${e.name.toLowerCase()} = new mongooseClient.Schema({\n`
+                            content += `const model = new mongooseClient.Schema({\n`
                             //fields
                             e.fields.map((f)=>{
                                 types.map((t)=>{
@@ -199,7 +198,7 @@ async function main(){
                             content += "    },{\n"
                             content += "        timestamps: true\n"
                             content += "    })\n"
-                            content += `        return mongooseClient.model("${e.name.toLowerCase()}s", ${e.name.toLowerCase()})\n`
+                            content += `        return mongooseClient.model("${pluralize(e.name.toLowerCase())}", model)\n`
                             content += "    }"
                         }
                         // console.log(content)

@@ -1,5 +1,5 @@
 const fs = require("fs")
-
+const pluralize = require('pluralize')
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 
 const isRelation = (types, name) =>{
@@ -138,25 +138,34 @@ server.listen().then(({url})=>{
     return content
 }
 
+const whitelistTypes = ['DirectiveDefinition', 'ScalarTypeDefinition']
 const generateGraphqlSchema = (schema)=>{
     let contents =  []
     let types = []
     for(let i =0; i < schema.definitions.length; i++){
-        let typeName = schema.definitions[i].name.value
+        if(whitelistTypes.includes(schema.definitions[i].kind)){
+            continue
+        }
+        let typeName = pluralize.singular(schema.definitions[i].name.value)
         types.push(typeName.toLowerCase())
     }
     for(let i =0; i < schema.definitions.length; i++){
-        let typeName = schema.definitions[i].name.value
+        if(whitelistTypes.includes(schema.definitions[i].kind)){
+            continue
+        }
+        let typeName = pluralize.singular(schema.definitions[i].name.value)
         let content = "export const typeDef = `\n"
         let type = `    type ${typeName} {\n`
 
         let relationTypes = []
         schema.definitions[i].fields.map((e)=>{
-            if(types.includes(e.name.value)){
-                relationTypes.push(e.name.value)
-            }
+            // if(types.includes(e.name.value)){
+            //     console.log(types, e.name.value, e.type.kind)
+            //     relationTypes.push(e.name.value)
+            // }
             //hasmany
-            if(types.includes(e.name.value.substr(0, e.name.value.length-1))){
+            if(types.includes(pluralize.singular(e.name.value))){
+                console.log("hasmany", e.name.value, e.type.kind)
                 relationTypes.push({
                     name: e.name.value,
                     type: e.type.kind
@@ -185,7 +194,7 @@ const generateGraphqlSchema = (schema)=>{
             }
         })
         input += "    }\n\n"
-        queriesPrepend+= `\n        ${typeName.toLowerCase() + "s"} (query: JSON): [${typeName}]`
+        queriesPrepend+= `\n        ${pluralize(typeName.toLowerCase())} (query: JSON): [${typeName}]`
         mutationPrepend+= `\n       create${typeName}(input: ${typeName}Input): ${typeName}`
         mutationPrepend+= `\n       update${typeName}(input: ${typeName}Input, _id: String): ${typeName}`
         mutationPrepend+= `\n       delete${typeName}(_id: String): ${typeName}`
@@ -202,25 +211,29 @@ const generateGraphqlSchema = (schema)=>{
         let resolverRelations = ""
         let typeNames = []
         for(let i =0; i < schema.definitions.length; i++){
+            if(whitelistTypes.includes(schema.definitions[i].kind)){
+                continue
+            }
             let typeName = schema.definitions[i].name.value
             typeNames.push(typeName)
         }
         
         let requester = typeName.toLowerCase()+"Requester"
         //findall
-        resolverQueries += `        ${typeName.toLowerCase()+"s"}: async(_, { query }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `        ${pluralize(typeName.toLowerCase())}: async(_, { query }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
         resolverQueries += `            return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "        }, \n"
         if(relationTypes.length > 0){
             resolverRelations += `    ${typeName}: {\n`
+ 
             relationTypes.map((e)=>{
                 if(e.type == "ListType"){
-                    resolverRelations += `        ${e.name}: async ({ _id }, { query }, { headers, ${e.name.substr(0, e.name.length - 1)}Requester })=>{\n`
-                    resolverRelations += `            return await ${e.name.substr(0, e.name.length - 1)}Requester.send({ type: 'index', query: Object.assign({ ${typeName.toLowerCase()}Id: _id }, query), headers })\n`
+                    resolverRelations += `        ${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.name)}Requester })=>{\n`
+                    resolverRelations += `            return await ${pluralize.singular(e.name)}Requester.send({ type: 'index', query: Object.assign({ ${typeName.toLowerCase()}Id: _id }, query), headers })\n`
                     resolverRelations += `        },\n`
                 }else{
-                    resolverRelations += `        ${e}: async ({ ${e}Id }, args, { headers, ${e}Requester })=>{\n`
-                    resolverRelations += `            return await ${e}Requester.send({ type: 'show', _id: ${e}Id, headers })\n`
+                    resolverRelations += `        ${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.name}Requester })=>{\n`
+                    resolverRelations += `            return await ${e.name}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
                     resolverRelations += `        },\n`
                 }
 
@@ -259,5 +272,6 @@ const generateGraphqlSchema = (schema)=>{
 module.exports = {
     generateGraphqlSchema,
     generateGraphqlServer,
-    generatePackageJSON
+    generatePackageJSON,
+    whitelistTypes
 }

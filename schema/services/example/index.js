@@ -18,10 +18,10 @@ const userRequester = new cote.Requester({
 exampleService.on("index", async (req,cb) => {
     try{
         let token = req.headers.authorization
-        let examples = await app.service("examples").find({query: req.query,
+        let data = await app.service("examples").find({query: req.query,
             token
         })
-        cb(null, examples)
+        cb(null, data)
     }catch(error){
         cb(error.message, null)
     }
@@ -30,10 +30,10 @@ exampleService.on("index", async (req,cb) => {
 exampleService.on("store", async (req, cb) => {
     try{
         let token = req.headers.authorization
-        let create = await app.service("examples").create(req.body, {
+        let data = await app.service("examples").create(req.body, {
             token
         })
-        cb(null, create)
+        cb(null, data)
     }catch(error){
         cb(error.message, null)
     }
@@ -42,10 +42,10 @@ exampleService.on("store", async (req, cb) => {
 exampleService.on("update", async (req, cb) => {
     try{
         let token = req.headers.authorization
-        let create = await app.service("examples").patch(req._id, req.body, {
+        let data = await app.service("examples").patch(req._id, req.body, {
             token
         })
-        cb(null, create)
+        cb(null, data)
     }catch(error){
         cb(error.message, null)
     }
@@ -54,10 +54,10 @@ exampleService.on("update", async (req, cb) => {
 exampleService.on("destroy", async (req, cb) => {
     try{
         let token = req.headers.authorization
-        let create = await app.service("examples").remove(req._id, {
+        let data = await app.service("examples").remove(req._id, {
             token
         })
-        cb(null, create)
+        cb(null, data)
     }catch(error){
         cb(error.message, null)
     }
@@ -66,10 +66,10 @@ exampleService.on("destroy", async (req, cb) => {
 exampleService.on("show", async (req, cb) => {
     try{
         let token = req.headers.authorization
-        let example = await app.service("examples").get(req._id, {
+        let data = await app.service("examples").get(req._id, {
             token
         })
-        cb(null, example)
+        cb(null, data)
     }catch(error){
         cb(error.message, null)
     }
