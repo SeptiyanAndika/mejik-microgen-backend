@@ -40,7 +40,16 @@ userService.on("register", async (req, cb) => {
       ...req.body,
       role:"authenticated"
     })
-    cb(null, user)
+
+    const auth = await app.service("authentication").create({
+      strategy: "local",
+      ...req.body
+    })
+    
+    cb(null, {
+      user,
+      token: auth.accessToken
+    })
   }catch(error){
     cb(error, null)
   }

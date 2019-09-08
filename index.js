@@ -1,11 +1,23 @@
 const fs = require("fs")
-const {printSchema, parse, GraphQLSchema, buildSchema} = require("graphql")
+const {printSchema, parse, GraphQLSchema} = require("graphql")
+const { makeExecutableSchema } = require("apollo-server")
 const path = require("path")
 const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON} = require("./generators")
 const ncp = require('ncp').ncp;
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 let type = fs.readFileSync("./schema.graphql").toString()
-const schema = parse(printSchema(buildSchema(type)));
+
+const { UpperCaseDirective } = require('./directives')
+
+let buildSchema = makeExecutableSchema({
+    typeDefs: type,
+    schemaDirectives: {
+        upper: UpperCaseDirective
+    }
+})
+
+const schema = parse(printSchema(buildSchema));
+
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
 
@@ -60,13 +72,19 @@ function generateAuthentiations(types){
                 return `'${t.name.toLowerCase()}:${a}'`
             }).join(", ")
         })}
-    ]
+    ],
+    public: [
+        ${types.map((t)=>{
+            return actions.filter((a)=> a == "find" || a == "get" ).map((a)=>{
+                return `'${t.name.toLowerCase()}:${a}'`
+            }).join(", ")
+        })}
+    ],
 }
 module.exports = {
     permissions
 }
         `
-
         // //generate permissions
         fs.writeFileSync("./outputs/services/user/src/permissions.js", permissions)
         console.log('done!');
@@ -86,11 +104,11 @@ async function main(){
 
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
-
-
-
     let types = []
     schema.definitions.map((def)=>{
+        if(def.kind == "DirectiveDefinition"){
+            return
+        }
         fields = []
         def.fields.map((e)=>{
             fields.push({
