@@ -101,6 +101,22 @@ module.exports = {
     })
 }
 
+function addNewRequester(content, type, requesterName, requesters){
+    if(requesters.includes(requesterName)){
+        return content
+    }
+    requesters.push(requesterName)
+    let contentSplitResponser = content.split(`${type.toLowerCase()}Service.on`)
+    let addNewRequester = 
+`const ${pluralize.singular(requesterName.toLowerCase())}Requester = new cote.Requester({
+    name: '${pluralize.singular(requesterName)} Requester',
+    key: '${pluralize.singular(requesterName.toLowerCase())}',
+})\n
+`
+    contentSplitResponser[0] += addNewRequester
+    content = contentSplitResponser.join(`${type.toLowerCase()}Service.on`)
+    return content
+}
 async function main(){
     if(!fs.existsSync("./outputs")){
         fs.mkdirSync("./outputs")
@@ -168,38 +184,52 @@ async function main(){
                     fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4)) 
                 })
             })
+            let requesters = []
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()
                 content = content.replace(/examples/g, pluralize(e.name.toLowerCase()))
                             .replace(/example/g, e.name.toLowerCase())
                             .replace(/Example/g, e.name)
 
-                 //hook on delete           
+                           
                 e.fields.map((f)=>{
+                    //find related field
+                    types.map((t)=>{
+                        if(pluralize.isSingular(f.name) && f.type == t.name){
+                            let contentSplit = content.split("//beforeCreate")
+                            let beforeCreate = 
+                `             
+                let belongsTo = await ${pluralize.singular(t.name.toLowerCase())}Requester.send({ 
+                    type: "show", 
+                    _id: context.data.${pluralize.singular(t.name.toLowerCase())}Id, 
+                    headers:{
+                        token: context.params.token
+                    }
+                })
+                if(!belongsTo){
+                    throw Error("${t.name} not found.")
+                }`
+                            beforeCreate += contentSplit[1]
+                            content = contentSplit[0] + beforeCreate
+                            content = addNewRequester(content, e.name, f.name, requesters)
+                        }
+                    })
                     f.directives.map((d)=>{
+                        //hook on delete 
                         if(d.name.value == "relation"){
                             let directiveRelationOnDelete = d.arguments[0].value.value
                             let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(f.name.toLowerCase()))
                             let contentSplit = content.split("//onDelete")
                             onDelete += contentSplit[1]
                             content = contentSplit[0] + onDelete
-
-                            let contentSplitResponser = content.split(`${e.name.toLowerCase()}Service.on`)
-                            let addNewRequester = 
-`const ${pluralize.singular(f.name.toLowerCase())}Requester = new cote.Requester({
-    name: '${pluralize.singular(f.name)} Requester',
-    key: '${pluralize.singular(f.name.toLowerCase())}',
-})\n
-`
-                            contentSplitResponser[0] += addNewRequester
-                            content = contentSplitResponser.join(`${e.name.toLowerCase()}Service.on`)
+                            content = addNewRequester(content, e.name, f.name, requesters)
                         }
                     })
                 })
                 
 
                 //remove unused comments
-                content = content.replace(/\/\/onDelete/g, "")
+                content = content.replace(/\/\/onDelete/g, "").replace(/\/\/beforeCreate/g, "")
                 // console.log("cc", content)
                 fs.writeFileSync(path+"index.js", content) 
             })
