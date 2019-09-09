@@ -132,7 +132,7 @@ async function main(){
             fields.push({
                 name: e.name.value,
                 type: e.type.kind == "NamedType" ? e.type.name.value : e.type.type.name.value,
-                required: e.type.kind == "NamedType" ? false: true,
+                required: e.type.kind == "NonNullType" ? true : false,
                 directives: e.directives
             })
         })
@@ -258,7 +258,7 @@ async function main(){
                             e.fields.map((f)=>{
                                 types.map((t)=>{
                                     if(t.name == f.type){
-                                        content += `        ${t.name.toLowerCase()+"Id"}: { type: String, required: false },\n`
+                                        content += `        ${t.name.toLowerCase()+"Id"}: { type: String, required: ${f.required} },\n`
                                     }
                                 })
                                 let defaultValue = null
