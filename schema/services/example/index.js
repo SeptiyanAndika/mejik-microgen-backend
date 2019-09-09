@@ -135,6 +135,7 @@ app.service('examples').hooks({
                 if(!context.params.permitted){
                     throw Error("UnAuthorized")
                 }
+                //beforeCreate
             }catch(err){
                 throw Error(err.message)
             }
