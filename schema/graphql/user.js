@@ -17,7 +17,7 @@ export const typeDef = `
 
     extend type Mutation {
         login(input: LoginInput): Login
-        register(input: RegisterInput): User
+        register(input: RegisterInput): Login
     }
     
 

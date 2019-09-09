@@ -1,11 +1,25 @@
 const fs = require("fs")
-const {printSchema, parse, GraphQLSchema, buildSchema} = require("graphql")
+const {printSchema, parse, GraphQLSchema} = require("graphql")
+const { makeExecutableSchema } = require("apollo-server")
 const path = require("path")
-const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON} = require("./generators")
+const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes} = require("./generators")
 const ncp = require('ncp').ncp;
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
+const pluralize = require('pluralize')
 let type = fs.readFileSync("./schema.graphql").toString()
-const schema = parse(printSchema(buildSchema(type)));
+
+const { UpperCaseDirective } = require('./directives')
+const scalars = require('./scalars')
+
+let buildSchema = makeExecutableSchema({
+    typeDefs: [scalars, type ],
+    schemaDirectives: {
+        upper: UpperCaseDirective
+    },
+})
+
+const schema = parse(printSchema(buildSchema));
+
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
 
@@ -20,8 +34,11 @@ const writeFile = (dir, fileName, file)=> {
     if(!fs.existsSync(dir)){
         fs.mkdirSync(dir)
     }
-    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}`), file, (err) => {
-        console.log('Outputs generated!');
+    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}.js`), file, (err) => {
+        if(err){
+            console.log(err)
+        }
+        console.log("Successfuly generated", camelize(fileName))
     });
 }
 
@@ -60,22 +77,26 @@ function generateAuthentiations(types){
                 return `'${t.name.toLowerCase()}:${a}'`
             }).join(", ")
         })}
-    ]
+    ],
+    public: [
+        ${types.map((t)=>{
+            return actions.filter((a)=> a == "find" || a == "get" ).map((a)=>{
+                return `'${t.name.toLowerCase()}:${a}'`
+            }).join(", ")
+        })}
+    ],
 }
 module.exports = {
     permissions
 }
         `
-
         // //generate permissions
         fs.writeFileSync("./outputs/services/user/src/permissions.js", permissions)
-        console.log('done!');
     });
     ncp(authGraphql, "./outputs/graphql/user.js", function (err) {
         if (err) {
             return console.error(err);
         }
-        console.log('done!');
     })
 }
 
@@ -86,11 +107,8 @@ async function main(){
 
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
-
-
-
     let types = []
-    schema.definitions.map((def)=>{
+    schema.definitions.filter((def)=> !whitelistTypes.includes(def.kind)).map((def)=>{
         fields = []
         def.fields.map((e)=>{
             fields.push({
@@ -100,7 +118,7 @@ async function main(){
             })
         })
         types.push({
-            name: def.name.value,
+            name: pluralize.singular(def.name.value),
             fields
         })
     })
@@ -108,13 +126,14 @@ async function main(){
     generateAuthentiations(types)
 
     let outputGraphqlServer = generateGraphqlServer(types.map((t)=> t.name))
-    writeFile("./outputs/", "graphql.js", outputGraphqlServer)
+    writeFile("./outputs/", "graphql", outputGraphqlServer)
 
     // graphql
     let outputGraphqlSchema = generateGraphqlSchema(schema)
     outputGraphqlSchema.map((s, index)=>{
-        writeFile(graphqlDirectiory, `${types[index].name}.js`, s)
+        writeFile(graphqlDirectiory, `${types[index].name}`, s)
     })
+
 
     generatePackageJSON(types.map((t)=> t.name))
 
@@ -166,7 +185,7 @@ async function main(){
                         if(fileName == "model.js"){
                             content = "module.exports = function (app) {\n"
                             content += "const mongooseClient = app.get('mongooseClient');\n"
-                            content += `const ${e.name.toLowerCase()} = new mongooseClient.Schema({\n`
+                            content += `const model = new mongooseClient.Schema({\n`
                             //fields
                             e.fields.map((f)=>{
                                 types.map((t)=>{
@@ -181,7 +200,7 @@ async function main(){
                             content += "    },{\n"
                             content += "        timestamps: true\n"
                             content += "    })\n"
-                            content += `        return mongooseClient.model("${e.name.toLowerCase()}s", ${e.name.toLowerCase()})\n`
+                            content += `        return mongooseClient.model("${pluralize(e.name.toLowerCase())}", model)\n`
                             content += "    }"
                         }
                         // console.log(content)

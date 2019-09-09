@@ -1,5 +1,6 @@
 type Class {
     _id: String!
+    price: Float
     name: String
     students: [Student]
 }

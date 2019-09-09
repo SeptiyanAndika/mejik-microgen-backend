@@ -5,7 +5,7 @@
 module.exports = function (app) {
     console.log("test")
     const mongooseClient = app.get('mongooseClient');
-    const examples = new mongooseClient.Schema({
+    const model = new mongooseClient.Schema({
         startTime: { type: Date },
         endTime: { type: Date },
         price: { type: Number },
@@ -14,5 +14,5 @@ module.exports = function (app) {
     }, {
         timestamps: true
     });
-    return mongooseClient.model('examples', examples);
+    return mongooseClient.model('examples', model);
 };
