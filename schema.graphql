@@ -1,12 +1,11 @@
-type Event {
+type Class {
     _id: String!
     name: String
-    tickets: [Ticket]
+    students: [Student]
 }
 
-type Ticket {
+type Student {
     _id: String!
-    event: Event
+    class: Class
     name: String!
-    price: Float!
 }
