@@ -16,3 +16,39 @@ it will run the GraphQL Playground and some related microservices
 - Access your GraphQL Playground at http://localhost:4000
 
 Note: Your database will be named as per service name. For example your service name is "product", then your db will be "product-service"
+
+# Schema
+
+**Custom Directives**
+- Default value
+    ```
+    @default(value: "someValue")
+    ```
+- Relation Delete Strategy
+    - CASCADE: when related parent deleted, also delete its child
+        ```
+        @relation(onDelete: CASCADE)
+        ```
+    - RESTRICT: can't delete parent, when it had children
+        ```
+        @relation(onDelete: RESTRICT)
+        ```
+    - SET_NULL: when related parent deleted, set null to the FK relation
+        ```
+        @relation(onDelete: SET_NULL)
+        ```
+
+**Usage Example**
+```
+type Student{
+    _id: String!
+    name: String @default(value: "students")
+    class: Class
+}
+
+type Class {
+    _id: String!
+    name: String
+    students: [Student] @relation(onDelete: CASCADE)
+}
+```
