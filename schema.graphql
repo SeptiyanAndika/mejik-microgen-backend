@@ -1,12 +1,11 @@
-type Class {
+type Student{
     _id: String!
-    price: Float
     name: String
-    students: [Student]
+    class: Class
 }
 
-type Student {
+type Class {
     _id: String!
-    class: Class
-    name: String!
+    name: String
+    students: [Student] @relation(onDelete: SET_NULL)
 }

@@ -29,6 +29,7 @@
     "feathers-mongoose": "^8.0.2",
     "feathers-permissions": "^0.2.1",
     "graphql": "^14.5.3",
+    "graphql-tools": "^4.0.5",
     "graphql-type-json": "^0.3.0",
     "helmet": "^3.20.0",
     "lodash": "^4.17.15",
