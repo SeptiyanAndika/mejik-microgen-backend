@@ -224,8 +224,20 @@ async function main(){
                                         content += `        ${t.name.toLowerCase()+"Id"}: { type: String, required: false },\n`
                                     }
                                 })
+                                let defaultValue = null
+                                f.directives.map((d)=>{
+
+                                    if(d.name.value == "default"){
+                                        defaultValue = d.arguments[0].value.value
+                                    }
+                                })
                                 if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)){
-                                    content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },\n`
+                                    if(defaultValue){
+                                        content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },\n`
+                                    }else{
+                                        content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },\n`
+                                    }
+
                                 }
                             })
                             content += "    },{\n"

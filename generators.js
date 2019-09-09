@@ -272,7 +272,7 @@ onDeleteRelations = (type, relatedTable) =>{
     switch(type){
         case "SET_NULL":
             return `
-                await ${relatedTable}Requester.send({ type: 'patch', 
+                await ${relatedTable}Requester.send({ type: 'update', 
                     _id: null,   
                     headers: {
                         authorization: context.params.token

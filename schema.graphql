@@ -1,6 +1,6 @@
 type Student{
     _id: String!
-    name: String
+    name: String @default(value: "students")
     class: Class
 }
 
