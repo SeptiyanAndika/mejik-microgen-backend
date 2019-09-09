@@ -272,6 +272,7 @@ onDeleteRelations = (type, relatedTable) =>{
     switch(type){
         case "SET_NULL":
             return `
+                //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
                     _id: null,   
                     headers: {
@@ -288,6 +289,7 @@ onDeleteRelations = (type, relatedTable) =>{
                 })`
         case "CASCADE":
             return `
+                //ON DELETE SET CASCADE
                 await ${relatedTable}Requester.send({ type: 'destroy', 
                     _id: null,   
                     headers: {
@@ -301,6 +303,7 @@ onDeleteRelations = (type, relatedTable) =>{
                 })`
         case "RESTRICT":
             return `
+                //ON DELETE SET RESTRICT
                 let belongsTo = await ${relatedTable}Requester.send({ 
                     type: 'index', 
                     query: {
@@ -316,6 +319,7 @@ onDeleteRelations = (type, relatedTable) =>{
             `
         default:
             return `
+                //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
                     _id: null,   
                     headers: {

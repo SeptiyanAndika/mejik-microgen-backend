@@ -76,7 +76,7 @@ exampleService.on("show", async (req, cb) => {
         }
         cb(null, data)
     }catch(error){
-        cb(error.message, null)
+        cb(null, null)
     }
 })
 
@@ -186,7 +186,6 @@ app.service('examples').hooks({
                 if(!context.params.permitted){
                     throw Error("UnAuthorized")
                 }
-                
                 //onDelete
             }catch(err){
                 throw Error(err.message)

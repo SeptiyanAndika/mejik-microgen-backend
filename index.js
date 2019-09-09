@@ -180,7 +180,7 @@ async function main(){
                         if(d.name.value == "relation"){
                             let directiveRelationOnDelete = d.arguments[0].value.value
                             let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(f.name.toLowerCase()))
-                            let contentSplit = content.split("onDelete")
+                            let contentSplit = content.split("//onDelete")
                             onDelete += contentSplit[1]
                             content = contentSplit[0] + onDelete
 
@@ -196,6 +196,10 @@ async function main(){
                         }
                     })
                 })
+                
+
+                //remove unused comments
+                content = content.replace(/\/\/onDelete/g, "")
                 // console.log("cc", content)
                 fs.writeFileSync(path+"index.js", content) 
             })
