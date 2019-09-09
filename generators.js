@@ -244,11 +244,11 @@ const generateGraphqlSchema = (schema)=>{
   
 
 
-        resolverMutations += `       create${typeName}: async(_, { input }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `       create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
         resolverMutations += `           return await ${requester}.send({ type: 'store', body: input, headers})\n`
         resolverMutations += "       }, \n"
 
-        resolverMutations += `       update${typeName}: async(_, { input, _id }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `       update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
         resolverMutations += `           return await ${requester}.send({ type: 'update', body: input, _id, headers})\n`
         resolverMutations += "       }, \n"
 

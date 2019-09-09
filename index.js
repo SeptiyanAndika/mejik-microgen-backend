@@ -199,7 +199,7 @@ async function main(){
                             let contentSplit = content.split("//beforeCreate")
                             let beforeCreate = 
                 `
-                if(context.data.${pluralize.singular(t.name.toLowerCase())}Id){
+                if(context.data && context.data.${pluralize.singular(t.name.toLowerCase())}Id){
                     let belongsTo = await ${pluralize.singular(t.name.toLowerCase())}Requester.send({ 
                         type: "show", 
                         _id: context.data.${pluralize.singular(t.name.toLowerCase())}Id, 
