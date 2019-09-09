@@ -198,17 +198,20 @@ async function main(){
                         if(pluralize.isSingular(f.name) && f.type == t.name){
                             let contentSplit = content.split("//beforeCreate")
                             let beforeCreate = 
-                `             
-                let belongsTo = await ${pluralize.singular(t.name.toLowerCase())}Requester.send({ 
-                    type: "show", 
-                    _id: context.data.${pluralize.singular(t.name.toLowerCase())}Id, 
-                    headers:{
-                        token: context.params.token
+                `
+                if(context.data.${pluralize.singular(t.name.toLowerCase())}Id){
+                    let belongsTo = await ${pluralize.singular(t.name.toLowerCase())}Requester.send({ 
+                        type: "show", 
+                        _id: context.data.${pluralize.singular(t.name.toLowerCase())}Id, 
+                        headers:{
+                            token: context.params.token
+                        }
+                    })
+                    if(!belongsTo){
+                        throw Error("${t.name} not found.")
                     }
-                })
-                if(!belongsTo){
-                    throw Error("${t.name} not found.")
-                }`
+                }             
+                `
                             beforeCreate += contentSplit[1]
                             content = contentSplit[0] + beforeCreate
                             content = addNewRequester(content, e.name, f.name, requesters)
