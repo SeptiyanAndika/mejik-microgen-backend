@@ -1,21 +1,11 @@
-type Order {
-    _id: String
-    event: Event
-    ticket: Ticket
-    qty: Float
-    price: Float
-}
-        
-type Event {
+type Student{
     _id: String!
-    price: Float
     name: String
-    tickets: [Ticket]
+    class: Class
 }
 
-type Ticket {
+type Class {
     _id: String!
-    event: Event
-    name: String!
-    price: Float!
+    name: String
+    students: [Student]
 }

@@ -21,6 +21,7 @@ exampleService.on("index", async (req,cb) => {
         let data = await app.service("examples").find({query: req.query,
             token
         })
+        
         cb(null, data)
     }catch(error){
         cb(error.message, null)
@@ -66,9 +67,12 @@ exampleService.on("destroy", async (req, cb) => {
 exampleService.on("show", async (req, cb) => {
     try{
         let token = req.headers.authorization
-        let data = await app.service("examples").get(req._id, {
-            token
-        })
+        let data = null
+        if(req._id){
+            data = await app.service("classes").get(req._id, {
+                token
+            })
+        }
         cb(null, data)
     }catch(error){
         cb(error.message, null)

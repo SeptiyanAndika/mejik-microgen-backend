@@ -167,7 +167,9 @@ async function main(){
             })
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()
-                content = content.replace(/example/g, e.name.toLowerCase()).replace(/Example/g, e.name)
+                content = content.replace(/examples/g, pluralize(e.name.toLowerCase()))
+                            .replace(/example/g, e.name.toLowerCase())
+                            .replace(/Example/g, e.name)
                 // console.log("cc", content)
                 fs.writeFileSync(path+"index.js", content) 
             })
@@ -181,7 +183,10 @@ async function main(){
 
                 file.map((fileName)=>{
                     fs.readFile(srcPath+fileName, (err, content)=>{
-                        content = content.toString().replace(/example/g, e.name.toLowerCase())
+                        content = content.toString().replace(/examples/g, pluralize(e.name.toLowerCase()))
+                            .replace(/example/g, e.name.toLowerCase())
+                            .replace(/Example/g, e.name)
+                            
                         if(fileName == "model.js"){
                             content = "module.exports = function (app) {\n"
                             content += "const mongooseClient = app.get('mongooseClient');\n"
