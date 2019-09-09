@@ -23,7 +23,7 @@ exampleService.on("index", async (req,cb) => {
         
         cb(null, data)
     }catch(error){
-        cb(null, null)
+        cb(error.message, null)
     }
 })
 
