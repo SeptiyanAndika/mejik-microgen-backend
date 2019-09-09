@@ -7,5 +7,5 @@ type Student{
 type Class {
     _id: String!
     name: String
-    students: [Student]
+    students: [Student] @relation(onDelete: SET_NULL)
 }

@@ -138,7 +138,7 @@ server.listen().then(({url})=>{
     return content
 }
 
-const whitelistTypes = ['DirectiveDefinition', 'ScalarTypeDefinition']
+const whitelistTypes = ['DirectiveDefinition', 'ScalarTypeDefinition', 'EnumTypeDefinition']
 const generateGraphqlSchema = (schema)=>{
     let contents =  []
     let types = []
@@ -268,9 +268,75 @@ const generateGraphqlSchema = (schema)=>{
     return contents
 }
 
+onDeleteRelations = (type, relatedTable) =>{
+    switch(type){
+        case "SET_NULL":
+            return `
+                await ${relatedTable}Requester.send({ type: 'patch', 
+                    _id: null,   
+                    headers: {
+                        authorization: context.params.token
+                    }, 
+                    body: {
+                        classId: null
+                    },
+                    params: {
+                        query: {
+                            classId: context.id
+                        }
+                    }
+                })`
+        case "CASCADE":
+            return `
+                await ${relatedTable}Requester.send({ type: 'destroy', 
+                    _id: null,   
+                    headers: {
+                        authorization: context.params.token
+                    }, 
+                    params: {
+                        query: {
+                            classId: context.id
+                        }
+                    }
+                })`
+        case "RESTRICT":
+            return `
+                let belongsTo = await ${relatedTable}Requester.send({ 
+                    type: 'index', 
+                    query: {
+                        classId: context.id
+                    }, 
+                    headers: {
+                        authorization: context.params.token
+                    }
+                })
+                if(belongsTo.length > 0){
+                    throw Error("Failed delete", null)
+                }
+            `
+        default:
+            return `
+                await ${relatedTable}Requester.send({ type: 'update', 
+                    _id: null,   
+                    headers: {
+                        authorization: context.params.token
+                    }, 
+                    body: {
+                        classId: null
+                    },
+                    params: {
+                        query: {
+                            classId: context.id
+                        }
+                    }
+                })`
+    }
+}
+
 module.exports = {
     generateGraphqlSchema,
     generateGraphqlServer,
     generatePackageJSON,
-    whitelistTypes
+    whitelistTypes,
+    onDeleteRelations
 }

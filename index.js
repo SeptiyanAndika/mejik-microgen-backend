@@ -1,24 +1,25 @@
 const fs = require("fs")
 const {printSchema, parse, GraphQLSchema} = require("graphql")
-const { makeExecutableSchema } = require("apollo-server")
+const merge = require("lodash").merge
+const { makeExecutableSchema } = require("graphql-tools")
 const path = require("path")
-const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes} = require("./generators")
+const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations} = require("./generators")
 const ncp = require('ncp').ncp;
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 const pluralize = require('pluralize')
 let type = fs.readFileSync("./schema.graphql").toString()
 
-const { UpperCaseDirective } = require('./directives')
+const directives = require('./directives')
 const scalars = require('./scalars')
 
-let buildSchema = makeExecutableSchema({
-    typeDefs: [scalars, type ],
-    schemaDirectives: {
-        upper: UpperCaseDirective
-    },
-})
-
-const schema = parse(printSchema(buildSchema));
+// let buildSchema = makeExecutableSchema({
+//     typeDefs: [scalars, type ],
+//     schemaDirectives: {
+//         upper: UpperCaseDirective
+//     },
+// })
+let rawSchema = scalars+directives+type
+const schema = parse(rawSchema);
 
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
@@ -110,11 +111,13 @@ async function main(){
     let types = []
     schema.definitions.filter((def)=> !whitelistTypes.includes(def.kind)).map((def)=>{
         fields = []
+
         def.fields.map((e)=>{
             fields.push({
                 name: e.name.value,
                 type: e.type.kind == "NamedType" ? e.type.name.value : e.type.type.name.value,
-                required: e.type.kind == "NamedType" ? false: true
+                required: e.type.kind == "NamedType" ? false: true,
+                directives: e.directives
             })
         })
         types.push({
@@ -170,6 +173,29 @@ async function main(){
                 content = content.replace(/examples/g, pluralize(e.name.toLowerCase()))
                             .replace(/example/g, e.name.toLowerCase())
                             .replace(/Example/g, e.name)
+
+                 //hook on delete           
+                e.fields.map((f)=>{
+                    f.directives.map((d)=>{
+                        if(d.name.value == "relation"){
+                            let directiveRelationOnDelete = d.arguments[0].value.value
+                            let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(f.name.toLowerCase()))
+                            let contentSplit = content.split("onDelete")
+                            onDelete += contentSplit[1]
+                            content = contentSplit[0] + onDelete
+
+                            let contentSplitResponser = content.split(`${e.name.toLowerCase()}Service.on`)
+                            let addNewRequester = 
+`const ${pluralize.singular(f.name.toLowerCase())}Requester = new cote.Requester({
+    name: '${pluralize.singular(f.name)} Requester',
+    key: '${pluralize.singular(f.name.toLowerCase())}',
+})\n
+`
+                            contentSplitResponser[0] += addNewRequester
+                            content = contentSplitResponser.join(`${e.name.toLowerCase()}Service.on`)
+                        }
+                    })
+                })
                 // console.log("cc", content)
                 fs.writeFileSync(path+"index.js", content) 
             })
