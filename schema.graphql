@@ -1,11 +1,22 @@
-type Student{
+type Post{
     _id: String!
-    name: String @default(value: "students")
-    class: Class!
+    text: String!
+    comments: [Comment]
+    user: User!
 }
 
-type Class {
-    _id: String!
-    name: String
-    students: [Student] @relation(onDelete: CASCADE)
+
+type UserFriend{
+    _id: String
+    user: User!
+    friend: User!
+}
+
+type User{
+    phoneNumbers: String!
+}
+type Comment {
+    _id: String
+    post: Post!
+    text: String!
 }

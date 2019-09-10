@@ -12,7 +12,7 @@ const userService = new cote.Responder({
 userService.on("index", async (req, cb)=>{
   try{
     const users = await app.service("users").find()
-    cb(null, users.data)
+    cb(null, users)
   }catch(error){
     cb(error, null)
   }

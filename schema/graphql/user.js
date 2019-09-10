@@ -1,4 +1,4 @@
-export const typeDef = `
+const typeDef = `
     input LoginInput {
         email: String!,
         password: String
@@ -23,6 +23,8 @@ export const typeDef = `
 
     type User {
         _id: ID!
+        firstName: String
+        lastName: String
         email: String
     }
 
@@ -31,7 +33,7 @@ export const typeDef = `
         user: User
     }
 `;
-export const resolvers = {
+const resolvers = {
     Query: {
         users: async (_,{query}, { userRequester })=>{
             return await userRequester.send({ type: 'index' })
@@ -46,3 +48,8 @@ export const resolvers = {
         },
     }
 };
+
+module.exports = {
+    typeDef,
+    resolvers
+}

@@ -1,5 +1,6 @@
 const fs = require("fs")
 const pluralize = require('pluralize')
+const { camelize } = require("./utils")
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 
 const isRelation = (types, name) =>{
@@ -12,9 +13,12 @@ const isRelation = (types, name) =>{
 const field = (types, name, type) =>{
     let fieldName = name
     let fieldType = type.kind == "NamedType" ?  type.name.value  : type.type.name.value
-    if(types.includes(name)){
-        fieldName =  name.toLowerCase()+"Id"
+    if(types.includes(name) || fieldType == "User"){
+        fieldName =  camelize(name)+"Id"
         fieldType = "String"
+    }
+    if(type.kind == "NonNullType"){
+        return `${fieldName} : ${fieldType}!`
     }
     return `${fieldName} : ${fieldType}`
 }
@@ -139,10 +143,14 @@ server.listen().then(({url})=>{
 }
 
 const whitelistTypes = ['DirectiveDefinition', 'ScalarTypeDefinition', 'EnumTypeDefinition']
+const reservedTypes = ['User']
 const generateGraphqlSchema = (schema)=>{
     let contents =  []
     let types = []
     for(let i =0; i < schema.definitions.length; i++){
+        if(reservedTypes.includes(schema.definitions[i].name.value)){
+            continue
+        }
         if(whitelistTypes.includes(schema.definitions[i].kind)){
             continue
         }
@@ -150,6 +158,9 @@ const generateGraphqlSchema = (schema)=>{
         types.push(typeName.toLowerCase())
     }
     for(let i =0; i < schema.definitions.length; i++){
+        if(reservedTypes.includes(schema.definitions[i].name.value)){
+            continue
+        }
         if(whitelistTypes.includes(schema.definitions[i].kind)){
             continue
         }
@@ -174,7 +185,6 @@ const generateGraphqlSchema = (schema)=>{
             }else{
                 type += `       ${e.name.value}: ${fieldType(e.type)} \n`
             }
-
         })
         type += "    }\n"
         let queriesPrepend = "    extend type Query {"
@@ -188,12 +198,12 @@ const generateGraphqlSchema = (schema)=>{
 
         input += `    input ${typeName}Input {\n`
         schema.definitions[i].fields.map((e)=>{
-            if(e.type.kind !== "ListType"){
+            if(e.type.kind !== "ListType" && e.name.value !== "_id"){
                 input += `       ${field(types, e.name.value, e.type)}\n`
             }
         })
         input += "    }\n\n"
-        queriesPrepend+= `\n        ${pluralize(typeName.toLowerCase())} (query: JSON): [${typeName}]`
+        queriesPrepend+= `\n        ${camelize(pluralize(typeName))} (query: JSON): [${typeName}]`
         mutationPrepend+= `\n       create${typeName}(input: ${typeName}Input): ${typeName}`
         mutationPrepend+= `\n       update${typeName}(input: ${typeName}Input, _id: String): ${typeName}`
         mutationPrepend+= `\n       delete${typeName}(_id: String): ${typeName}`
@@ -210,6 +220,9 @@ const generateGraphqlSchema = (schema)=>{
         let resolverRelations = ""
         let typeNames = []
         for(let i =0; i < schema.definitions.length; i++){
+            if(reservedTypes.includes(schema.definitions[i].name.value)){
+                continue
+            }
             if(whitelistTypes.includes(schema.definitions[i].kind)){
                 continue
             }
@@ -217,9 +230,9 @@ const generateGraphqlSchema = (schema)=>{
             typeNames.push(typeName)
         }
         
-        let requester = typeName.toLowerCase()+"Requester"
+        let requester = camelize(typeName)+"Requester"
         //findall
-        resolverQueries += `        ${pluralize(typeName.toLowerCase())}: async(_, { query }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `        ${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
         resolverQueries += `            return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "        }, \n"
         if(relationTypes.length > 0){
@@ -228,7 +241,7 @@ const generateGraphqlSchema = (schema)=>{
             relationTypes.map((e)=>{
                 if(e.type == "ListType"){
                     resolverRelations += `        ${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.name)}Requester })=>{\n`
-                    resolverRelations += `            return await ${pluralize.singular(e.name)}Requester.send({ type: 'index', query: Object.assign({ ${typeName.toLowerCase()}Id: _id }, query), headers })\n`
+                    resolverRelations += `            return await ${pluralize.singular(e.name)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
                     resolverRelations += `        },\n`
                 }else{
                     resolverRelations += `        ${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.name}Requester })=>{\n`
@@ -244,15 +257,15 @@ const generateGraphqlSchema = (schema)=>{
   
 
 
-        resolverMutations += `       create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `       create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
         resolverMutations += `           return await ${requester}.send({ type: 'store', body: input, headers})\n`
         resolverMutations += "       }, \n"
 
-        resolverMutations += `       update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `       update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
         resolverMutations += `           return await ${requester}.send({ type: 'update', body: input, _id, headers})\n`
         resolverMutations += "       }, \n"
 
-        resolverMutations += `       delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> e.toLowerCase()+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `       delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
         resolverMutations += `           return await ${requester}.send({ type: 'destroy', _id,  headers})\n`
         resolverMutations += "       }, \n"
 
@@ -342,5 +355,6 @@ module.exports = {
     generateGraphqlServer,
     generatePackageJSON,
     whitelistTypes,
+    reservedTypes,
     onDeleteRelations
 }
