@@ -214,11 +214,19 @@ function generateAuthentiations(types){
                 ],
                 public: [
                     ${types.map((t, typeIndex)=>{
-                        return actions.filter((a)=> a == "find" || a == "get" ).map((a, actionIndex)=>{
+                        if(typeIndex == 0){
+                            return actions.map((a, actionIndex)=>{
+                                // if(typeIndex ==0 && actionIndex == 0){
+                                //     return `'${camelize(t.name)}:${a}'\n`
+                                // }
+                                return `'${camelize(t.name)}:${a}'`
+                            }).join(", ")
+                        }
+                        return `\n`+actions.filter((a)=> a == "find" || a == "get" ).map((a, actionIndex)=>{
                             if(typeIndex ==0 && actionIndex == 0){
                                 return `'${camelize(t.name)}:${a}'\n`
                             }
-                            return `\n'${camelize(t.name)}:${a}'`
+                            return `'${camelize(t.name)}:${a}'`
                         }).join(", ")
                     })}
                 ],
