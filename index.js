@@ -196,11 +196,19 @@ function generateAuthentiations(types){
                 admin: ['admin:*'],
                 authenticated: [
                     ${types.map((t,typeIndex)=>{
-                        return actions.map((a, actionIndex)=>{
-                            if(typeIndex ==0 && actionIndex == 0){
-                                return `'${camelize(t.name)}:${a}'\n`
-                            }
-                            return `\n'${camelize(t.name)}:${a}'`
+                        if(typeIndex == 0){
+                            return actions.map((a, actionIndex)=>{
+                                // if(typeIndex ==0 && actionIndex == 0){
+                                //     return `'${camelize(t.name)}:${a}'\n`
+                                // }
+                                return `'${camelize(t.name)}:${a}'`
+                            }).join(", ")
+                        }
+                        return  `\n`+actions.map((a, actionIndex)=>{
+                            // if(typeIndex ==0 && actionIndex == 0){
+                            //     return `'${camelize(t.name)}:${a}'\n`
+                            // }
+                            return `'${camelize(t.name)}:${a}'`
                         }).join(", ")
                     })}
                 ],
