@@ -1,6 +1,6 @@
 const fs = require("fs")
 const pluralize = require('pluralize')
-const { camelize } = require("./utils")
+const { camelize, beautify } = require("./utils")
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 
 const isRelation = (types, name) =>{
@@ -61,85 +61,85 @@ const generateGraphqlServer = (types) =>{
     })
 
     content += 
-    `\nconst cote = require('cote')({ redis: { host: "${config.cote.redis.host}", port: ${config.cote.redis.port} } })\n`+
-    "const typeDefs = gql`\n"+
-    "   type Query { anything: String }\n"+
-    "   type Mutation { anything: String }\n"+
-    "   scalar JSON\n"+
-    "   scalar Date\n`"+
-`
-const resolver = {
-    JSON: GraphQLJSON,
-    Date: new GraphQLScalarType({
-        name: 'Date',
-        description: 'Date custom scalar type',
-        parseValue(value) {
-            return new Date(value); // value from the client
-        },
-        serialize(value) {
-            return new Date(value).toString() // value sent to the client
-        },
-        parseLiteral(ast) {
-            if (ast.kind === Kind.INT) {
-                return parseInt(ast.value, 10); // ast value is always in string format
-            }
-            return null;
-        },
-    }),
-}`
+        `\nconst cote = require('cote')({ redis: { host: "${config.cote.redis.host}", port: ${config.cote.redis.port} } })\n`+
+        "const typeDefs = gql`\n"+
+        "   type Query { anything: String }\n"+
+        "   type Mutation { anything: String }\n"+
+        "   scalar JSON\n"+
+        "   scalar Date\n`"+
+        `
+        const resolver = {
+            JSON: GraphQLJSON,
+            Date: new GraphQLScalarType({
+                name: 'Date',
+                description: 'Date custom scalar type',
+                parseValue(value) {
+                    return new Date(value); // value from the client
+                },
+                serialize(value) {
+                    return new Date(value).toString() // value sent to the client
+                },
+                parseLiteral(ast) {
+                    if (ast.kind === Kind.INT) {
+                        return parseInt(ast.value, 10); // ast value is always in string format
+                    }
+                    return null;
+                },
+            }),
+        }`
+
     content += 
-    `
-const schema = makeExecutableSchema({
-    typeDefs: [ typeDefs, User, ${types.join(", ")}],
-    resolvers: merge(resolver,  userResolvers, ${types.map((t)=> camelize(t)+"Resolvers").join(", ")}),
-});
-    `
+        `
+        const schema = makeExecutableSchema({
+            typeDefs: [ typeDefs, User, ${types.join(", ")}],
+            resolvers: merge(resolver,  userResolvers, ${types.map((t)=> camelize(t)+"Resolvers").join(", ")}),
+        });
+        `
     
     content += `
-const userRequester = new cote.Requester({ 
-    name: 'User Requester', 
-    key: 'user',
-})      
-    ` 
+        const userRequester = new cote.Requester({ 
+            name: 'User Requester', 
+            key: 'user',
+        })      
+            ` 
     //requster
     types.map((t)=>{
         content += `
-const ${camelize(t)+"Requester"} = new cote.Requester({ 
-    name: '${t} Requester', 
-    key: '${camelize(t)}',
-})
+            const ${camelize(t)+"Requester"} = new cote.Requester({ 
+                name: '${t} Requester', 
+                key: '${camelize(t)}',
+            })
         `
     })
 
 
     content += `
-const parseBearerToken = (headers)=>{
-    return Object.assign(headers, {
-        authorization: headers.authorization ? headers.authorization.split(" ")[1] : null
-    })
-}\n`
+        const parseBearerToken = (headers)=>{
+            return Object.assign(headers, {
+                authorization: headers.authorization ? headers.authorization.split(" ")[1] : null
+            })
+        }\n`
     //create context
     content += `
-const context = ({req}) => {
-    return {
-        headers: parseBearerToken(req.headers),
-        userRequester,
-        ${types.map((e)=> camelize(e)+"Requester").join(", ")}
-    }
-}\n`
+        const context = ({req}) => {
+            return {
+                headers: parseBearerToken(req.headers),
+                userRequester,
+                ${types.map((e)=> camelize(e)+"Requester").join(", ")}
+            }
+        }\n`
 
     content += `
-const server = new ApolloServer({
-    schema, 
-    context
-})
+        const server = new ApolloServer({
+            schema, 
+            context
+        })
 
-
-server.listen().then(({url})=>{
-    console.log("Server ready at"+url)
-})
+        server.listen().then(({url})=>{
+            console.log("Server ready at"+url)
+        })
     `
-    return content
+    return beautify(content)
 }
 
 const whitelistTypes = ['DirectiveDefinition', 'ScalarTypeDefinition', 'EnumTypeDefinition']
@@ -253,21 +253,21 @@ const generateGraphqlSchema = (schema)=>{
         
         let requester = camelize(typeName)+"Requester"
         //findall
-        resolverQueries += `        ${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
-        resolverQueries += `            return await ${requester}.send({ type: 'index', query, headers})\n`
-        resolverQueries += "        }, \n"
+        resolverQueries += `${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `    return await ${requester}.send({ type: 'index', query, headers})\n`
+        resolverQueries += "}, \n"
         if(relationTypes.length > 0){
             resolverRelations += `    ${typeName}: {\n`
  
             relationTypes.map((e)=>{
                 if(e.type == "ListType"){
-                    resolverRelations += `        ${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
-                    resolverRelations += `            return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
-                    resolverRelations += `        },\n`
+                    resolverRelations += `${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
+                    resolverRelations += `  return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
+                    resolverRelations += `},\n`
                 }else{
-                    resolverRelations += `        ${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
-                    resolverRelations += `            return await ${e.relatedTo}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
-                    resolverRelations += `        },\n`
+                    resolverRelations += `${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
+                    resolverRelations += `  return await ${e.relatedTo}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
+                    resolverRelations += `},\n`
                 }
 
             })
@@ -275,29 +275,26 @@ const generateGraphqlSchema = (schema)=>{
         }
 
 
-  
+        resolverMutations += `create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `  return await ${requester}.send({ type: 'store', body: input, headers})\n`
+        resolverMutations += "}, \n"
+
+        resolverMutations += `update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `  return await ${requester}.send({ type: 'update', body: input, _id, headers})\n`
+        resolverMutations += "}, \n"
+
+        resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
+        resolverMutations += `  return await ${requester}.send({ type: 'destroy', _id,  headers})\n`
+        resolverMutations += "}, \n"
 
 
-        resolverMutations += `       create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
-        resolverMutations += `           return await ${requester}.send({ type: 'store', body: input, headers})\n`
-        resolverMutations += "       }, \n"
-
-        resolverMutations += `       update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
-        resolverMutations += `           return await ${requester}.send({ type: 'update', body: input, _id, headers})\n`
-        resolverMutations += "       }, \n"
-
-        resolverMutations += `       delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
-        resolverMutations += `           return await ${requester}.send({ type: 'destroy', _id,  headers})\n`
-        resolverMutations += "       }, \n"
-
-
-        resolverQueries += "    }, \n"
-        resolverMutations += "   }, \n"
+        resolverQueries += "}, \n"
+        resolverMutations += "}, \n"
         //end of queries
         resolvers += resolverQueries + resolverRelations + resolverMutations + "}"
         content += resolvers
 
-        contents.push(content)
+        contents.push(beautify(content))
     }
     return contents
 }
