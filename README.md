@@ -4,11 +4,24 @@ Microgen is a smart microservices and graphql generator based on NodeJs. Instead
 
 Although Microgen code are generated, it code are easy to read. So it is easy to maintain and also easy to modify. 
 
+## Features
+
+Microgen use cote (https://github.com/dashersw/cote) for the microservices api, feathersJs (https://feathersjs.com) for DB ORM, redis for service discovery, and apollo graphql (https://www.apollographql.com) for the gateway. Microgen use the best practice of implementing microservices:
+
+- **Zero dependency:** Microservices with only JavaScript and Node.js
+- **Zero-configuration:** no IP addresses, no ports, no routing to configure
+- **Decentralized:** No fixed parts, no "manager" nodes, no single point of failure
+- **Auto-discovery:** Services discover each other without a central bookkeeper
+- **Fault-tolerant:** Don't lose any requests when a service is down
+- **Scalable:** Horizontally scale to any number of machines
+- **Performant:** Process thousands of messages per second
+- **Humanized API:** Extremely simple to get started with a reasonable API!
+
 ## Getting Started
 
 Here are simple steps to generate your code in outputs folder:
 
-- write your schema in schema.graphql (Readmore about how to make Schema, on schema section)
+- write your schema in schema.graphql (Readmore about how to make Schema, on [schema section](#Schema))
 
 - run 
 ```
@@ -21,6 +34,7 @@ $ node index.js
 ## Schema
 
 **Default Generated Schema**
+
 Microgen generate User schema for You although You don't specify it on "schema.graphql". The User Schema generated are look like this:
 
 ```
@@ -45,6 +59,7 @@ type User {
 don't worry about the other fields, the default email, password, etc are still generated for You.
 
 **Custom Directives**
+
 - Default value
     ```
     @default(value: "someValue")
@@ -77,6 +92,7 @@ don't worry about the other fields, the default email, password, etc are still g
         ```
 
 **Usage Example**
+
 ```
 type Post{
     _id: String!
