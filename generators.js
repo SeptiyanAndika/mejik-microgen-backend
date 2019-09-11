@@ -39,10 +39,10 @@ const generatePackageJSON = (types) =>{
     packageJSON["scripts"]["graphql"] = "nodemon --exec babel-node graphql --presets env"
     packageJSON["scripts"]["user-services"] = "cd "+config.services.src+"user && nodemon index.js"
     types.map((type)=>{
-        packageJSON["scripts"][`${type.toLowerCase()}-services`] = "cd "+config.services.src+type.toLowerCase()+ " && nodemon index.js"
+        packageJSON["scripts"][`${camelize(type)}-services`] = "cd "+config.services.src+camelize(type)+ " && nodemon index.js"
     })
 
-    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql user-services ${types.map((type)=> `${type.toLowerCase()}-services`).join(" ")}`
+    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql user-services ${types.map((type)=> `${camelize(type)}-services`).join(" ")}`
 
     fs.writeFileSync(config.src+"package.json", JSON.stringify(packageJSON,null,4))
 }
