@@ -306,6 +306,7 @@ onDeleteRelations = (type, relatedTable, foreignId) =>{
     switch(type){
         case "SET_NULL":
             return `
+                //onDelete
                 //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
                     _id: null,   
@@ -313,16 +314,17 @@ onDeleteRelations = (type, relatedTable, foreignId) =>{
                         authorization: context.params.token
                     }, 
                     body: {
-                        ${foreignId}: null
+                        ${foreignId}Id: null
                     },
                     params: {
                         query: {
-                            ${foreignId}: context.id
+                            ${foreignId}Id: context.id
                         }
                     }
                 })`
         case "CASCADE":
             return `
+                //onDelete
                 //ON DELETE SET CASCADE
                 await ${relatedTable}Requester.send({ type: 'destroy', 
                     _id: null,   
@@ -331,28 +333,30 @@ onDeleteRelations = (type, relatedTable, foreignId) =>{
                     }, 
                     params: {
                         query: {
-                            ${foreignId}: context.id
+                            ${foreignId}Id: context.id
                         }
                     }
                 })`
         case "RESTRICT":
             return `
+                //onDelete
                 //ON DELETE SET RESTRICT
-                let belongsTo = await ${relatedTable}Requester.send({ 
+                let ${pluralize(relatedTable)} = await ${relatedTable}Requester.send({ 
                     type: 'index', 
                     query: {
-                        ${foreignId}: context.id
+                        ${foreignId}Id: context.id
                     }, 
                     headers: {
                         authorization: context.params.token
                     }
                 })
-                if(belongsTo.length > 0){
+                if(${pluralize(relatedTable)}.length > 0){
                     throw Error("Failed delete", null)
                 }
             `
         default:
             return `
+                //onDelete
                 //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
                     _id: null,   
@@ -360,11 +364,11 @@ onDeleteRelations = (type, relatedTable, foreignId) =>{
                         authorization: context.params.token
                     }, 
                     body: {
-                        ${foreignId}: null
+                        ${foreignId}Id: null
                     },
                     params: {
                         query: {
-                            ${foreignId}: context.id
+                            ${foreignId}Id: context.id
                         }
                     }
                 })`

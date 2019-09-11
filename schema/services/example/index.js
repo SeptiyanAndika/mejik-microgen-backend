@@ -102,7 +102,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                throw Error(err.message)
+                throw Error(err)
             }
         },
         get: async (context)=>{
@@ -119,7 +119,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                throw Error(err.message)
+                throw Error(err)
             }
         },
         create: async (context)=>{
@@ -137,7 +137,7 @@ app.service('examples').hooks({
                 }
                 //beforeCreate
             }catch(err){
-                throw Error(err.message)
+                throw Error(err)
             }
         },
         update: async (context)=>{
@@ -155,7 +155,7 @@ app.service('examples').hooks({
                 }
                 //beforeUpdate
             }catch(err){
-                throw Error(err.message)
+                throw Error(err)
             }
         },
         patch: async (context)=>{
@@ -173,7 +173,7 @@ app.service('examples').hooks({
                 }
                 //beforePatch
             }catch(err){
-                throw Error(err.message)
+                throw Error(err)
             }
         },
         remove: async (context)=>{
@@ -192,7 +192,7 @@ app.service('examples').hooks({
                 //beforeDelete
                 //onDelete
             }catch(err){
-                throw Error(err.message)
+                throw Error(err)
             }
         }
     },

@@ -320,12 +320,13 @@ async function main(){
                     fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4)) 
                 })
             })
-            let requesters = []
+            let requesters = ['user']
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()
                 content = content.replace(/examples/g, pluralize(camelize(e.name)))
                             .replace(/example/g, camelize(e.name))
                             .replace(/Example/g, camelize(e.name))
+                
 
                 e.fields.map((f)=>{
                     //find related field
@@ -351,16 +352,18 @@ async function main(){
                                 
                                 if(args.name.value == "onUpdateDelete"){
                                     if(args.value.value == "own"){
+                                        console.log("type", e)
                                         let contentSplit = content.split("//beforePatch")
                                         let beforeUpdate = 
                 `
-                let post = await app.service("posts").find({
-                    query:{
-                        _id: context.id,
-                        userId: auth.user._id
-                    }
+                let query = context.params.query || {
+                    _id: context.id,
+                    userId: auth.user._id
+                }
+                let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
+                    query
                 })
-                if(post.length == 0 ){
+                if(${pluralize(camelize(e.name))}.length == 0 ){
                     throw Error("UnAuthorized")
                 } 
                 `
@@ -368,18 +371,19 @@ async function main(){
                                         content = contentSplit[0] + beforeUpdate
 
                                         let contentSplitDelete = content.split("//beforeDelete")
-                                                                let beforeDelete = 
-                                        `
-                let post = await app.service("posts").find({
-                    query:{
-                        _id: context.id,
-                        userId: auth.user._id
-                    }
+                                        let beforeDelete = 
+                `
+                let query = context.params.query || {
+                    _id: context.id,
+                    userId: auth.user._id
+                }
+                let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
+                    query
                 })
-                if(post.length == 0 ){
+                if(${pluralize(camelize(e.name))}.length == 0 ){
                     throw Error("UnAuthorized")
                 } 
-                                        `
+                `
                                         beforeDelete += contentSplitDelete[1]
                                         content = contentSplitDelete[0] + beforeDelete
                                         // console.log(contentSplit[0])
@@ -417,8 +421,7 @@ async function main(){
                         //hook on delete 
                         if(d.name.value == "relation"){
                             let directiveRelationOnDelete = d.arguments[0].value.value
-                            console.log("f", e.name)
-                            let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(camelize(f.name)), pluralize.singular(camelize(e.name))+"Id")
+                            let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(camelize(f.name)), pluralize.singular(camelize(e.name)))
                             let contentSplit = content.split("//onDelete")
                             onDelete += contentSplit[1]
                             content = contentSplit[0] + onDelete
