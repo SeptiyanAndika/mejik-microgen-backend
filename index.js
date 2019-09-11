@@ -352,7 +352,6 @@ async function main(){
                                 
                                 if(args.name.value == "onUpdateDelete"){
                                     if(args.value.value == "own"){
-                                        console.log("type", e)
                                         let contentSplit = content.split("//beforePatch")
                                         let beforeUpdate = 
                 `
