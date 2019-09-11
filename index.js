@@ -417,7 +417,8 @@ async function main(){
                         //hook on delete 
                         if(d.name.value == "relation"){
                             let directiveRelationOnDelete = d.arguments[0].value.value
-                            let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(camelize(f.name)))
+                            console.log("f", e.name)
+                            let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(camelize(f.name)), pluralize.singular(camelize(e.name))+"Id")
                             let contentSplit = content.split("//onDelete")
                             onDelete += contentSplit[1]
                             content = contentSplit[0] + onDelete

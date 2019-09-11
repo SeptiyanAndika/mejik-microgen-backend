@@ -175,12 +175,10 @@ const generateGraphqlSchema = (schema)=>{
             //     relationTypes.push(e.name.value)
             // }
             //hasmany
-            console.log("etypes", e.type)
             // if(e.type.type){
             //     console.log(e.type.type.name.value)
             // }
             if(e.type.type){
-                console.log("e", e.type.type.name.value)
                 if(types.includes(camelize(e.type.type.name.value))){
                     relationTypes.push({
                         name: e.name.value,
@@ -267,7 +265,6 @@ const generateGraphqlSchema = (schema)=>{
                     resolverRelations += `            return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
                     resolverRelations += `        },\n`
                 }else{
-                    console.log("e", e.relatedTo)
                     resolverRelations += `        ${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
                     resolverRelations += `            return await ${e.relatedTo}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
                     resolverRelations += `        },\n`
@@ -305,7 +302,7 @@ const generateGraphqlSchema = (schema)=>{
     return contents
 }
 
-onDeleteRelations = (type, relatedTable) =>{
+onDeleteRelations = (type, relatedTable, foreignId) =>{
     switch(type){
         case "SET_NULL":
             return `
@@ -316,11 +313,11 @@ onDeleteRelations = (type, relatedTable) =>{
                         authorization: context.params.token
                     }, 
                     body: {
-                        classId: null
+                        ${foreignId}: null
                     },
                     params: {
                         query: {
-                            classId: context.id
+                            ${foreignId}: context.id
                         }
                     }
                 })`
@@ -334,7 +331,7 @@ onDeleteRelations = (type, relatedTable) =>{
                     }, 
                     params: {
                         query: {
-                            classId: context.id
+                            ${foreignId}: context.id
                         }
                     }
                 })`
@@ -344,7 +341,7 @@ onDeleteRelations = (type, relatedTable) =>{
                 let belongsTo = await ${relatedTable}Requester.send({ 
                     type: 'index', 
                     query: {
-                        classId: context.id
+                        ${foreignId}: context.id
                     }, 
                     headers: {
                         authorization: context.params.token
@@ -363,11 +360,11 @@ onDeleteRelations = (type, relatedTable) =>{
                         authorization: context.params.token
                     }, 
                     body: {
-                        classId: null
+                        ${foreignId}: null
                     },
                     params: {
                         query: {
-                            classId: context.id
+                            ${foreignId}: context.id
                         }
                     }
                 })`
