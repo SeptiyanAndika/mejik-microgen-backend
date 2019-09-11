@@ -1,6 +1,7 @@
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
+const checkPermissions = require('feathers-permissions');
 const {permissions} = require('./src/permissions')
 const cote = require('cote')({ redis: { host: 'localhost', port: "6379" } })
 const userService = new cote.Responder({ 
