@@ -7,9 +7,8 @@ const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitel
 const ncp = require('ncp').ncp;
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 const pluralize = require('pluralize')
-const { camelize } = require("./utils")
+const { camelize, beautify } = require("./utils")
 let type = fs.readFileSync("./schema.graphql").toString()
-
 const directives = require('./directives')
 const scalars = require('./scalars')
 
@@ -82,7 +81,6 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                                  d.fields.map((dFields, i)=>{
                                     base.fields.map((baseField)=>{
                                         if(dFields.name.value !== baseField.name.value){
-                                            // d.fields.push(dFields)
                                             if(!d.fields.map((e)=> e.name.value).includes(baseField.name.value)){
                                                 d.fields.push(baseField)
                                             }
@@ -103,23 +101,14 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                         schema.definitions.map((base)=>{
                             if(base.name.value == "User"){
                                 base.fields.map((baseField)=>{
-                                    // if(baseField.type.kind == "NonNullType"){
-                                        d.fields.push(baseField)
-                                    // }
+                                    d.fields.push(baseField)
                                 })
                             }
                         })
                     }
                }
-            //    console.log("d", d)
            })
-        //    typeDef.definitions.map((m)=>{
-        //        if(m.name.value == "User"){
-        //             m.fields.map((f)=>{
-        //                 console.log(f)
-        //             })
-        //        }
-        //    })
+
            schemaType.typeDef = print(typeDef)
            writeFile(graphqlDirectiory, "user", 
                 "const typeDef = `\n"+schemaType.typeDef+"`\n"+
@@ -148,12 +137,13 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                     content += "\t\tfirstName: { type: String },\n"
                     content += "\t\tlastName: { type: String },\n"
                     content += "\t\trole: {type: String},\n"
+
                     const whitelist = ['email', 'password', 'firstName', 'lastName', 'role']
                     fields.filter((f)=> !whitelist.includes(f.name)).map((f)=>{
                         // console.log(f)
                         types.map((t)=>{
                             if(t.name == f.type){
-                                content += `        ${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },\n`
+                                content += `${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },`
                             }
                         })
                         let defaultValue = null
@@ -165,9 +155,9 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                         })
                         if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)){
                             if(defaultValue){
-                                content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },\n`
+                                content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
                             }else{
-                                content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },\n`
+                                content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
                             }
 
                         }
@@ -175,12 +165,15 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                 }
             })
 
-            content += "    },{\n"
-            content += "        timestamps: true\n"
-            content += "    })\n"
-            content += `        return mongooseClient.model("users", model)\n`
-            content += "    }"
-            writeFile(featherDirectory+"user/src/", "model", content)
+            content += `
+                },{
+                    timestamps: true
+                })
+                    return mongooseClient.model("users", model)
+                }
+            `
+
+            writeFile(featherDirectory+"user/src/", "model", beautify(content))
         })
 
         })
@@ -199,29 +192,35 @@ function generateAuthentiations(types){
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
 
         const permissions =
-`const permissions = {
-    admin: ['admin:*'],
-    authenticated: [
-        ${types.map((t)=>{
-            return actions.map((a)=>{
-                return `'${camelize(t.name)}:${a}'`
-            }).join(", ")
-        })}
-    ],
-    public: [
-        ${types.map((t)=>{
-            return actions.filter((a)=> a == "find" || a == "get" ).map((a)=>{
-                return `'${camelize(t.name)}:${a}'`
-            }).join(", ")
-        })}
-    ],
-}
-module.exports = {
-    permissions
-}
-        `
+            `const permissions = {
+                admin: ['admin:*'],
+                authenticated: [
+                    ${types.map((t,typeIndex)=>{
+                        return actions.map((a, actionIndex)=>{
+                            if(typeIndex ==0 && actionIndex == 0){
+                                return `'${camelize(t.name)}:${a}'\n`
+                            }
+                            return `\n'${camelize(t.name)}:${a}'`
+                        }).join(", ")
+                    })}
+                ],
+                public: [
+                    ${types.map((t, typeIndex)=>{
+                        return actions.filter((a)=> a == "find" || a == "get" ).map((a, actionIndex)=>{
+                            if(typeIndex ==0 && actionIndex == 0){
+                                return `'${camelize(t.name)}:${a}'\n`
+                            }
+                            return `\n'${camelize(t.name)}:${a}'`
+                        }).join(", ")
+                    })}
+                ],
+            }
+            module.exports = {
+                permissions
+            }
+            `
         // //generate permissions
-        fs.writeFileSync("./outputs/services/user/src/permissions.js", permissions)
+        fs.writeFileSync("./outputs/services/user/src/permissions.js", beautify(permissions))
 
         
     });
@@ -338,10 +337,10 @@ async function main(){
                                     if(args.value.value == "own"){
                                         let contentSplit = content.split("//beforeCreate")
                                         let beforeCreate = 
-                `
-                context.data.userId = auth.user._id
-                //beforeCreate     
-                `
+                                        `
+                                        context.data.userId = auth.user._id
+                                        //beforeCreate     
+                                        `
                                         beforeCreate += contentSplit[1]
                                         // console.log(contentSplit[0])
                                         content = contentSplit[0] + beforeCreate
@@ -354,35 +353,35 @@ async function main(){
                                     if(args.value.value == "own"){
                                         let contentSplit = content.split("//beforePatch")
                                         let beforeUpdate = 
-                `
-                let query = context.params.query || {
-                    _id: context.id,
-                    userId: auth.user._id
-                }
-                let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                    query
-                })
-                if(${pluralize(camelize(e.name))}.length == 0 ){
-                    throw Error("UnAuthorized")
-                } 
-                `
+                                        `
+                                        let query = context.params.query || {
+                                            _id: context.id,
+                                            userId: auth.user._id
+                                        }
+                                        let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
+                                            query
+                                        })
+                                        if(${pluralize(camelize(e.name))}.length == 0 ){
+                                            throw Error("UnAuthorized")
+                                        } 
+                                        `
                                         beforeUpdate += contentSplit[1]
                                         content = contentSplit[0] + beforeUpdate
 
                                         let contentSplitDelete = content.split("//beforeDelete")
                                         let beforeDelete = 
-                `
-                let query = context.params.query || {
-                    _id: context.id,
-                    userId: auth.user._id
-                }
-                let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                    query
-                })
-                if(${pluralize(camelize(e.name))}.length == 0 ){
-                    throw Error("UnAuthorized")
-                } 
-                `
+                                        `
+                                        let query = context.params.query || {
+                                            _id: context.id,
+                                            userId: auth.user._id
+                                        }
+                                        let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
+                                            query
+                                        })
+                                        if(${pluralize(camelize(e.name))}.length == 0 ){
+                                            throw Error("UnAuthorized")
+                                        } 
+                                        `
                                         beforeDelete += contentSplitDelete[1]
                                         content = contentSplitDelete[0] + beforeDelete
                                         // console.log(contentSplit[0])
@@ -396,21 +395,21 @@ async function main(){
                         if(pluralize.isSingular(f.name) && f.type == t.name){
                             let contentSplit = content.split("//beforeCreate")
                             let beforeCreate = 
-                `
-                //beforeCreate
-                if(context.data && context.data.${pluralize.singular(camelize(t.name))}Id){
-                    let belongsTo = await ${pluralize.singular(camelize(t.name))}Requester.send({ 
-                        type: "show", 
-                        _id: context.data.${pluralize.singular(camelize(t.name))}Id, 
-                        headers:{
-                            token: context.params.token
-                        }
-                    })
-                    if(!belongsTo){
-                        throw Error("${t.name} not found.")
-                    }
-                }             
-                `
+                            `
+                            //beforeCreate
+                            if(context.data && context.data.${pluralize.singular(camelize(t.name))}Id){
+                                let belongsTo = await ${pluralize.singular(camelize(t.name))}Requester.send({ 
+                                    type: "show", 
+                                    _id: context.data.${pluralize.singular(camelize(t.name))}Id, 
+                                    headers:{
+                                        token: context.params.token
+                                    }
+                                })
+                                if(!belongsTo){
+                                    throw Error("${t.name} not found.")
+                                }
+                            }             
+                            `
                             beforeCreate += contentSplit[1]
                             content = contentSplit[0] + beforeCreate
                             content = addNewRequester(content, e.name, f.name, requesters)
@@ -433,7 +432,7 @@ async function main(){
                 //remove unused comments
                 content = content.replace(/\/\/onDelete/g, "").replace(/\/\/beforeCreate/g, "")
                 // console.log("cc", content)
-                fs.writeFileSync(path+"index.js", content) 
+                fs.writeFileSync(path+"index.js", beautify(content)) 
             })
 
             const srcPath = schemaExampleFeather+"src/"
@@ -456,17 +455,16 @@ async function main(){
                             //fields
                             e.fields.map((f)=>{
                                 if(f.type == "User"){
-                                    content += `        ${f.name}Id: { type: String, required: ${f.required} },\n`
+                                    content += `${f.name}Id: { type: String, required: ${f.required} },`
                                 }
                                 types.map((t)=>{
                                     if(t.name == f.type && f.kind !== "ListType"){
                                         // console.log("loll",f)
-                                        content += `        ${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },\n`
+                                        content += `${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },`
                                     }
                                 })
                                 let defaultValue = null
                                 f.directives.map((d)=>{
-
                                     if(d.name.value == "default"){
                                         defaultValue = d.arguments[0].value.value
                                     }
@@ -474,21 +472,23 @@ async function main(){
                                 if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type) && f.kind !== "ListType"){
 
                                     if(defaultValue){
-                                        content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },\n`
+                                        content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
                                     }else{
-                                        content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },\n`
+                                        content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
                                     }
 
                                 }
                             })
-                            content += "    },{\n"
-                            content += "        timestamps: true\n"
-                            content += "    })\n"
-                            content += `        return mongooseClient.model("${pluralize(camelize(e.name))}", model)\n`
-                            content += "    }"
+                            content += `
+                                },{
+                                    timestamps: true
+                                })
+                                    return mongooseClient.model("${pluralize(camelize(e.name))}", model)
+                                }
+                            `
                         }
                         // console.log(content)
-                        fs.writeFileSync(path+"src/"+fileName, content)
+                        fs.writeFileSync(path+"src/"+fileName, beautify(content))
                     })
                 })
             })
