@@ -5,7 +5,6 @@ type Post{
     user: User!  @role(onCreate: "own", onUpdateDelete: "own")
 }
 
-
 type UserFriend{
     _id: String
     user: User!
@@ -13,8 +12,9 @@ type UserFriend{
 }
 
 type User{
-    phoneNumbers: String!
+    phoneNumbers: String
 }
+
 type Comment {
     _id: String
     post: Post!
