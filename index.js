@@ -363,7 +363,7 @@ async function main(){
                                                 query
                                             })
                                             if(${pluralize(camelize(e.name))}.length == 0 ){
-                                                throw Error("UnAuthorized")
+                                                throw new NotFound("Id doest not exist")
                                             } 
                                         }
                                         `
@@ -382,7 +382,7 @@ async function main(){
                                                 query
                                             })
                                             if(${pluralize(camelize(e.name))}.length == 0 ){
-                                                throw Error("UnAuthorized")
+                                                throw new NotFound("Id doest not exist")
                                             }
                                         } 
                                         `

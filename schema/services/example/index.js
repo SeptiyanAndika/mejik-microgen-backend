@@ -2,6 +2,7 @@ const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
 const checkPermissions = require('feathers-permissions');
+const { NotFound } = require('@feathersjs/errors');
 const cote = require('cote')({ redis: { host: 'localhost', port: "6379" } })
 
 const exampleService = new cote.Responder({ 
@@ -102,7 +103,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                throw Error(err)
+                throw err
             }
         },
         get: async (context)=>{
@@ -119,7 +120,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                throw Error(err)
+                throw err
             }
         },
         create: async (context)=>{
@@ -137,7 +138,7 @@ app.service('examples').hooks({
                 }
                 //beforeCreate
             }catch(err){
-                throw Error(err)
+                throw err
             }
         },
         update: async (context)=>{
@@ -155,7 +156,7 @@ app.service('examples').hooks({
                 }
                 //beforeUpdate
             }catch(err){
-                throw Error(err)
+                throw err
             }
         },
         patch: async (context)=>{
@@ -173,7 +174,7 @@ app.service('examples').hooks({
                 }
                 //beforePatch
             }catch(err){
-                throw Error(err)
+                throw err
             }
         },
         remove: async (context)=>{
@@ -192,7 +193,7 @@ app.service('examples').hooks({
                 //beforeDelete
                 //onDelete
             }catch(err){
-                throw Error(err)
+                throw err
             }
         }
     },
