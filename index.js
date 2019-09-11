@@ -354,16 +354,18 @@ async function main(){
                                         let contentSplit = content.split("//beforePatch")
                                         let beforeUpdate = 
                                         `
-                                        let query = context.params.query || {
-                                            _id: context.id,
-                                            userId: auth.user._id
+                                        if(context.id){
+                                            let query = context.params.query || {
+                                                _id: context.id,
+                                                userId: auth.user._id
+                                            }
+                                            let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
+                                                query
+                                            })
+                                            if(${pluralize(camelize(e.name))}.length == 0 ){
+                                                throw Error("UnAuthorized")
+                                            } 
                                         }
-                                        let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                                            query
-                                        })
-                                        if(${pluralize(camelize(e.name))}.length == 0 ){
-                                            throw Error("UnAuthorized")
-                                        } 
                                         `
                                         beforeUpdate += contentSplit[1]
                                         content = contentSplit[0] + beforeUpdate
@@ -371,15 +373,17 @@ async function main(){
                                         let contentSplitDelete = content.split("//beforeDelete")
                                         let beforeDelete = 
                                         `
-                                        let query = context.params.query || {
-                                            _id: context.id,
-                                            userId: auth.user._id
-                                        }
-                                        let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                                            query
-                                        })
-                                        if(${pluralize(camelize(e.name))}.length == 0 ){
-                                            throw Error("UnAuthorized")
+                                        if(context.id){
+                                            let query = context.params.query || {
+                                                _id: context.id,
+                                                userId: auth.user._id
+                                            }
+                                            let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
+                                                query
+                                            })
+                                            if(${pluralize(camelize(e.name))}.length == 0 ){
+                                                throw Error("UnAuthorized")
+                                            }
                                         } 
                                         `
                                         beforeDelete += contentSplitDelete[1]

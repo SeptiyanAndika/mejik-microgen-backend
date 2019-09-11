@@ -1,7 +1,7 @@
 type Post{
     _id: String!
     text: String!
-    comments: [Comment] @relation(onDelete: RESTRICT)
+    comments: [Comment] @relation(onDelete: CASCADE)
     user: User!  @role(onCreate: "own", onUpdateDelete: "own")
 }
 
