@@ -2,7 +2,7 @@ type Post{
     _id: String!
     text: String!
     comments: [Comment]
-    user: User!
+    user: User!  @role(onCreate: "own", onUpdateDelete: "own")
 }
 
 
@@ -19,4 +19,5 @@ type Comment {
     _id: String
     post: Post!
     text: String!
+    user: User!  @role(onCreate: "own", onUpdateDelete: "own")
 }

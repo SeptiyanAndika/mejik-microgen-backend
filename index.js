@@ -142,11 +142,18 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                             directives: e.directives
                         })
                     })
-                    fields.map((f)=>{
+                    //default value
+                    content += "\t\temail: {type: String, unique: true, lowercase: true},\n"
+                    content += "\t\tpassword: { type: String },\n"
+                    content += "\t\tfirstName: { type: String },\n"
+                    content += "\t\tlastName: { type: String },\n"
+                    content += "\t\trole: {type: String},\n"
+                    const whitelist = ['email', 'password', 'firstName', 'lastName', 'role']
+                    fields.filter((f)=> !whitelist.includes(f.name)).map((f)=>{
                         // console.log(f)
                         types.map((t)=>{
                             if(t.name == f.type){
-                                content += `        ${t.name.toLowerCase()+"Id"}: { type: String, required: ${f.required} },\n`
+                                content += `        ${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },\n`
                             }
                         })
                         let defaultValue = null
@@ -197,14 +204,14 @@ function generateAuthentiations(types){
     authenticated: [
         ${types.map((t)=>{
             return actions.map((a)=>{
-                return `'${t.name.toLowerCase()}:${a}'`
+                return `'${camelize(t.name)}:${a}'`
             }).join(", ")
         })}
     ],
     public: [
         ${types.map((t)=>{
             return actions.filter((a)=> a == "find" || a == "get" ).map((a)=>{
-                return `'${t.name.toLowerCase()}:${a}'`
+                return `'${camelize(t.name)}:${a}'`
             }).join(", ")
         })}
     ],
@@ -235,15 +242,15 @@ function addNewRequester(content, type, requesterName, requesters){
         return content
     }
     requesters.push(requesterName)
-    let contentSplitResponser = content.split(`${type.toLowerCase()}Service.on`)
+    let contentSplitResponser = content.split(`${camelize(type)}Service.on`)
     let addNewRequester = 
-`const ${pluralize.singular(requesterName.toLowerCase())}Requester = new cote.Requester({
+`const ${pluralize.singular(camelize(requesterName))}Requester = new cote.Requester({
     name: '${pluralize.singular(requesterName)} Requester',
-    key: '${pluralize.singular(requesterName.toLowerCase())}',
+    key: '${pluralize.singular(camelize(requesterName))}',
 })\n
 `
     contentSplitResponser[0] += addNewRequester
-    content = contentSplitResponser.join(`${type.toLowerCase()}Service.on`)
+    content = contentSplitResponser.join(`${camelize(type)}Service.on`)
     return content
 }
 async function main(){
@@ -262,7 +269,8 @@ async function main(){
                 name: e.name.value,
                 type: e.type.kind == "NamedType" ? e.type.name.value : e.type.type.name.value,
                 required: e.type.kind == "NonNullType" ? true : false,
-                directives: e.directives
+                directives: e.directives,
+                kind: e.type.kind
             })
         })
         types.push({
@@ -292,12 +300,11 @@ async function main(){
         if(!fs.existsSync(featherDirectory)){
             fs.mkdirSync(featherDirectory)
         }
-        const path = featherDirectory+e.name.toLowerCase()+"/"
+        const path = featherDirectory+camelize(e.name)+"/"
+
         if(!fs.existsSync(path)){
             fs.mkdirSync(path)
         }
-
-
         const schemaExampleFeather = "./schema/services/example/"
         fs.readdir(schemaExampleFeather, function(err, fileName){
             const configPath = schemaExampleFeather+"config/"
@@ -306,7 +313,7 @@ async function main(){
                     const config = JSON.parse(content)
                     config.port = defaultConfigService.port+index
                     config.host = defaultConfigService.host
-                    config.mongodb = defaultConfigService.mongodb+e.name.toLowerCase()+"_service"
+                    config.mongodb = defaultConfigService.mongodb+camelize(e.name)+"_service"
                     if(!fs.existsSync(path+"config/")){
                         fs.mkdirSync(path+"config/")
                     }
@@ -316,22 +323,82 @@ async function main(){
             let requesters = []
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()
-                content = content.replace(/examples/g, pluralize(e.name.toLowerCase()))
-                            .replace(/example/g, e.name.toLowerCase())
-                            .replace(/Example/g, e.name)
+                content = content.replace(/examples/g, pluralize(camelize(e.name)))
+                            .replace(/example/g, camelize(e.name))
+                            .replace(/Example/g, camelize(e.name))
 
-                           
                 e.fields.map((f)=>{
                     //find related field
+                    f.directives.map((directive)=>{
+                        // console.log(directive)
+                        if(directive.name.value == "role"){
+                            directive.arguments.map((args)=>{
+                                if(args.name.value == "onCreate"){
+                                    if(args.value.value == "own"){
+                                        let contentSplit = content.split("//beforeCreate")
+                                        let beforeCreate = 
+                `
+                context.data.userId = auth.user._id
+                //beforeCreate     
+                `
+                                        beforeCreate += contentSplit[1]
+                                        // console.log(contentSplit[0])
+                                        content = contentSplit[0] + beforeCreate
+                                        // console.log(content)
+                                        // content = addNewRequester(content, e.name, f.name, requesters)
+                                    }
+                                }
+                                
+                                if(args.name.value == "onUpdateDelete"){
+                                    if(args.value.value == "own"){
+                                        let contentSplit = content.split("//beforePatch")
+                                        let beforeUpdate = 
+                `
+                let post = await app.service("posts").find({
+                    query:{
+                        _id: context.id,
+                        userId: auth.user._id
+                    }
+                })
+                if(post.length == 0 ){
+                    throw Error("UnAuthorized")
+                } 
+                `
+                                        beforeUpdate += contentSplit[1]
+                                        content = contentSplit[0] + beforeUpdate
+
+                                        let contentSplitDelete = content.split("//beforeDelete")
+                                                                let beforeDelete = 
+                                        `
+                let post = await app.service("posts").find({
+                    query:{
+                        _id: context.id,
+                        userId: auth.user._id
+                    }
+                })
+                if(post.length == 0 ){
+                    throw Error("UnAuthorized")
+                } 
+                                        `
+                                        beforeDelete += contentSplitDelete[1]
+                                        content = contentSplitDelete[0] + beforeDelete
+                                        // console.log(contentSplit[0])
+                                    }
+                                }
+                            })
+                        }
+                    })
+
                     types.map((t)=>{
                         if(pluralize.isSingular(f.name) && f.type == t.name){
                             let contentSplit = content.split("//beforeCreate")
                             let beforeCreate = 
                 `
-                if(context.data && context.data.${pluralize.singular(t.name.toLowerCase())}Id){
-                    let belongsTo = await ${pluralize.singular(t.name.toLowerCase())}Requester.send({ 
+                //beforeCreate
+                if(context.data && context.data.${pluralize.singular(camelize(t.name))}Id){
+                    let belongsTo = await ${pluralize.singular(camelize(t.name))}Requester.send({ 
                         type: "show", 
-                        _id: context.data.${pluralize.singular(t.name.toLowerCase())}Id, 
+                        _id: context.data.${pluralize.singular(camelize(t.name))}Id, 
                         headers:{
                             token: context.params.token
                         }
@@ -350,7 +417,7 @@ async function main(){
                         //hook on delete 
                         if(d.name.value == "relation"){
                             let directiveRelationOnDelete = d.arguments[0].value.value
-                            let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(f.name.toLowerCase()))
+                            let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(camelize(f.name)))
                             let contentSplit = content.split("//onDelete")
                             onDelete += contentSplit[1]
                             content = contentSplit[0] + onDelete
@@ -375,9 +442,9 @@ async function main(){
 
                 file.map((fileName)=>{
                     fs.readFile(srcPath+fileName, (err, content)=>{
-                        content = content.toString().replace(/examples/g, pluralize(e.name.toLowerCase()))
-                            .replace(/example/g, e.name.toLowerCase())
-                            .replace(/Example/g, e.name)
+                        content = content.toString().replace(/examples/g, pluralize(camelize(e.name)))
+                            .replace(/example/g, camelize(e.name))
+                            .replace(/Example/g, camelize(e.name))
                             
                         if(fileName == "model.js"){
                             content = "module.exports = function (app) {\n"
@@ -385,9 +452,13 @@ async function main(){
                             content += `const model = new mongooseClient.Schema({\n`
                             //fields
                             e.fields.map((f)=>{
+                                if(f.type == "User"){
+                                    content += `        ${f.name}Id: { type: String, required: ${f.required} },\n`
+                                }
                                 types.map((t)=>{
-                                    if(t.name == f.type){
-                                        content += `        ${t.name.toLowerCase()+"Id"}: { type: String, required: ${f.required} },\n`
+                                    if(t.name == f.type && f.kind !== "ListType"){
+                                        // console.log("loll",f)
+                                        content += `        ${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },\n`
                                     }
                                 })
                                 let defaultValue = null
@@ -397,7 +468,8 @@ async function main(){
                                         defaultValue = d.arguments[0].value.value
                                     }
                                 })
-                                if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)){
+                                if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type) && f.kind !== "ListType"){
+
                                     if(defaultValue){
                                         content += `        ${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },\n`
                                     }else{
@@ -409,7 +481,7 @@ async function main(){
                             content += "    },{\n"
                             content += "        timestamps: true\n"
                             content += "    })\n"
-                            content += `        return mongooseClient.model("${pluralize(e.name.toLowerCase())}", model)\n`
+                            content += `        return mongooseClient.model("${pluralize(camelize(e.name))}", model)\n`
                             content += "    }"
                         }
                         // console.log(content)

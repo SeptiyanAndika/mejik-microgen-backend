@@ -18,6 +18,22 @@ userService.on("index", async (req, cb)=>{
   }
 })
 
+
+userService.on("show", async (req, cb) => {
+  try{
+      let token = req.headers.authorization
+      let data = null
+      if(req._id){
+          data = await app.service("users").get(req._id, {
+              token
+          })
+      }
+      cb(null, data)
+  }catch(error){
+      cb(null, null)
+  }
+})
+
 userService.on("login", async (req, cb)=>{
   try{
     const user = await app.service("authentication").create({
@@ -40,7 +56,8 @@ userService.on("register", async (req, cb) => {
 
     const auth = await app.service("authentication").create({
       strategy: "local",
-      ...req.body
+      email: req.body.email,
+      password: req.body.password,
     })
     
     cb(null, {

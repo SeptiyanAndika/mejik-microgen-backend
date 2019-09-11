@@ -57,7 +57,7 @@ const generateGraphqlServer = (types) =>{
     content += `import { typeDef as User, resolvers as userResolvers } from './graphql/user'\n`
     //import all type and resolvers
     types.map((type)=>{
-        content += `import { typeDef as ${type}, resolvers as ${type.toLowerCase()}Resolvers } from './graphql/${type.toLowerCase()}'\n`
+        content += `import { typeDef as ${type}, resolvers as ${camelize(type)}Resolvers } from './graphql/${camelize(type)}'\n`
     })
 
     content += 
@@ -91,7 +91,7 @@ const resolver = {
     `
 const schema = makeExecutableSchema({
     typeDefs: [ typeDefs, User, ${types.join(", ")}],
-    resolvers: merge(resolver,  userResolvers, ${types.map((t)=> t.toLowerCase()+"Resolvers").join(", ")}),
+    resolvers: merge(resolver,  userResolvers, ${types.map((t)=> camelize(t)+"Resolvers").join(", ")}),
 });
     `
     
@@ -104,9 +104,9 @@ const userRequester = new cote.Requester({
     //requster
     types.map((t)=>{
         content += `
-const ${t.toLowerCase()+"Requester"} = new cote.Requester({ 
+const ${camelize(t)+"Requester"} = new cote.Requester({ 
     name: '${t} Requester', 
-    key: '${t.toLowerCase()}',
+    key: '${camelize(t)}',
 })
         `
     })
@@ -124,7 +124,7 @@ const context = ({req}) => {
     return {
         headers: parseBearerToken(req.headers),
         userRequester,
-        ${types.map((e)=> e.toLowerCase()+"Requester").join(", ")}
+        ${types.map((e)=> camelize(e)+"Requester").join(", ")}
     }
 }\n`
 
@@ -146,7 +146,7 @@ const whitelistTypes = ['DirectiveDefinition', 'ScalarTypeDefinition', 'EnumType
 const reservedTypes = ['User']
 const generateGraphqlSchema = (schema)=>{
     let contents =  []
-    let types = []
+    let types = ["user"]
     for(let i =0; i < schema.definitions.length; i++){
         if(reservedTypes.includes(schema.definitions[i].name.value)){
             continue
@@ -175,13 +175,23 @@ const generateGraphqlSchema = (schema)=>{
             //     relationTypes.push(e.name.value)
             // }
             //hasmany
-            if(types.includes(pluralize.singular(e.name.value))){
-                relationTypes.push({
-                    name: e.name.value,
-                    type: e.type.kind
-                })
+            console.log("etypes", e.type)
+            // if(e.type.type){
+            //     console.log(e.type.type.name.value)
+            // }
+            if(e.type.type){
+                console.log("e", e.type.type.name.value)
+                if(types.includes(camelize(e.type.type.name.value))){
+                    relationTypes.push({
+                        name: e.name.value,
+                        relatedTo: camelize(e.type.type.name.value),
+                        type: e.type.kind
+                    })
 
-                type += `       ${e.name.value} (query: JSON): ${fieldType(e.type)} \n`
+                    type += `       ${e.name.value} (query: JSON): ${fieldType(e.type)} \n`
+                }else{
+                    type += `       ${e.name.value}: ${fieldType(e.type)} \n`
+                }
             }else{
                 type += `       ${e.name.value}: ${fieldType(e.type)} \n`
             }
@@ -198,7 +208,20 @@ const generateGraphqlSchema = (schema)=>{
 
         input += `    input ${typeName}Input {\n`
         schema.definitions[i].fields.map((e)=>{
-            if(e.type.kind !== "ListType" && e.name.value !== "_id"){
+            let role = []
+            e.directives.map((d)=>{
+                if(d.name.value == "role"){
+                    d.arguments.map((args)=>{
+                        if(args.name.value == "onCreate"){
+                            if(args.value.value == "own"){
+                                role.push(args.value.value)
+                                return
+                            }
+                        }
+                    })
+                }
+            })
+            if(!role.includes("own") && e.type.kind !== "ListType" && e.name.value !== "_id"){
                 input += `       ${field(types, e.name.value, e.type)}\n`
             }
         })
@@ -240,12 +263,13 @@ const generateGraphqlSchema = (schema)=>{
  
             relationTypes.map((e)=>{
                 if(e.type == "ListType"){
-                    resolverRelations += `        ${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.name)}Requester })=>{\n`
-                    resolverRelations += `            return await ${pluralize.singular(e.name)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
+                    resolverRelations += `        ${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
+                    resolverRelations += `            return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
                     resolverRelations += `        },\n`
                 }else{
-                    resolverRelations += `        ${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.name}Requester })=>{\n`
-                    resolverRelations += `            return await ${e.name}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
+                    console.log("e", e.relatedTo)
+                    resolverRelations += `        ${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
+                    resolverRelations += `            return await ${e.relatedTo}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
                     resolverRelations += `        },\n`
                 }
 

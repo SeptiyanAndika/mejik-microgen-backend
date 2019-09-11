@@ -153,6 +153,7 @@ app.service('examples').hooks({
                 if(!context.params.permitted){
                     throw Error("UnAuthorized")
                 }
+                //beforeUpdate
             }catch(err){
                 throw Error(err.message)
             }
@@ -170,6 +171,7 @@ app.service('examples').hooks({
                 if(!context.params.permitted){
                     throw Error("UnAuthorized")
                 }
+                //beforePatch
             }catch(err){
                 throw Error(err.message)
             }
@@ -187,6 +189,7 @@ app.service('examples').hooks({
                 if(!context.params.permitted){
                     throw Error("UnAuthorized")
                 }
+                //beforeDelete
                 //onDelete
             }catch(err){
                 throw Error(err.message)
