@@ -11,6 +11,16 @@ const typeDef = `
         lastName: String
     }
 
+
+    input CreateUserInput {
+        email: String!
+        password: String!
+        firstName: String!
+        lastName: String
+        phoneNumbers: String
+        role: String!
+    }
+
     extend type Query {
         users: [User]
     }
@@ -18,8 +28,8 @@ const typeDef = `
     extend type Mutation {
         login(input: LoginInput): Login
         register(input: RegisterInput): Login
+        createUser(input: CreateUserInput): Login
     }
-    
 
     type User {
         _id: ID!
@@ -40,6 +50,9 @@ const resolvers = {
         }
     },
     Mutation :{
+        createUser: async (_, { input }, { userRequester, headers}) => {
+            return await userRequester.send({ type: 'createUser', body: input, headers})
+        },
         login: async (_, { input }, { userRequester }) => {
             return await userRequester.send({ type: 'login', body: input })
         },

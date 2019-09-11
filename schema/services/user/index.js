@@ -69,6 +69,40 @@ userService.on("register", async (req, cb) => {
   }
 })
 
+
+userService.on("createUser", async (req, cb) => {
+  try{
+    let token = req.headers.authorization
+    let verify = await app.service("authentication").verifyAccessToken(token)
+    let admin = await app.service("users").get(verify.sub, {
+      query: {
+        $select: ['_id', 'email', 'firstName', 'lastName', 'role']
+      }
+    })
+    admin.permissions = permissions[admin.role]
+
+    const user = await app.service("users").create({
+      ...req.body,
+    },{
+      type: "createUser",
+      user: admin
+    })
+
+    const auth = await app.service("authentication").create({
+      strategy: "local",
+      email: req.body.email,
+      password: req.body.password,
+    })
+    
+    cb(null, {
+      user,
+      token: auth.accessToken
+    })
+  }catch(error){
+    cb(error.message, null)
+  }
+})
+
 userService.on("verifyToken", async (req, cb) => {
   try{
     // console.log("verify token", app.service("authentication"))
@@ -95,6 +129,32 @@ userService.on("verifyToken", async (req, cb) => {
     cb(null, verify)
   }catch(error){
     cb(error, null)
+  }
+})
+
+
+
+
+app.service('users').hooks({
+  before: {
+    create: async (context) => {
+      let users = await app.service("users").find()
+      if(users.length == 0){
+        context.data.role = "admin"
+      }
+
+      if(context.params.type == "createUser"){
+        context.method = "createUser"
+        await checkPermissions({
+            roles: ['admin']
+        })(context)
+
+        if (!context.params.permitted) {
+            throw Error("UnAuthorized")
+        }
+      }
+
+    }
   }
 })
 
