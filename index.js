@@ -324,7 +324,7 @@ async function main(){
         fs.readdir(schemaExampleFeather, function(err, fileName){
             const configPath = schemaExampleFeather+"config/"
             fs.readdir(configPath, (err, file)=>{
-                fs.readFile(configPath+file, 'utf-8', (err,content)=>{
+                fs.readFile(configPath+"default.json", 'utf-8', (err,content)=>{
                     const config = JSON.parse(content)
                     config.port = defaultConfigService.port+index
                     config.host = defaultConfigService.host
@@ -332,9 +332,16 @@ async function main(){
                     if(!fs.existsSync(path+"config/")){
                         fs.mkdirSync(path+"config/")
                     }
-                    fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4)) 
+                    fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4))
+
+                    fs.writeFileSync(path+".env", 
+                        "HOST="+config.host+"\n"+
+                        "PORT="+config.port+"\n"+
+                        "MONGODB="+config.mongodb+"\n"
+                    )
                 })
             })
+            ncp(schemaExampleFeather+"config.js", path+"config.js")
             let requesters = ['user']
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()

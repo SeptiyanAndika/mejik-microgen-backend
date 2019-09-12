@@ -1,3 +1,4 @@
+require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
