@@ -4,6 +4,7 @@ const server = app.listen(port);
 const checkPermissions = require('feathers-permissions');
 const {permissions} = require('./permissions')
 const cote = require('cote')({ redis: { host: 'localhost', port: "6379" } })
+const bcrypt = require('bcryptjs');
 const userService = new cote.Responder({ 
     name: 'User Service',
     key: 'user'
@@ -45,6 +46,28 @@ userService.on("login", async (req, cb)=>{
     cb(null, user)
   }catch(error){
     cb(error, null)
+  }
+})
+
+userService.on("changePassword", async (req, cb) => {
+  try{
+      let token = req.headers.authorization
+      let verify = await app.service("authentication").verifyAccessToken(token)
+      let user = await app.service("users").get(verify.sub)
+      let isValid = bcrypt.compareSync(req.body.oldPassword, user.password)
+      if(isValid){
+        const auth = await app.service('users').patch(user._id, {password: req.body.newPassword});
+        console.log("changepassword", auth)
+        cb(null, {
+            status: 1,
+            message: "Success"
+        })
+      }else{
+        cb(new Error("UnAuthorized").message, null)
+      }
+  }catch(error){
+      console.log("e", error)
+      cb(error, null)
   }
 })
 

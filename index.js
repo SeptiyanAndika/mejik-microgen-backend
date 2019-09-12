@@ -342,6 +342,7 @@ async function main(){
                 })
             })
             ncp(schemaExampleFeather+"config.js", path+"config.js")
+            ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
             let requesters = ['user']
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()
