@@ -49,6 +49,7 @@ const generatePackageJSON = (types) =>{
 
 const generateGraphqlServer = (types) =>{
     let content = ""
+    content += `import { REDIS_HOST, REDIS_PORT } from './config'\n`
     content += `import { merge } from 'lodash'\n`
     content += `import { ApolloServer, makeExecutableSchema, gql } from 'apollo-server'\n`
     content += `import { GraphQLScalarType } from 'graphql'\n`
@@ -63,7 +64,7 @@ const generateGraphqlServer = (types) =>{
 
     content +=
         `const pubSub = new PubSub()\n`+ 
-        `\nconst cote = require('cote')({ redis: { host: "${config.cote.redis.host}", port: ${config.cote.redis.port} } })\n`+
+        `\nconst cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })\n`+
         "const typeDefs = gql`\n"+
         "   type Query { default: String }\n"+
         "   type Mutation { default: String }\n"+

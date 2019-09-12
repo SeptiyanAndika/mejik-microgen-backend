@@ -1,10 +1,10 @@
-require("./config")
+const { REDIS_HOST, REDIS_PORT } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
 const checkPermissions = require('feathers-permissions');
 const { NotFound } = require('@feathersjs/errors');
-const cote = require('cote')({ redis: { host: 'localhost', port: "6379" } })
+const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 
 const exampleService = new cote.Responder({ 
     name: 'Example Service',
