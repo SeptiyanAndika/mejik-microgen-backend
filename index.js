@@ -215,7 +215,7 @@ function generateAuthentiations(types){
                 public: [
                     ${types.map((t, typeIndex)=>{
                         if(typeIndex == 0){
-                            return actions.map((a, actionIndex)=>{
+                            return actions.filter((a)=> a == "find" || a == "get" ).map((a, actionIndex)=>{
                                 // if(typeIndex ==0 && actionIndex == 0){
                                 //     return `'${camelize(t.name)}:${a}'\n`
                                 // }
