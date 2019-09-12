@@ -27,6 +27,8 @@
         "cors": "^2.8.5",
         "cote": "^0.20.1",
         "express": "^4.17.1",
+        "dotenv": "^8.1.0",
+        "bcryptjs": "^2.4.3",
         "feathers-mongoose": "^8.0.2",
         "feathers-permissions": "^0.2.1",
         "graphql": "^14.5.3",
