@@ -118,3 +118,34 @@ type Comment {
     author: User!  @role(onCreate: "own", onUpdateDelete: "own")
 }
 ```
+
+## Outputs
+
+### Run app
+
+Simply click RUN button on the top navigation
+
+### Permissions
+
+Microgen had already defined role & permissions for You. To change the default permissions, You can change on "services/users/permission.js"
+
+
+```javascript
+const permissions = {
+    admin: ['admin:*'],
+    authenticated: [
+        'post:find', 'post:get', 'post:create', 'post:update', 'post:remove', 'post:patch',
+    ],
+    public: [
+        'post:find', 'post:get',
+    ],
+}
+module.exports = {
+    permissions
+}
+```
+
+on the example above, it means that: 
+- admin able to access everything
+- authenticated users, able to do everything on post-service
+- public (unauthenticated users) only able to use post-service on find and get methods
