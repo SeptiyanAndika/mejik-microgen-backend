@@ -16,4 +16,3 @@ it will run the GraphQL Playground and some related microservices
 - Access your GraphQL Playground at http://localhost:4000
 
 Note: Your database will be named as per service name. For example your service name is "product", then your db will be "product-service"
-
