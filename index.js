@@ -394,16 +394,10 @@ async function main(){
                                         let beforeUpdate = 
                                         `
                                         if(context.id){
-                                            let query = context.params.query || {
-                                                _id: context.id,
-                                                userId: auth.user._id
+                                            let post = await app.service("posts").get(context.id)
+                                            if(post && post.userId !== auth.user._id){
+                                                throw new Error("UnAuthorized")
                                             }
-                                            let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                                                query
-                                            })
-                                            if(${pluralize(camelize(e.name))}.length == 0 ){
-                                                throw new NotFound("Id doest not exist")
-                                            } 
                                         }
                                         `
                                         beforeUpdate += contentSplit[1]
@@ -413,17 +407,11 @@ async function main(){
                                         let beforeDelete = 
                                         `
                                         if(context.id){
-                                            let query = context.params.query || {
-                                                _id: context.id,
-                                                userId: auth.user._id
+                                            let post = await app.service("posts").get(context.id)
+                                            if(post && post.userId !== auth.user._id){
+                                                throw new Error("UnAuthorized")
                                             }
-                                            let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                                                query
-                                            })
-                                            if(${pluralize(camelize(e.name))}.length == 0 ){
-                                                throw new NotFound("Id doest not exist")
-                                            }
-                                        } 
+                                        }
                                         `
                                         beforeDelete += contentSplitDelete[1]
                                         content = contentSplitDelete[0] + beforeDelete

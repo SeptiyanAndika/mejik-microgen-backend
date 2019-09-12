@@ -145,15 +145,15 @@ userService.on("verifyToken", async (req, cb) => {
         $select: ['_id', 'email', 'firstName', 'lastName', 'role']
       }
     })
+    
     user.permissions = permissions[user.role]
     if(!user.permissions){
-      cb(null, null)
-      return
+      throw new Error("UnAuthorized")
     }
     verify.user = user
     cb(null, verify)
   }catch(error){
-    cb(error, null)
+    cb(error.message, null)
   }
 })
 
