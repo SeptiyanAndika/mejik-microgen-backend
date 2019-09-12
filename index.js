@@ -236,7 +236,7 @@ function generateAuthentiations(types){
             }
             `
         // //generate permissions
-        fs.writeFileSync("./outputs/services/user/src/permissions.js", beautify(permissions))
+        fs.writeFileSync("./outputs/services/user/permissions.js", beautify(permissions))
 
         
     });

@@ -53,6 +53,7 @@ const generateGraphqlServer = (types) =>{
     content += `import { ApolloServer, makeExecutableSchema, gql } from 'apollo-server'\n`
     content += `import { GraphQLScalarType } from 'graphql'\n`
     content += `import GraphQLJSON from 'graphql-type-json'\n\n`
+    content += `import { PubSub } from 'graphql-subscriptions'\n`
 
     content += `import { typeDef as User, resolvers as userResolvers } from './graphql/user'\n`
     //import all type and resolvers
@@ -60,11 +61,13 @@ const generateGraphqlServer = (types) =>{
         content += `import { typeDef as ${type}, resolvers as ${camelize(type)}Resolvers } from './graphql/${camelize(type)}'\n`
     })
 
-    content += 
+    content +=
+        `const pubSub = new PubSub()\n`+ 
         `\nconst cote = require('cote')({ redis: { host: "${config.cote.redis.host}", port: ${config.cote.redis.port} } })\n`+
         "const typeDefs = gql`\n"+
-        "   type Query { anything: String }\n"+
-        "   type Mutation { anything: String }\n"+
+        "   type Query { default: String }\n"+
+        "   type Mutation { default: String }\n"+
+        "   type Subscription { default: String }\n"+
         "   scalar JSON\n"+
         "   scalar Date\n`"+
         `
@@ -92,7 +95,7 @@ const generateGraphqlServer = (types) =>{
         `
         const schema = makeExecutableSchema({
             typeDefs: [ typeDefs, User, ${types.join(", ")}],
-            resolvers: merge(resolver,  userResolvers, ${types.map((t)=> camelize(t)+"Resolvers").join(", ")}),
+            resolvers: merge(resolver,  userResolvers, ${types.map((t)=> camelize(t)+"Resolvers({ pubSub })").join(", ")}),
         });
         `
     
@@ -121,9 +124,9 @@ const generateGraphqlServer = (types) =>{
         }\n`
     //create context
     content += `
-        const context = ({req}) => {
+        const context = ({ req, connection}) => {
             return {
-                headers: parseBearerToken(req.headers),
+                headers: !connection && parseBearerToken(req.headers),
                 userRequester,
                 ${types.map((e)=> camelize(e)+"Requester").join(", ")}
             }
@@ -200,8 +203,12 @@ const generateGraphqlSchema = (schema)=>{
 
         let input = ""
 
+        let subscriptionPrepend = "    extend type Subscription {"
+        let subscriptionAppend = "\n    }\n"
+
         let mutationPrepend = "    extend type Mutation {"
         let mutationAppend = "\n    }\n"
+       
 
 
         input += `    input ${typeName}Input {\n`
@@ -225,19 +232,27 @@ const generateGraphqlSchema = (schema)=>{
         })
         input += "    }\n\n"
         queriesPrepend+= `\n        ${camelize(pluralize(typeName))} (query: JSON): [${typeName}]`
+
+        subscriptionPrepend+= `\n       ${camelize(typeName)}Added: ${typeName}`
+        subscriptionPrepend+= `\n       ${camelize(typeName)}Updated: ${typeName}`
+        subscriptionPrepend+= `\n       ${camelize(typeName)}Deleted: ${typeName}`
+
         mutationPrepend+= `\n       create${typeName}(input: ${typeName}Input): ${typeName}`
         mutationPrepend+= `\n       update${typeName}(input: ${typeName}Input, _id: String): ${typeName}`
         mutationPrepend+= `\n       delete${typeName}(_id: String): ${typeName}`
 
+
         const queries = queriesPrepend+queriesAppend
         const mutations = mutationPrepend+mutationAppend
-        let result = type+ "\n" + queries + "\n" + input + mutations
+        const subscriptions = subscriptionPrepend+subscriptionAppend
+        let result = type+ "\n" + queries + "\n" + input + subscriptions + mutations
         content += result + "`\n"
 
         //resolver
-        let resolvers = "export const resolvers = {\n"
+        let resolvers = "export const resolvers = ({ pubSub }) => ({\n"
         let resolverQueries = "    Query: {\n"
         let resolverMutations = "    Mutation : {\n"
+        let resolverSubscriptions = "    Subscription : {\n"
         let resolverRelations = ""
         let typeNames = []
         for(let i =0; i < schema.definitions.length; i++){
@@ -275,23 +290,44 @@ const generateGraphqlSchema = (schema)=>{
         }
 
 
-        resolverMutations += `create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
-        resolverMutations += `  return await ${requester}.send({ type: 'store', body: input, headers})\n`
-        resolverMutations += "}, \n"
+        resolverMutations +=`create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{
+                                let data = await ${requester}.send({ type: 'store', body: input, headers})
+                                pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: data })
+                                return data
+                            },`
 
-        resolverMutations += `update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
-        resolverMutations += `  return await ${requester}.send({ type: 'update', body: input, _id, headers})\n`
-        resolverMutations += "}, \n"
+        resolverMutations +=`update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{
+                                let data = await ${requester}.send({ type: 'update', body: input, _id, headers})
+                                pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: data })
+                                return data
+                            },`
 
-        resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
-        resolverMutations += `  return await ${requester}.send({ type: 'destroy', _id,  headers})\n`
-        resolverMutations += "}, \n"
+        resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{
+                                let data = await ${requester}.send({ type: 'destroy', _id,  headers})
+                                pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: data })
+                                return data
+                            },`
+
+
+        resolverSubscriptions += `${camelize(typeName)}Added: {\n`
+        resolverSubscriptions += `  subscribe: () => pubSub.asyncIterator('${camelize(typeName)}Added')\n`
+        resolverSubscriptions += "}, \n"
+
+        resolverSubscriptions += `${camelize(typeName)}Updated: {\n`
+        resolverSubscriptions += `  subscribe: () => pubSub.asyncIterator('${camelize(typeName)}Updated')\n`
+        resolverSubscriptions += "}, \n"
+
+        resolverSubscriptions += `${camelize(typeName)}Deleted: {\n`
+        resolverSubscriptions += `  subscribe: () => pubSub.asyncIterator('${camelize(typeName)}Deleted')\n`
+        resolverSubscriptions += "}, \n"
+
 
 
         resolverQueries += "}, \n"
         resolverMutations += "}, \n"
+        resolverSubscriptions += "}, \n"
         //end of queries
-        resolvers += resolverQueries + resolverRelations + resolverMutations + "}"
+        resolvers += resolverQueries + resolverRelations + resolverSubscriptions + resolverMutations + "})"
         content += resolvers
 
         contents.push(beautify(content))
