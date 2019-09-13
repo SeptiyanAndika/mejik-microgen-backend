@@ -149,3 +149,38 @@ on the example above, it means that:
 - admin able to access everything
 - authenticated users, able to do everything on post-service
 - public (unauthenticated users) only able to use post-service on find and get methods
+
+### Socket
+
+Microgen is battery included, socket is one of them. To use it, simply use graphql subscription tag. There are 3 types of subscriptions (for example You have post service, it will generate):
+
+
+- postAdded: triggered when post added
+    ```
+    subscription {
+        postAdded {
+            _id
+                text
+        }
+    }
+    ```
+
+- postUpdated: triggered when post updated
+    ```
+    subscription {
+        postUpdated {
+            _id
+                text
+        }
+    }
+    ```
+
+- postDeleted: triggered when post deleted
+    ```
+    subscription {
+        postDeleted {
+            _id
+                text
+        }
+    }
+    ```
