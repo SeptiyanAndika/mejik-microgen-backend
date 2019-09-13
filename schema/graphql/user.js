@@ -19,8 +19,12 @@ const typeDef = `
         lastName: String
         phoneNumbers: String
         role: String!
-    }
-
+	}
+	
+	input VerifyEmailInput {
+		token: String!
+	}
+	
     extend type Query {
         users (query: JSON): [User]
         user: User
@@ -31,18 +35,20 @@ const typeDef = `
         register(input: RegisterInput): Login
         createUser(input: CreateUserInput): Login
         forgetPassword(input: ForgetPasswordInput): Response
-        resetPassword(input: ResetPasswordInput): Response
+		resetPassword(input: ResetPasswordInput): Response
+		verifyEmail(input: VerifyEmailInput): Response
     }
 
     type User {
         _id: ID!
         firstName: String
         lastName: String
-        email: String
+		email: String
+		status: Int
     }
 
     type ForgetPassword {
-        hash: String!
+        token: String!
     }
 
     type Login {
@@ -56,7 +62,7 @@ const typeDef = `
         
     input ResetPasswordInput {
         newPassword: String!
-        hash: String!
+        token: String!
     }
 
 `;
@@ -100,6 +106,13 @@ const resolvers = {
 		createUser: async (_, { input }, { userRequester, headers }) => {
 			return await userRequester.send({
 				type: "createUser",
+				body: input,
+				headers
+			});
+		},
+		verifyEmail: async (_, { input }, { userRequester, headers }) => {
+			return await userRequester.send({
+				type: "verifyEmail",
 				body: input,
 				headers
 			});

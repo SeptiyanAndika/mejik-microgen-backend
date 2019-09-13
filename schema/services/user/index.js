@@ -69,12 +69,16 @@ userService.on("login", async (req, cb) => {
 			strategy: "local",
 			...req.body
 		});
+		if(user.user.status == 0 || !user.user.status){
+			throw new Error("Your account is not activate, check your email to activate your account.")
+		}
 		user.token = user.accessToken;
 		cb(null, user);
 	} catch (error) {
-		cb(error, null);
+		cb(error.message, null);
 	}
 });
+
 
 userService.on("forgetPassword", async (req, cb) => {
 	try {
@@ -90,7 +94,7 @@ userService.on("forgetPassword", async (req, cb) => {
 			});
 			return
 		}
-		req.body.hash = bcrypt.genSaltSync();
+		req.body.token = bcrypt.genSaltSync();
 		await app.service("forgetPasswords").create(req.body);
 		emailRequester.send({
 			type: 'send', 
@@ -101,7 +105,7 @@ userService.on("forgetPassword", async (req, cb) => {
 				emailImageHeader: null,
 				emailTitle: "You are forget password",
 				emailBody: "forget",
-				emailLink: HOST+"/resetPassword?hash="+req.body.hash
+				emailLink: HOST+"/resetPassword?token="+req.body.token
 			}
 		})
 		cb(null, {
@@ -116,11 +120,11 @@ userService.on("resetPassword", async (req, cb) => {
 	try {
 		let data = await app.service("forgetPasswords").find({
 			query: {
-				hash: req.body.hash
+				token: req.body.token
 			}
 		});
 		if (data.length == 0) {
-			throw new Error("Hash is not exist");
+			throw new Error("Token is not exist");
 		}
 		data = data[0];
 		const d1 = new Date(data.createdAt);
@@ -159,6 +163,53 @@ userService.on("resetPassword", async (req, cb) => {
 	}
 });
 
+userService.on("verifyEmail", async (req, cb) => {
+	try {
+		let data = await app.service("emailVerifications").find({
+			query: {
+				token: req.body.token
+			}
+		});
+		if (data.length == 0) {
+			throw new Error("Token is not exist");
+		}
+		data = data[0];
+		// const d1 = new Date(data.createdAt);
+		// const d2 = new Date();
+		// const timeDiff = d2.getTime() - d1.getTime();
+		// const daysDiff = timeDiff / (1000 * 3600 * 24);
+		// if (daysDiff > forgetPasswordExpired) {
+		// 	throw new Error("Expired.");
+		// }
+
+		await app.service("users").patch(
+			null,
+			{
+				status: 1
+			},
+			{
+
+				query:{
+					email: data.email
+				}
+		
+			}
+		)
+		await app.service("emailVerifications").remove(null,{  
+			params: {
+				query: {
+					email: data.email
+				}
+			}
+		})
+		cb(null, {
+			message: "Success."
+		});
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
 userService.on("changePassword", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
@@ -171,7 +222,6 @@ userService.on("changePassword", async (req, cb) => {
 			const auth = await app
 				.service("users")
 				.patch(user._id, { password: req.body.newPassword });
-			console.log("changepassword", auth);
 			cb(null, {
 				status: 1,
 				message: "Success"
@@ -180,7 +230,6 @@ userService.on("changePassword", async (req, cb) => {
 			cb(new Error("UnAuthorized").message, null);
 		}
 	} catch (error) {
-		console.log("e", error);
 		cb(error, null);
 	}
 });
@@ -198,12 +247,30 @@ userService.on("register", async (req, cb) => {
 			password: req.body.password
 		});
 
+		const emailToken = bcrypt.genSaltSync()
+		await app.service("emailVerifications").create({
+			email: req.body.email,
+			token: emailToken
+		});
+
+		await emailRequester.send({
+			type: 'send', 
+			body:{
+				email:req.body.email,
+				from:email.from,
+				subject:"Email Verification",
+				emailImageHeader: null,
+				emailTitle: "Email Verification",
+				emailBody: "Verification",
+				emailLink: HOST+"/user/verify?token="+emailToken
+			}
+		})
 		cb(null, {
 			user,
 			token: auth.accessToken
 		});
 	} catch (error) {
-		cb(error, null);
+		cb(error.message, null);
 	}
 });
 
@@ -282,6 +349,7 @@ app.service("users").hooks({
 			let users = await app.service("users").find();
 			if (users.length == 0) {
 				context.data.role = "admin";
+				context.data.status = 1
 			}
 
 			if (context.params.type == "createUser") {

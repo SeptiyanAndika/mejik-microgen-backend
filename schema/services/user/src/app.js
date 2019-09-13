@@ -7,7 +7,7 @@ const app = express(feathersjs())
 
 
 const mongoose = require('./mongoose');
-const { User, ForgetPassword } = require('./models')
+const { User, ForgetPassword, EmailVerification } = require('./models')
 const hooks = require('./hooks');
 const authentication = require('./authentication');
 
@@ -28,5 +28,6 @@ app.configure(mongoose)
 
 app.use('/users', service({Model: User(app), whitelist: [ '$regex', '$options' ], multi: ['patch']}))
 app.use('/forgetPasswords', service({Model: ForgetPassword(app), whitelist: [ '$regex', '$options' ], multi: ['remove']}))
+app.use('/emailVerifications', service({Model: EmailVerification(app), whitelist: [ '$regex', '$options' ], multi: ['remove']}))
 app.service('users').hooks(hooks)
 module.exports = app

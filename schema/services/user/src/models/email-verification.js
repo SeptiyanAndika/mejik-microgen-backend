@@ -6,5 +6,5 @@ module.exports = function(app) {
     }, {
         timestamps: true
     })
-    return mongooseClient.model("forgetPasswords", model)
+    return mongooseClient.model("emailVerifications", model)
 }
