@@ -22,7 +22,8 @@ const typeDef = `
     }
 
     extend type Query {
-        users: [User]
+        users (query: JSON): [User]
+        user: User
     }
 
     extend type Mutation {
@@ -60,33 +61,59 @@ const typeDef = `
 
 `;
 const resolvers = {
-    Query: {
-        users: async (_,{query}, { userRequester })=>{
-            return await userRequester.send({ type: 'index' })
-        }
-    },
-    Mutation :{
-        resetPassword: async (_, { input = {} }, { userRequester, headers }) => {
-            let data = await userRequester.send({ type: 'resetPassword', body: input, headers })
-            return data
-        },
-        forgetPassword: async (_, { input = {} }, { userRequester, headers }) => {
-            let data = await userRequester.send({ type: 'forgetPassword', body: input, headers })
-            return data
-        },
-        createUser: async (_, { input }, { userRequester, headers}) => {
-            return await userRequester.send({ type: 'createUser', body: input, headers})
-        },
-        login: async (_, { input }, { userRequester }) => {
-            return await userRequester.send({ type: 'login', body: input })
-        },
-        register: async (_, { input }, { userRequester }) => {
-            return await  userRequester.send({ type: 'register', body: input })
-        },
-    }
+	Query: {
+		users: async (_, { query }, { userRequester }) => {
+			return await userRequester.send({ type: "index", query });
+		},
+		user: async (_, args, { headers, userRequester }) => {
+			return await userRequester.send({
+				type: "user",
+				headers
+			});
+		}
+	},
+	Mutation: {
+		resetPassword: async (
+			_,
+			{ input = {} },
+			{ userRequester, headers }
+		) => {
+			let data = await userRequester.send({
+				type: "resetPassword",
+				body: input,
+				headers
+			});
+			return data;
+		},
+		forgetPassword: async (
+			_,
+			{ input = {} },
+			{ userRequester, headers }
+		) => {
+			let data = await userRequester.send({
+				type: "forgetPassword",
+				body: input,
+				headers
+			});
+			return data;
+		},
+		createUser: async (_, { input }, { userRequester, headers }) => {
+			return await userRequester.send({
+				type: "createUser",
+				body: input,
+				headers
+			});
+		},
+		login: async (_, { input }, { userRequester }) => {
+			return await userRequester.send({ type: "login", body: input });
+		},
+		register: async (_, { input }, { userRequester }) => {
+			return await userRequester.send({ type: "register", body: input });
+		}
+	}
 };
 
 module.exports = {
-    typeDef,
-    resolvers
-}
+	typeDef,
+	resolvers
+};
