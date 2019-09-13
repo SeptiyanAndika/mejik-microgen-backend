@@ -24,13 +24,14 @@ const typeDef = `
     extend type Query {
         users (query: JSON): [User]
         user: User
-        sendEmail: User
     }
 
     extend type Mutation {
         login(input: LoginInput): Login
         register(input: RegisterInput): Login
         createUser(input: CreateUserInput): Login
+        forgetPassword(input: ForgetPasswordInput): ForgetPassword
+        resetPassword(input: ResetPasswordInput): Response
     }
 
     type User {
@@ -40,10 +41,24 @@ const typeDef = `
         email: String
     }
 
+    type ForgetPassword {
+        hash: String!
+    }
+
     type Login {
         token: String
         user: User
     }
+
+    input ForgetPasswordInput {
+        email : String!
+    }
+        
+    input ResetPasswordInput {
+        newPassword: String!
+        hash: String!
+    }
+
 `;
 const resolvers = {
 	Query: {
@@ -55,15 +70,33 @@ const resolvers = {
 				type: "user",
 				headers
 			});
-		},
-		sendEmail: async (_, args, { headers, userRequester }) => {
-			return await userRequester.send({
-				type: "sendEmail",
-				headers
-			});
 		}
 	},
 	Mutation: {
+		resetPassword: async (
+			_,
+			{ input = {} },
+			{ userRequester, headers }
+		) => {
+			let data = await userRequester.send({
+				type: "resetPassword",
+				body: input,
+				headers
+			});
+			return data;
+		},
+		forgetPassword: async (
+			_,
+			{ input = {} },
+			{ userRequester, headers }
+		) => {
+			let data = await userRequester.send({
+				type: "forgetPassword",
+				body: input,
+				headers
+			});
+			return data;
+		},
 		createUser: async (_, { input }, { userRequester, headers }) => {
 			return await userRequester.send({
 				type: "createUser",

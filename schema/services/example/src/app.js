@@ -1,9 +1,12 @@
+const { HOST, MONGODB, PORT } = require("../config")
 const express = require('@feathersjs/express')
 const feathers = require('@feathersjs/feathers')
-const configuration = require('@feathersjs/configuration');
 const service = require('feathers-mongoose')
 const app = express(feathers())
 
+app.set("host", HOST)
+app.set("port", PORT)
+app.set("mongodb", MONGODB)
 
 const mongoose = require('./mongoose');
 const Model = require('./model')
@@ -16,7 +19,6 @@ app.use(express.urlencoded({ extended: true }));
 // Set up REST transport
 app.configure(express.rest())
 
-app.configure(configuration())
 app.configure(mongoose)
 app.use('/examples', service({Model: Model(app), whitelist: [ '$regex', '$options' ], multi: ['upadate','patch', 'remove']}))
 

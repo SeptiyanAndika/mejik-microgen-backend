@@ -333,16 +333,16 @@ async function main(){
         }
         const schemaExampleFeather = "./schema/services/example/"
         fs.readdir(schemaExampleFeather, function(err, fileName){
-            const configPath = schemaExampleFeather+"config/"
+            // const configPath = schemaExampleFeather+"config/"
             // fs.readdir(configPath, (err, file)=>{
             //     fs.readFile(configPath+"default.json", 'utf-8', (err,content)=>{
             //         const config = JSON.parse(content)
             //         config.port = defaultConfigService.port+index
             //         config.host = defaultConfigService.host
             //         config.mongodb = defaultConfigService.mongodb+camelize(e.name)+"_service"
-            if(!fs.existsSync(path+"config/")){
-                fs.mkdirSync(path+"config/")
-            }
+            // if(!fs.existsSync(path+"config/")){
+            //     fs.mkdirSync(path+"config/")
+            // }
             //         // fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4))
 
             //         fs.writeFileSync(path+".env", 
@@ -362,9 +362,11 @@ async function main(){
                 "REDIS_HOST="+defaultConfigService.redis.host+"\n"+
                 "REDIS_PORT="+defaultConfigService.redis.port+"\n"
             )
-            ncp(configPath+"default.json", path+"/config/default.json")
+            // ncp(configPath+"default.json", path+"/config/default.json")
             ncp(schemaExampleFeather+"config.js", path+"config.js")
-            ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
+            ncp('./schema/config.js', './outputs/config.js')
+            ncp('./schema/.env', './outputs/.env')
+            // ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
             let requesters = ['user']
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()

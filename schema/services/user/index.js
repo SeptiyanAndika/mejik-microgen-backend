@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT, SENDGRID_API } = require("./config");
+const { REDIS_HOST, REDIS_PORT, forgetPasswordExpired } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -6,10 +6,6 @@ const checkPermissions = require("feathers-permissions");
 const { permissions } = require("./permissions");
 const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
-const sendgrid = require("nodemailer-sendgrid-transport");
-const { sendEmail } = require("../email/index");
-
 const userService = new cote.Responder({
 	name: "User Service",
 	key: "user"
@@ -74,6 +70,55 @@ userService.on("login", async (req, cb) => {
 	}
 });
 
+userService.on("forgetPassword", async (req, cb) => {
+	try {
+		req.body.hash = bcrypt.genSaltSync();
+		let data = await app.service("forgetPasswords").create(req.body);
+		cb(null, data);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("resetPassword", async (req, cb) => {
+	try {
+		let data = await app.service("forgetPasswords").find({
+			query: {
+				hash: req.body.hash
+			}
+		});
+		if (data.length == 0) {
+			throw new Error("Hash is not exist");
+		}
+		data = data[0];
+		const d1 = new Date(data.createdAt);
+		const d2 = new Date();
+		const timeDiff = d2.getTime() - d1.getTime();
+		const daysDiff = timeDiff / (1000 * 3600 * 24);
+		if (daysDiff > forgetPasswordExpired) {
+			await app.service("forgetPasswords").remove(data._id);
+			throw new Error("Expired.");
+		}
+		await app.service("users").patch(
+			null,
+			{
+				password: req.body.newPassword
+			},
+			{
+				query: {
+					email: data.email
+				}
+			}
+		);
+		await app.service("forgetPasswords").remove(data._id);
+		cb(null, {
+			message: "Success."
+		});
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
 userService.on("changePassword", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
@@ -96,29 +141,6 @@ userService.on("changePassword", async (req, cb) => {
 		}
 	} catch (error) {
 		console.log("e", error);
-		cb(error, null);
-	}
-});
-
-// SEND EMAIL EXAMPLE
-userService.on("sendEmail", async (req, cb) => {
-	try {
-		let token = req.headers.authorization;
-		let verify = await app
-			.service("authentication")
-			.verifyAccessToken(token);
-		let user = await app.service("users").get(verify.sub);
-
-		await sendEmail(
-			user.email,
-			"maslul@rekeningku.com",
-			"DONT REPLY",
-			`<p>Sending email</p>`
-		);
-
-		cb(null, user);
-	} catch (error) {
-		console.log(error);
 		cb(error, null);
 	}
 });
