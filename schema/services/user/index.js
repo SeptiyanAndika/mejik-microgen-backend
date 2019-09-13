@@ -105,7 +105,7 @@ userService.on("forgetPassword", async (req, cb) => {
 				emailImageHeader: null,
 				emailTitle: "You are forget password",
 				emailBody: "forget",
-				emailLink: HOST+"/resetPassword?token="+req.body.token
+				emailLink: HOST+"/user/resetPassword?token="+req.body.token
 			}
 		})
 		cb(null, {
