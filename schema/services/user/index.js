@@ -100,6 +100,7 @@ userService.on("changePassword", async (req, cb) => {
 	}
 });
 
+// SEND EMAIL EXAMPLE
 userService.on("sendEmail", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
