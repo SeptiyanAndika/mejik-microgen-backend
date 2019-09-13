@@ -24,6 +24,7 @@ const typeDef = `
     extend type Query {
         users (query: JSON): [User]
         user: User
+        sendEmail: User
     }
 
     extend type Mutation {
@@ -52,6 +53,12 @@ const resolvers = {
 		user: async (_, args, { headers, userRequester }) => {
 			return await userRequester.send({
 				type: "user",
+				headers
+			});
+		},
+		sendEmail: async (_, args, { headers, userRequester }) => {
+			return await userRequester.send({
+				type: "sendEmail",
 				headers
 			});
 		}

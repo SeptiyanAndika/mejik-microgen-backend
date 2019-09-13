@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT } = require("./config");
+const { REDIS_HOST, REDIS_PORT, SENDGRID_API } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -109,8 +109,7 @@ userService.on("sendEmail", async (req, cb) => {
 		const transport = nodemailer.createTransport(
 			sendgrid({
 				auth: {
-					api_key:
-						"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"
+					api_key: SENDGRID_API
 				}
 			})
 		);
@@ -121,6 +120,7 @@ userService.on("sendEmail", async (req, cb) => {
 			subject: "SUBJECT",
 			html: `<p>Sending email</p>`
 		});
+		cb(null, user);
 	} catch (error) {
 		console.log(error);
 		cb(error, null);
