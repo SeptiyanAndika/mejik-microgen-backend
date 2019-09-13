@@ -80,7 +80,7 @@ userService.on("resetPassword", async (req, cb) => {
           await app.service("forgetPasswords").remove(data._id)
           throw new Error("Expired.")
       }
-      let changePassword = await app.service("users").patch(null, {
+      await app.service("users").patch(null, {
         password: req.body.newPassword
       }, {
         query:{
