@@ -22,7 +22,7 @@ const typeDef = `
     }
 
     extend type Query {
-        users: [User]
+        users (query: JSON): [User]
     }
 
     extend type Mutation {
@@ -44,25 +44,29 @@ const typeDef = `
     }
 `;
 const resolvers = {
-    Query: {
-        users: async (_,{query}, { userRequester })=>{
-            return await userRequester.send({ type: 'index' })
-        }
-    },
-    Mutation :{
-        createUser: async (_, { input }, { userRequester, headers}) => {
-            return await userRequester.send({ type: 'createUser', body: input, headers})
-        },
-        login: async (_, { input }, { userRequester }) => {
-            return await userRequester.send({ type: 'login', body: input })
-        },
-        register: async (_, { input }, { userRequester }) => {
-            return await  userRequester.send({ type: 'register', body: input })
-        },
-    }
+	Query: {
+		users: async (_, { query }, { userRequester }) => {
+			return await userRequester.send({ type: "index", query });
+		}
+	},
+	Mutation: {
+		createUser: async (_, { input }, { userRequester, headers }) => {
+			return await userRequester.send({
+				type: "createUser",
+				body: input,
+				headers
+			});
+		},
+		login: async (_, { input }, { userRequester }) => {
+			return await userRequester.send({ type: "login", body: input });
+		},
+		register: async (_, { input }, { userRequester }) => {
+			return await userRequester.send({ type: "register", body: input });
+		}
+	}
 };
 
 module.exports = {
-    typeDef,
-    resolvers
-}
+	typeDef,
+	resolvers
+};
