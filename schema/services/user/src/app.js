@@ -7,7 +7,7 @@ const app = express(feathers())
 
 
 const mongoose = require('./mongoose');
-const Model = require('./model')
+const { User, ForgetPassword } = require('./models')
 const hooks = require('./hooks');
 const authentication = require('./authentication');
 
@@ -25,6 +25,8 @@ app.configure(express.rest())
 
 app.configure(authentication);
 app.configure(mongoose)
-app.use('/users', service({Model: Model(app), whitelist: [ '$regex', '$options' ]}))
+
+app.use('/users', service({Model: User(app), whitelist: [ '$regex', '$options' ], multi: ['patch']}))
+app.use('/forgetPasswords', service({Model: ForgetPassword(app), whitelist: [ '$regex', '$options' ]}))
 app.service('users').hooks(hooks)
 module.exports = app

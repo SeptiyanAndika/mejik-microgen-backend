@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT } = require("./config")
+const { REDIS_HOST, REDIS_PORT, forgetPasswordExpired } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
@@ -47,6 +47,53 @@ userService.on("login", async (req, cb)=>{
     cb(null, user)
   }catch(error){
     cb(error, null)
+  }
+})
+
+userService.on("forgetPassword", async (req, cb) => {
+  try {
+      req.body.hash = bcrypt.genSaltSync()
+      let data = await app.service("forgetPasswords").create(req.body)
+      cb(null, data)
+  } catch (error) {
+      cb(error.message, null)
+  }
+})
+
+
+userService.on("resetPassword", async (req, cb) => {
+  try {
+      let data = await app.service("forgetPasswords").find({
+          query:{
+              hash: req.body.hash
+          }
+      })
+      if(data.length == 0){
+          throw new Error("Hash is not exist")
+      }
+      data = data[0]
+      const d1 = new Date(data.createdAt)
+      const d2 =  new Date()
+      const timeDiff = d2.getTime() - d1.getTime();
+      const daysDiff = timeDiff / (1000 * 3600 * 24);
+      if(daysDiff > forgetPasswordExpired){
+          await app.service("forgetPasswords").remove(data._id)
+          throw new Error("Expired.")
+      }
+      let changePassword = await app.service("users").patch(null, {
+        password: req.body.newPassword
+      }, {
+        query:{
+          email: data.email
+        }
+      })
+      await app.service("forgetPasswords").remove(data._id)
+      console.log(changePassword)
+      cb(null, {
+        message: "Success."
+      })
+  } catch (error) {
+      cb(error.message, null)
   }
 })
 

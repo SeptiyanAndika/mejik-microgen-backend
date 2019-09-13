@@ -67,6 +67,7 @@ const generateGraphqlServer = (types) =>{
         `\nconst cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })\n`+
         "const typeDefs = gql`\n"+
         "   type Query { default: String }\n"+
+        "   type Response { message: String }\n"+
         "   type Mutation { default: String }\n"+
         "   type Subscription { default: String }\n"+
         "   scalar JSON\n"+

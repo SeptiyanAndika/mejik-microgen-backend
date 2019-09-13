@@ -27,5 +27,6 @@ module.exports = {
             "usernameField": "email",
             "passwordField": "password"
         }
-    }
+    },
+    forgetPasswordExpired: 1,
 }
