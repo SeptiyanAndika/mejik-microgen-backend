@@ -23,6 +23,7 @@ const typeDef = `
 
     extend type Query {
         users (query: JSON): [User]
+        user: User
     }
 
     extend type Mutation {
@@ -47,6 +48,12 @@ const resolvers = {
 	Query: {
 		users: async (_, { query }, { userRequester }) => {
 			return await userRequester.send({ type: "index", query });
+		},
+		user: async (_, args, { headers, userRequester }) => {
+			return await userRequester.send({
+				type: "user",
+				headers
+			});
 		}
 	},
 	Mutation: {

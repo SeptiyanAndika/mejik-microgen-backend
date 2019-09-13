@@ -6,6 +6,9 @@ const checkPermissions = require("feathers-permissions");
 const { permissions } = require("./permissions");
 const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
+const sendgrid = require("nodemailer-sendgrid-transport");
+
 const userService = new cote.Responder({
 	name: "User Service",
 	key: "user"
@@ -31,6 +34,26 @@ userService.on("show", async (req, cb) => {
 				token
 			});
 		}
+		cb(null, data);
+	} catch (error) {
+		cb(null, null);
+	}
+});
+
+userService.on("user", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let data = null;
+
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+
+		data = await app.service("users").get(user._id, {
+			token
+		});
+
 		cb(null, data);
 	} catch (error) {
 		cb(null, null);
@@ -72,6 +95,34 @@ userService.on("changePassword", async (req, cb) => {
 		}
 	} catch (error) {
 		console.log("e", error);
+		cb(error, null);
+	}
+});
+
+userService.on("sendEmail", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		const transport = nodemailer.createTransport(
+			sendgrid({
+				auth: {
+					api_key:
+						"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"
+				}
+			})
+		);
+
+		await transport.sendMail({
+			to: user.email,
+			from: "dontreply@rekeningku.com",
+			subject: "SUBJECT",
+			html: `<p>Sending email</p>`
+		});
+	} catch (error) {
+		console.log(error);
 		cb(error, null);
 	}
 });
