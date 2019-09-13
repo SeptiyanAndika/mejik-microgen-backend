@@ -88,7 +88,6 @@ userService.on("resetPassword", async (req, cb) => {
         }
       })
       await app.service("forgetPasswords").remove(data._id)
-      console.log(changePassword)
       cb(null, {
         message: "Success."
       })
