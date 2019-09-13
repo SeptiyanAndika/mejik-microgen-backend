@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT, forgetPasswordExpired } = require("./config");
+const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -6,10 +6,16 @@ const checkPermissions = require("feathers-permissions");
 const { permissions } = require("./permissions");
 const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const bcrypt = require("bcryptjs");
+
 const userService = new cote.Responder({
 	name: "User Service",
 	key: "user"
 });
+
+const emailRequester = new cote.Requester({
+	name: 'Email Requester',
+	key: 'email',
+})
 
 userService.on("index", async (req, cb) => {
 	try {
@@ -72,9 +78,35 @@ userService.on("login", async (req, cb) => {
 
 userService.on("forgetPassword", async (req, cb) => {
 	try {
+		let users = await app.service("users").find({
+			query:{
+				email: req.body.email
+			}
+		})
+		if(users.length == 0){
+			console.log("email not registered")
+			cb(null, {
+				message: "Success."
+			});
+			return
+		}
 		req.body.hash = bcrypt.genSaltSync();
-		let data = await app.service("forgetPasswords").create(req.body);
-		cb(null, data);
+		await app.service("forgetPasswords").create(req.body);
+		emailRequester.send({
+			type: 'send', 
+			body:{
+				email:req.body.email,
+				from:email.from,
+				subject:"Forget Password",
+				emailImageHeader: null,
+				emailTitle: "You are forget password",
+				emailBody: "forget",
+				emailLink: HOST+"/resetPassword?hash="+req.body.hash
+			}
+		})
+		cb(null, {
+			message: "Success."
+		});
 	} catch (error) {
 		cb(error.message, null);
 	}
@@ -96,21 +128,29 @@ userService.on("resetPassword", async (req, cb) => {
 		const timeDiff = d2.getTime() - d1.getTime();
 		const daysDiff = timeDiff / (1000 * 3600 * 24);
 		if (daysDiff > forgetPasswordExpired) {
-			await app.service("forgetPasswords").remove(data._id);
 			throw new Error("Expired.");
 		}
+
 		await app.service("users").patch(
 			null,
 			{
 				password: req.body.newPassword
 			},
 			{
+
+				query:{
+					email: data.email
+				}
+		
+			}
+		)
+		await app.service("forgetPasswords").remove(null,{  
+			params: {
 				query: {
 					email: data.email
 				}
 			}
-		);
-		await app.service("forgetPasswords").remove(data._id);
+		})
 		cb(null, {
 			message: "Success."
 		});

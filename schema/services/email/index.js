@@ -1,15 +1,30 @@
 const nodemailer = require("nodemailer");
 const sendgrid = require("nodemailer-sendgrid-transport");
-const { SENDGRID_API } = require("./config");
+const { SENDGRID_API, REDIS_HOST, REDIS_PORT } = require("./config");
+const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
+const emailService = new cote.Responder({
+	name: "Email Service",
+	key: "email"
+});
 
-exports.sendEmail = async (
-	email,
-	from,
-	subject,
-	emailImageHeader,
-	emailTitle,
-	emailBody,
-	emailLink
+emailService.on("send", async (req, cb) => {
+	try{
+		await sendEmail(req.body)
+	}catch(err){
+		throw err
+	}
+})
+
+const sendEmail = async (
+	{
+		email,
+		from,
+		subject,
+		emailImageHeader,
+		emailTitle,
+		emailBody,
+		emailLink
+	}
 ) => {
 	const transport = nodemailer.createTransport(
 		sendgrid({
@@ -64,3 +79,5 @@ exports.sendEmail = async (
 	</div>`
 	});
 };
+
+module.exports = sendEmail

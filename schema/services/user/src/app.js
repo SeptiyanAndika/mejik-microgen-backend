@@ -1,4 +1,4 @@
-const { HOST, MONGODB, PORT, feather } = require("../config")
+const { HOST, MONGODB, PORT, feathers } = require("../config")
 
 const express = require('@feathersjs/express')
 const feathersjs = require('@feathersjs/feathers')
@@ -14,7 +14,7 @@ const authentication = require('./authentication');
 app.set("host", HOST)
 app.set("port", PORT)
 app.set("mongodb", MONGODB)
-app.set('authentication', feather.authentication)
+app.set('authentication', feathers.authentication)
 
 // Turn on JSON parser for REST services
 app.use(express.json())
@@ -27,6 +27,6 @@ app.configure(authentication);
 app.configure(mongoose)
 
 app.use('/users', service({Model: User(app), whitelist: [ '$regex', '$options' ], multi: ['patch']}))
-app.use('/forgetPasswords', service({Model: ForgetPassword(app), whitelist: [ '$regex', '$options' ]}))
+app.use('/forgetPasswords', service({Model: ForgetPassword(app), whitelist: [ '$regex', '$options' ], multi: ['remove']}))
 app.service('users').hooks(hooks)
 module.exports = app

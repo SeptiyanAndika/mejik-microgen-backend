@@ -8,7 +8,7 @@ module.exports = {
     REDIS_PORT: process.env.REDIS_PORT,
 
 
-    feather:{
+    feathers:{
         paginate:{
             default: 20,
             limit: 20

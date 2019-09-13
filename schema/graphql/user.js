@@ -30,7 +30,7 @@ const typeDef = `
         login(input: LoginInput): Login
         register(input: RegisterInput): Login
         createUser(input: CreateUserInput): Login
-        forgetPassword(input: ForgetPasswordInput): ForgetPassword
+        forgetPassword(input: ForgetPasswordInput): Response
         resetPassword(input: ResetPasswordInput): Response
     }
 

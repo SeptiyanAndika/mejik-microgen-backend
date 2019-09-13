@@ -8,7 +8,10 @@ module.exports = {
 	MONGODB: process.env.MONGODB,
 
 	forgetPasswordExpired: 1,
-	feather: {
+	email:{
+		from: "dev@microgen.com"
+	},
+	feathers: {
 		authentication: {
 			entity: "user",
 			service: "users",
