@@ -1,10 +1,10 @@
-require("./config")
+const { REDIS_HOST, REDIS_PORT } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
 const checkPermissions = require('feathers-permissions');
 const { NotFound } = require('@feathersjs/errors');
-const cote = require('cote')({ redis: { host: 'localhost', port: "6379" } })
+const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 
 const exampleService = new cote.Responder({ 
     name: 'Example Service',
@@ -104,7 +104,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                throw err
+                throw new Error(err)
             }
         },
         get: async (context)=>{
@@ -121,7 +121,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
             }catch(err){
-                throw err
+                throw new Error(err)
             }
         },
         create: async (context)=>{
@@ -139,7 +139,7 @@ app.service('examples').hooks({
                 }
                 //beforeCreate
             }catch(err){
-                throw err
+                throw new Error(err)
             }
         },
         update: async (context)=>{
@@ -157,7 +157,7 @@ app.service('examples').hooks({
                 }
                 //beforeUpdate
             }catch(err){
-                throw err
+                throw new Error(err)
             }
         },
         patch: async (context)=>{
@@ -175,7 +175,7 @@ app.service('examples').hooks({
                 }
                 //beforePatch
             }catch(err){
-                throw err
+                throw new Error(err)
             }
         },
         remove: async (context)=>{
@@ -194,7 +194,7 @@ app.service('examples').hooks({
                 //beforeDelete
                 //onDelete
             }catch(err){
-                throw err
+                throw new Error(err)
             }
         }
     },

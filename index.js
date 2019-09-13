@@ -34,7 +34,11 @@ let defaultConfigService = {
     host: 'localhost',
     port: 3031,
     paginate: { default: 10, max: 50 },
-    mongodb: 'mongodb://localhost:27017/' 
+    mongodb: 'mongodb://localhost:27017/',
+    redis:{
+        host:"localhost",
+        port: 6379
+    }
 }
 const writeFile = (dir, fileName, file)=> {
     //create folder if not exists
@@ -323,25 +327,37 @@ async function main(){
         const schemaExampleFeather = "./schema/services/example/"
         fs.readdir(schemaExampleFeather, function(err, fileName){
             const configPath = schemaExampleFeather+"config/"
-            fs.readdir(configPath, (err, file)=>{
-                fs.readFile(configPath+"default.json", 'utf-8', (err,content)=>{
-                    const config = JSON.parse(content)
-                    config.port = defaultConfigService.port+index
-                    config.host = defaultConfigService.host
-                    config.mongodb = defaultConfigService.mongodb+camelize(e.name)+"_service"
-                    if(!fs.existsSync(path+"config/")){
-                        fs.mkdirSync(path+"config/")
-                    }
-                    fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4))
+            // fs.readdir(configPath, (err, file)=>{
+            //     fs.readFile(configPath+"default.json", 'utf-8', (err,content)=>{
+            //         const config = JSON.parse(content)
+            //         config.port = defaultConfigService.port+index
+            //         config.host = defaultConfigService.host
+            //         config.mongodb = defaultConfigService.mongodb+camelize(e.name)+"_service"
+            if(!fs.existsSync(path+"config/")){
+                fs.mkdirSync(path+"config/")
+            }
+            //         // fs.writeFileSync(path+"config/default.json", JSON.stringify(config, null, 4))
 
-                    fs.writeFileSync(path+".env", 
-                        "HOST="+config.host+"\n"+
-                        "PORT="+config.port+"\n"+
-                        "MONGODB="+config.mongodb+"\n"
-                    )
-                })
-            })
+            //         fs.writeFileSync(path+".env", 
+            //             "HOST="+defaultConfigService.host+"\n"+
+            //             "PORT="+defaultConfigService.port+index+"\n"+
+            //             "MONGODB="+config.mongodb+"\n"+
+            //             "REDIS_HOST="+defaultConfigService.redis.host+"\n"+
+            //             "REDIS_PORT="+defaultConfigService.redis.port+"\n"
+            //         )
+            //     })
+            // })
+            let port = defaultConfigService.port + index
+            fs.writeFileSync(path+".env", 
+                "HOST="+defaultConfigService.host+"\n"+
+                "PORT="+port+"\n"+
+                "MONGODB="+defaultConfigService.mongodb+camelize(e.name)+"_service\n"+
+                "REDIS_HOST="+defaultConfigService.redis.host+"\n"+
+                "REDIS_PORT="+defaultConfigService.redis.port+"\n"
+            )
+            ncp(configPath+"default.json", path+"/config/default.json")
             ncp(schemaExampleFeather+"config.js", path+"config.js")
+            ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
             let requesters = ['user']
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
                 content = content.toString()
@@ -378,16 +394,10 @@ async function main(){
                                         let beforeUpdate = 
                                         `
                                         if(context.id){
-                                            let query = context.params.query || {
-                                                _id: context.id,
-                                                userId: auth.user._id
+                                            let post = await app.service("posts").get(context.id)
+                                            if(post && post.userId !== auth.user._id){
+                                                throw new Error("UnAuthorized")
                                             }
-                                            let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                                                query
-                                            })
-                                            if(${pluralize(camelize(e.name))}.length == 0 ){
-                                                throw new NotFound("Id doest not exist")
-                                            } 
                                         }
                                         `
                                         beforeUpdate += contentSplit[1]
@@ -397,17 +407,11 @@ async function main(){
                                         let beforeDelete = 
                                         `
                                         if(context.id){
-                                            let query = context.params.query || {
-                                                _id: context.id,
-                                                userId: auth.user._id
+                                            let post = await app.service("posts").get(context.id)
+                                            if(post && post.userId !== auth.user._id){
+                                                throw new Error("UnAuthorized")
                                             }
-                                            let ${pluralize(camelize(e.name))} = await app.service("${pluralize(camelize(e.name))}").find({
-                                                query
-                                            })
-                                            if(${pluralize(camelize(e.name))}.length == 0 ){
-                                                throw new NotFound("Id doest not exist")
-                                            }
-                                        } 
+                                        }
                                         `
                                         beforeDelete += contentSplitDelete[1]
                                         content = contentSplitDelete[0] + beforeDelete
