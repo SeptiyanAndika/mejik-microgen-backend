@@ -200,6 +200,16 @@ const generateGraphqlSchema = (schema)=>{
             }
         })
         type += "    }\n"
+
+        let typeConnection = `    type ${typeName}Connection {\n`
+        typeConnection += `       total: Int \n`
+        typeConnection += `       limit: Int \n`
+        typeConnection += `       skip: Int \n`
+        typeConnection += `       data: [${typeName}] \n`
+        typeConnection += "    }\n"
+
+        type += typeConnection
+        
         let queriesPrepend = "    extend type Query {"
         let queriesAppend = "\n    } \n"
 
@@ -211,7 +221,6 @@ const generateGraphqlSchema = (schema)=>{
         let mutationPrepend = "    extend type Mutation {"
         let mutationAppend = "\n    }\n"
        
-
 
         input += `    input ${typeName}Input {\n`
         schema.definitions[i].fields.map((e)=>{
@@ -234,6 +243,7 @@ const generateGraphqlSchema = (schema)=>{
         })
         input += "    }\n\n"
         queriesPrepend+= `\n        ${camelize(pluralize(typeName))} (query: JSON): [${typeName}]`
+        queriesPrepend+= `\n        ${camelize(pluralize(typeName))}Connection (query: JSON): ${typeName}Connection`
 
         subscriptionPrepend+= `\n       ${camelize(typeName)}Added: ${typeName}`
         subscriptionPrepend+= `\n       ${camelize(typeName)}Updated: ${typeName}`
@@ -273,6 +283,12 @@ const generateGraphqlSchema = (schema)=>{
         resolverQueries += `${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
         resolverQueries += `    return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "}, \n"
+
+        //connections
+        resolverQueries += `${camelize(pluralize(typeName))}Connection: async(_, { query }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `    return await ${requester}.send({ type: 'indexConnection', query, headers})\n`
+        resolverQueries += "}, \n"
+        
         if(relationTypes.length > 0){
             resolverRelations += `    ${typeName}: {\n`
  
