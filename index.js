@@ -23,6 +23,7 @@ let schema = parse(rawSchema);
 
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
+const emailServices = "./schema/services/email"
 const authServices = "./schema/services/user"
 const authGraphql =  "./schema/graphql/user.js"
 const baseTypeUser = `
@@ -192,6 +193,12 @@ function generateAuthentiations(types){
         if (err) {
             return console.error(err);
         }
+
+        ncp(emailServices, "./outputs/services/email", function (err) {
+            if (err) {
+                return console.error(err);
+            }   
+        })
 
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
 

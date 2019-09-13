@@ -8,6 +8,7 @@ const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const sendgrid = require("nodemailer-sendgrid-transport");
+const { sendEmail } = require("../email/index");
 
 const userService = new cote.Responder({
 	name: "User Service",
@@ -106,20 +107,14 @@ userService.on("sendEmail", async (req, cb) => {
 			.service("authentication")
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
-		const transport = nodemailer.createTransport(
-			sendgrid({
-				auth: {
-					api_key: SENDGRID_API
-				}
-			})
+
+		await sendEmail(
+			user.email,
+			"maslul@rekeningku.com",
+			"DONT REPLY",
+			`<p>Sending email</p>`
 		);
 
-		await transport.sendMail({
-			to: user.email,
-			from: "dontreply@rekeningku.com",
-			subject: "SUBJECT",
-			html: `<p>Sending email</p>`
-		});
 		cb(null, user);
 	} catch (error) {
 		console.log(error);
