@@ -1,9 +1,9 @@
-const { HOST, MONGODB, PORT, AUTHENTICATION } = require("../config")
+const { HOST, MONGODB, PORT, feather } = require("../config")
 
 const express = require('@feathersjs/express')
-const feathers = require('@feathersjs/feathers')
+const feathersjs = require('@feathersjs/feathers')
 const service = require('feathers-mongoose')
-const app = express(feathers())
+const app = express(feathersjs())
 
 
 const mongoose = require('./mongoose');
@@ -14,7 +14,7 @@ const authentication = require('./authentication');
 app.set("host", HOST)
 app.set("port", PORT)
 app.set("mongodb", MONGODB)
-app.set('authentication', AUTHENTICATION)
+app.set('authentication', feather.authentication)
 
 // Turn on JSON parser for REST services
 app.use(express.json())

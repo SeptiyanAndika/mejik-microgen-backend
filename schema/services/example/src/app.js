@@ -1,4 +1,4 @@
-const { HOST, MONGODB, PORT } = require("../config")
+const { HOST, MONGODB, PORT, feather } = require("../config")
 const express = require('@feathersjs/express')
 const feathers = require('@feathersjs/feathers')
 const service = require('feathers-mongoose')
@@ -20,6 +20,6 @@ app.use(express.urlencoded({ extended: true }));
 app.configure(express.rest())
 
 app.configure(mongoose)
-app.use('/examples', service({Model: Model(app), whitelist: [ '$regex', '$options' ], multi: ['upadate','patch', 'remove']}))
+app.use('/examples', service({Model: Model(app), whitelist: [ '$regex', '$options' ], multi: ['upadate','patch', 'remove'], paginate: feather.paginate }))
 
 module.exports = app

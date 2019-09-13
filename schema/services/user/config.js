@@ -6,27 +6,31 @@ module.exports = {
     HOST:process.env.HOST,
     PORT:process.env.PORT,
     MONGODB:process.env.MONGODB,
-    AUTHENTICATION: {
-        "entity": "user",
-        "service": "users",
-        "secret": "dkWG2RZXO3u4mOgJKXxmWE0mUWM=",
-        "authStrategies": [
-            "jwt",
-            "local"
-        ],
-        "jwtOptions": {
-        "header": {
-            "typ": "access"
-        },
-            "audience": "https://yourdomain.com",
-            "issuer": "feathers",
-            "algorithm": "HS256",
-            "expiresIn": "1d"
-        },
-        "local": {
-            "usernameField": "email",
-            "passwordField": "password"
-        }
-    },
+
+
     forgetPasswordExpired: 1,
+    feather:{
+        authentication:{
+            "entity": "user",
+            "service": "users",
+            "secret": "dkWG2RZXO3u4mOgJKXxmWE0mUWM=",
+            "authStrategies": [
+                "jwt",
+                "local"
+            ],
+            "jwtOptions": {
+            "header": {
+                "typ": "access"
+            },
+                "audience": "https://yourdomain.com",
+                "issuer": "feathers",
+                "algorithm": "HS256",
+                "expiresIn": "1d"
+            },
+            "local": {
+                "usernameField": "email",
+                "passwordField": "password"
+            }
+        },
+    }
 }

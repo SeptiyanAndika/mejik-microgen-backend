@@ -19,12 +19,27 @@ const userRequester = new cote.Requester({
 exampleService.on("index", async (req,cb) => {
     try{
         let token = req.headers.authorization
-        let data = await app.service("examples").find({query: req.query,
+        let data = await app.service("examples").find({
+            query: req.query,
             token
         })
         
-        cb(null, data)
+        cb(null, data.data)
     }catch(error){
+        cb(error.message, null)
+    }
+})
+
+exampleService.on("indexConnection", async (req, cb) => {
+    try {
+        let token = req.headers.authorization
+        let data = await app.service("examples").find({
+            query: req.query,
+            token
+        })
+
+        cb(null, data)
+    } catch (error) {
         cb(error.message, null)
     }
 })
