@@ -24,7 +24,7 @@ const typeDef = `
 	input VerifyEmailInput {
 		token: String!
 	}
-	
+
     extend type Query {
         users (query: JSON): [User]
         user: User
@@ -45,6 +45,7 @@ const typeDef = `
         lastName: String
 		email: String
 		status: Int
+		role: String
     }
 
     type ForgetPassword {

@@ -253,7 +253,7 @@ userService.on("register", async (req, cb) => {
 			token: emailToken
 		});
 
-		await emailRequester.send({
+		emailRequester.send({
 			type: 'send', 
 			body:{
 				email:req.body.email,
