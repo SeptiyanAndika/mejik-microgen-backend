@@ -8,24 +8,22 @@ const emailService = new cote.Responder({
 });
 
 emailService.on("send", async (req, cb) => {
-	try{
-		await sendEmail(req.body)
-	}catch(err){
-		throw err
+	try {
+		await sendEmail(req.body);
+	} catch (err) {
+		throw err;
 	}
-})
+});
 
-const sendEmail = async (
-	{
-		email,
-		from,
-		subject,
-		emailImageHeader,
-		emailTitle,
-		emailBody,
-		emailLink
-	}
-) => {
+const sendEmail = async ({
+	email,
+	from,
+	subject,
+	emailImageHeader,
+	emailTitle,
+	emailBody,
+	emailLink
+}) => {
 	const transport = nodemailer.createTransport(
 		sendgrid({
 			auth: {
@@ -40,7 +38,7 @@ const sendEmail = async (
 		subject: subject,
 		html: `<div style="background: #f4f5f7; padding: 100px">
 		<div
-			style="max-width: 600px; background: #fff; margin: 0 auto;  padding: 20px 0"
+			style="max-width: 600px; background: #fff; margin: 0 auto;  padding: 10px 0"
 		>
 			<div style="margin: 20px 20px 0;">
 				<img
@@ -80,4 +78,4 @@ const sendEmail = async (
 	});
 };
 
-module.exports = sendEmail
+module.exports = sendEmail;

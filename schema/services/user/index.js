@@ -1,4 +1,10 @@
-const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email } = require("./config");
+const {
+	HOST,
+	REDIS_HOST,
+	REDIS_PORT,
+	forgetPasswordExpired,
+	email
+} = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -13,9 +19,9 @@ const userService = new cote.Responder({
 });
 
 const emailRequester = new cote.Requester({
-	name: 'Email Requester',
-	key: 'email',
-})
+	name: "Email Requester",
+	key: "email"
+});
 
 userService.on("index", async (req, cb) => {
 	try {
@@ -69,8 +75,10 @@ userService.on("login", async (req, cb) => {
 			strategy: "local",
 			...req.body
 		});
-		if(user.user.status == 0 || !user.user.status){
-			throw new Error("Your account is not activate, check your email to activate your account.")
+		if (user.user.status == 0 || !user.user.status) {
+			throw new Error(
+				"Your account is not activate, check your email to activate your account."
+			);
 		}
 		user.token = user.accessToken;
 		cb(null, user);
@@ -79,35 +87,36 @@ userService.on("login", async (req, cb) => {
 	}
 });
 
-
 userService.on("forgetPassword", async (req, cb) => {
 	try {
 		let users = await app.service("users").find({
-			query:{
+			query: {
 				email: req.body.email
 			}
-		})
-		if(users.length == 0){
-			console.log("email not registered")
+		});
+		if (users.length == 0) {
+			console.log("email not registered");
 			cb(null, {
 				message: "Success."
 			});
-			return
+			return;
 		}
 		req.body.token = bcrypt.genSaltSync();
+		const emailBody = `You are receiving this email as you have requested to change your account password.
+		Here is your verification code: <strong>${req.body.token}</strong>. Please enter the code on the verification page or simply click this button:`;
 		await app.service("forgetPasswords").create(req.body);
 		emailRequester.send({
-			type: 'send', 
-			body:{
-				email:req.body.email,
-				from:email.from,
-				subject:"Forget Password",
+			type: "send",
+			body: {
+				email: req.body.email,
+				from: email.from,
+				subject: "Forget Password",
 				emailImageHeader: null,
 				emailTitle: "You are forget password",
-				emailBody: "forget",
-				emailLink: HOST+"/user/resetPassword?token="+req.body.token
+				emailBody: emailBody,
+				emailLink: HOST + "/user/resetPassword?token=" + req.body.token
 			}
-		})
+		});
 		cb(null, {
 			message: "Success."
 		});
@@ -141,20 +150,18 @@ userService.on("resetPassword", async (req, cb) => {
 				password: req.body.newPassword
 			},
 			{
-
-				query:{
+				query: {
 					email: data.email
 				}
-		
 			}
-		)
-		await app.service("forgetPasswords").remove(null,{  
+		);
+		await app.service("forgetPasswords").remove(null, {
 			params: {
 				query: {
 					email: data.email
 				}
 			}
-		})
+		});
 		cb(null, {
 			message: "Success."
 		});
@@ -188,20 +195,18 @@ userService.on("verifyEmail", async (req, cb) => {
 				status: 1
 			},
 			{
-
-				query:{
+				query: {
 					email: data.email
 				}
-		
 			}
-		)
-		await app.service("emailVerifications").remove(null,{  
+		);
+		await app.service("emailVerifications").remove(null, {
 			params: {
 				query: {
 					email: data.email
 				}
 			}
-		})
+		});
 		cb(null, {
 			message: "Success."
 		});
@@ -247,24 +252,24 @@ userService.on("register", async (req, cb) => {
 			password: req.body.password
 		});
 
-		const emailToken = bcrypt.genSaltSync()
+		const emailToken = bcrypt.genSaltSync();
 		await app.service("emailVerifications").create({
 			email: req.body.email,
 			token: emailToken
 		});
 
 		emailRequester.send({
-			type: 'send', 
-			body:{
-				email:req.body.email,
-				from:email.from,
-				subject:"Email Verification",
+			type: "send",
+			body: {
+				email: req.body.email,
+				from: email.from,
+				subject: "Email Verification",
 				emailImageHeader: null,
 				emailTitle: "Email Verification",
 				emailBody: "Verification",
-				emailLink: HOST+"/user/verify?token="+emailToken
+				emailLink: HOST + "/user/verify?token=" + emailToken
 			}
-		})
+		});
 		cb(null, {
 			user,
 			token: auth.accessToken
@@ -349,7 +354,7 @@ app.service("users").hooks({
 			let users = await app.service("users").find();
 			if (users.length == 0) {
 				context.data.role = "admin";
-				context.data.status = 1
+				context.data.status = 1;
 			}
 
 			if (context.params.type == "createUser") {
