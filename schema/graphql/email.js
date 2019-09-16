@@ -1,6 +1,5 @@
 export const typeDef = `
     input EmailInput {
-        email: String!
         from: String!
         subject: String!
         emailImageHeader: String

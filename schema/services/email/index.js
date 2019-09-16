@@ -7,6 +7,11 @@ const emailService = new cote.Responder({
 	key: "email"
 });
 
+const userRequester = new cote.Requester({
+	name: "User Requester",
+	key: "user"
+});
+
 const emailRequester = new cote.Requester({
 	name: "Email Requester",
 	key: "email"
@@ -22,7 +27,16 @@ emailService.on("send", async (req, cb) => {
 
 emailService.on("store", async (req, cb) => {
 	try {
-		emailRequester.send({ type: "send", body: req.body });
+		const isAdmin = await userRequester.send({
+			type: "verifyToken",
+			token: req.headers.authorization
+		})
+		if (isAdmin.user.role === 'admin') {
+			const users = await userRequester.send({ type: "index" })
+			users.map(user => {
+				emailRequester.send({ type: "send", body: { ...req.body, email: user.email } });
+			})
+		}
 		cb(null, { message: "Success." });
 	} catch (error) {
 		cb(error.message, null);
