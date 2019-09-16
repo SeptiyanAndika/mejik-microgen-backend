@@ -33,9 +33,17 @@ const typeDef = `
 		token: String!
 	}
 
+	type UserConnection {
+		total: Int
+		limit: Int
+		skip: Int
+		data: [User]
+	}
+
     extend type Query {
         users (query: JSON): [User]
-        user: User
+		user (query: JSON): User
+		userConnection (query: JSON): UserConnection
     }
 
     extend type Mutation {
@@ -86,12 +94,20 @@ const resolvers = {
 				query
 			});
 		},
-		user: async (_, args, { headers, userRequester }) => {
+		user: async (_, { query }, { headers, userRequester }) => {
 			return await userRequester.send({
 				type: "user",
+				query,
 				headers
 			});
-		}
+		},
+		userConnection: async (_, { query }, { headers, userRequester }) => {
+			return await userRequester.send({
+				type: "indexConnection",
+				query,
+				headers
+			});
+		},
 	},
 	Mutation: {
 		resetPassword: async (_, { input = {} }, { userRequester, headers }) => {

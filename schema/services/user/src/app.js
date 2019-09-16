@@ -26,8 +26,8 @@ app.configure(express.rest())
 app.configure(authentication);
 app.configure(mongoose)
 
-app.use('/users', service({Model: User(app), whitelist: [ '$regex', '$options' ], multi: ['patch']}))
-app.use('/forgetPasswords', service({Model: ForgetPassword(app), whitelist: [ '$regex', '$options' ], multi: ['remove']}))
-app.use('/emailVerifications', service({Model: EmailVerification(app), whitelist: [ '$regex', '$options' ], multi: ['remove']}))
+app.use('/users', service({ Model: User(app), whitelist: ['$regex', '$options'], multi: ['patch'], paginate: feathers.paginate }))
+app.use('/forgetPasswords', service({ Model: ForgetPassword(app), whitelist: ['$regex', '$options'], multi: ['remove'] }))
+app.use('/emailVerifications', service({ Model: EmailVerification(app), whitelist: ['$regex', '$options'], multi: ['remove'] }))
 app.service('users').hooks(hooks)
 module.exports = app

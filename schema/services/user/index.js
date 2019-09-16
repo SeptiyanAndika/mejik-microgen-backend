@@ -28,6 +28,17 @@ userService.on("index", async (req, cb) => {
 	}
 });
 
+userService.on("indexConnection", async (req, cb) => {
+	try {
+		const users = await app.service("users").find({
+			query: req.query
+		});
+		cb(null, users);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
 userService.on("show", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
@@ -39,7 +50,7 @@ userService.on("show", async (req, cb) => {
 		}
 		cb(null, data);
 	} catch (error) {
-		cb(null, null);
+		cb(error.message, null);
 	}
 });
 
@@ -53,7 +64,9 @@ userService.on("user", async (req, cb) => {
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
 
+		console.log(req)
 		data = await app.service("users").get(user._id, {
+			query: req.query,
 			token
 		});
 
