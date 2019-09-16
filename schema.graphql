@@ -1,14 +1,34 @@
-type Post {
-    _id: String!
-    text: String!
-    comments: [Comment] @relation(onDelete: CASCADE)
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
-}
+# TESTING
+# type Post {
+#     _id: String!
+#     text: String!
+#     comments: [Comment] @relation(onDelete: CASCADE)
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
 
-type UserFriend {
+# type UserFriend {
+#     _id: String
+#     user: User!
+#     friend: User!
+# }
+
+# type User {
+#     phoneNumbers: String
+#     image: String
+# }
+
+# type Comment {
+#     _id: String
+#     post: Post!
+#     text: String!
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
+
+
+# RAJAKARCIS
+type Bank {
     _id: String
-    user: User!
-    friend: User!
+    name: String!
 }
 
 type User {
@@ -16,63 +36,125 @@ type User {
     image: String
 }
 
-type Comment {
+type Ticket {
     _id: String
-    post: Post!
-    text: String!
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+    type: String
+    name: String
+    event: Event
+    qty: Int
+    price: Int
+    startDate: String
+    endDate: String
+    startTime: String
+    endTime: String
+    description: String
+    visibility: String
+    orderMinQty: Int
+    orderMaxQty: Int
+    # salesChannels: String
+    sold: Int
 }
 
-# type Event {
-#     _id: String
-#     type: String
-#     categorie: String
-#     subCategorie: String
-#     startDate: String!
-#     endDate: String!
-#     startTime: String
-#     endTime: String
-#     image: String
-#     name: String!
-#     price: String
-#     description: String!
-#     locationType: String
-#     locationName: String
-#     latitude: String
-#     longitude: String
-#     address: String
-#     state: String
-#     postalCode: String
-#     city: String
-#     country: String
-#     refundPolicy: String
-#     tags: String
-#     organizer: String
-# }
-
-# type Ticket {
-#     _id: String
-#     event: Event!
-#     type: String!
-#     name: String
-#     qty: String!
-#     price: String!
-#     startDate: String!
-#     endDate: String!
-#     startTime: String
-#     endTime: String
-#     description: String
-#     visibility: String
-#     orderMinQty: String
-#     orderMaxQty: String
-#     salesChannel: String
-#     sold: String
-# }
+type Event {
+    _id: String
+    user: User @role(onCreate: "own", onDelete: "own")
+    name: String
+    locationType: String
+    locationName: String
+    latitude: String
+    longitude: String
+    address: String
+    state: String
+    postalCode: String
+    city: String
+    country: String
+    type: String
+    categorie: String
+    subCategorie: String
+    tags: String
+    startDate: String
+    endDate: String
+    startTime: String
+    endTime: String
+    image: String
+    tickets: [Ticket] @relation(onDelete: CASCADE)
+    description: String
+    organizer: String
+    refundPolicy: String
+    link: String
+}
 
 # type eventTaxes {
 #     _id: String
-#     event: Event
-#     ticket: Ticket
+#     event: Event!
+#     ticket: Ticket!
 #     taxName: String
 #     taxRate: String
 # }
+
+type payout {
+    _id: String
+    user: User!
+    accountHolder: String
+    name: String
+    address: String
+    city: String
+    postalCode: String
+    state: String
+    bank: Bank
+    branch: String
+    accountNumber: Int
+    accountNickname: String
+}
+
+# type eventReports {
+#     _id: String
+#     event: Event!
+#     totalTicketAvailable: Int
+#     totalTicketPending: Int
+#     totalTicketSold: Int
+#     pageViews: Int
+#     totalPayoutUnpaid: Int
+#     totalPayoutPaid: Int
+# }
+
+# type eventSales {
+#     _id: String
+#     event: Event
+#     ticket: Ticket
+#     price: Int
+#     firstName: String
+#     lastName: String
+#     email: String
+#     phoneNumber: String
+# }
+
+# type usersTickets {
+#     _id: String
+#     user: User
+#     event: Event
+#     ticket: Ticket
+# }
+
+type Order {
+    _id: String
+    event: Event!
+    ticket: Ticket!
+    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+    price: Int
+    fee: Int
+    qty: Int
+    subtotal: Int
+    transaction: Transaction
+}
+
+type Transaction {
+    _id: String
+    user: User!
+    firstName: String
+    lastName: String
+    email: String
+    # paymentMethod: Bank
+    total: Int
+    status: Int
+}

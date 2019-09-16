@@ -22,7 +22,7 @@ userService.on("index", async (req, cb) => {
 		const users = await app.service("users").find({
 			query: req.query
 		});
-		cb(null, users);
+		cb(null, users.data);
 	} catch (error) {
 		cb(error, null);
 	}
