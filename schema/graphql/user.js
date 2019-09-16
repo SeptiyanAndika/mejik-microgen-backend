@@ -47,6 +47,7 @@ const typeDef = `
 		verifyEmail(input: VerifyEmailInput): Response
 		updateUser(input: UpdateUserInput, _id: String!): User
 		deleteUser(_id: String!): User
+		changeProfile(input: UpdateUserInput): User
     }
 
     type User {
@@ -129,6 +130,13 @@ const resolvers = {
 				type: "deleteUser",
 				body: input,
 				_id,
+				headers
+			});
+		},
+		changeProfile: async (_, { input = {} }, { userRequester, headers }) => {
+			return await userRequester.send({
+				type: "update",
+				body: input,
 				headers
 			});
 		},

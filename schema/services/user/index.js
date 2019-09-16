@@ -287,13 +287,8 @@ userService.on("createUser", async (req, cb) => {
 		admin.permissions = permissions[admin.role];
 
 		const user = await app.service("users").create(
-			{
-				...req.body
-			},
-			{
-				type: "createUser",
-				user: admin
-			}
+			{ ...req.body },
+			{ type: "createUser", user: admin }
 		);
 
 		const auth = await app.service("authentication").create({
@@ -306,6 +301,23 @@ userService.on("createUser", async (req, cb) => {
 			user,
 			token: auth.accessToken
 		});
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("update", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		let data = await app.service("users").patch(user._id, req.body, {
+			...req.params || {},
+			token
+		})
+		cb(null, data);
 	} catch (error) {
 		cb(error.message, null);
 	}
