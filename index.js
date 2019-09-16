@@ -1,9 +1,9 @@
 const fs = require("fs")
-const {printSchema, parse, GraphQLSchema, print} = require("graphql")
+const { printSchema, parse, GraphQLSchema, print } = require("graphql")
 const merge = require("lodash").merge
 const { makeExecutableSchema, } = require("graphql-tools")
 const path = require("path")
-const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes} = require("./generators")
+const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes } = require("./generators")
 const ncp = require('ncp').ncp;
 const config = JSON.parse(fs.readFileSync("./config.json").toString())
 const pluralize = require('pluralize')
@@ -18,36 +18,37 @@ const scalars = require('./scalars')
 //         upper: UpperCaseDirective
 //     },
 // })
-let rawSchema = scalars+directives+type
+let rawSchema = scalars + directives + type
 let schema = parse(rawSchema);
 
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
 const emailServices = "./schema/services/email"
 const authServices = "./schema/services/user"
-const authGraphql =  "./schema/graphql/user.js"
+const authGraphql = "./schema/graphql/user.js"
+const emailGraphql = "./schema/graphql/email.js"
 const baseTypeUser = `
     type User {
         _id: String
     }
 `
-let defaultConfigService = { 
+let defaultConfigService = {
     host: 'localhost',
     port: 3031,
     paginate: { default: 10, max: 50 },
     mongodb: 'mongodb://localhost:27017/',
-    redis:{
-        host:"localhost",
+    redis: {
+        host: "localhost",
         port: 6379
     }
 }
-const writeFile = (dir, fileName, file)=> {
+const writeFile = (dir, fileName, file) => {
     //create folder if not exists
-    if(!fs.existsSync(dir)){
+    if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir)
     }
     fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}.js`), file, (err) => {
-        if(err){
+        if (err) {
             console.log(err)
         }
         console.log("Successfuly generated", camelize(fileName))
@@ -55,41 +56,41 @@ const writeFile = (dir, fileName, file)=> {
 }
 
 const primitiveTypes = ["String", "Number", "Float", "Double"]
-const convertToFeatherTypes = (type)=>{
-    if(type == "Float"){
+const convertToFeatherTypes = (type) => {
+    if (type == "Float") {
         return "String"
     }
     return type
 }
 
 
-function hookUser(schema, types, userDirectory, graphqlFile){
-    let type = schema.definitions.filter((def)=> def.name.value == "User")
+function hookUser(schema, types, userDirectory, graphqlFile) {
+    let type = schema.definitions.filter((def) => def.name.value == "User")
 
     //add type user just for bypass error
-    if(type.length == 0){
+    if (type.length == 0) {
         rawSchema += baseTypeUser
         schema = parse(rawSchema)
         return
     }
 
     setTimeout(() => {
-        fs.readFile(graphqlFile, (err,content)=>{
-           content = content.toString()
-           let schemaType = require(graphqlFile)
-           let typeDef = parse(schemaType.typeDef)
-           typeDef.definitions.map((d)=>{
-               if(d.kind == "ObjectTypeDefinition"){
-                   if(d.name.value == "User"){
-                       schema.definitions.map((base)=>{
-                           if(base.name.value == "User"){
-                                 d.fields.map((dFields, i)=>{
-                                    base.fields.map((baseField)=>{
-                                        if(dFields.name.value !== baseField.name.value){
-                                            if(!d.fields.map((e)=> e.name.value).includes(baseField.name.value)){
+        fs.readFile(graphqlFile, (err, content) => {
+            content = content.toString()
+            let schemaType = require(graphqlFile)
+            let typeDef = parse(schemaType.typeDef)
+            typeDef.definitions.map((d) => {
+                if (d.kind == "ObjectTypeDefinition") {
+                    if (d.name.value == "User") {
+                        schema.definitions.map((base) => {
+                            if (base.name.value == "User") {
+                                d.fields.map((dFields, i) => {
+                                    base.fields.map((baseField) => {
+                                        if (dFields.name.value !== baseField.name.value) {
+                                            if (!d.fields.map((e) => e.name.value).includes(baseField.name.value)) {
                                                 d.fields.push(baseField)
                                             }
-                                        }else{
+                                        } else {
                                             d.fields[i] = baseField
                                         }
                                         return baseField
@@ -97,80 +98,80 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                                     return dFields
                                 })
                                 return base
-                           }
-                       })
-                   }
-               }
-               if(d.kind == "InputObjectTypeDefinition"){
-                    if(d.name.value == "RegisterInput"){
-                        schema.definitions.map((base)=>{
-                            if(base.name.value == "User"){
-                                base.fields.map((baseField)=>{
+                            }
+                        })
+                    }
+                }
+                if (d.kind == "InputObjectTypeDefinition") {
+                    if (d.name.value == "RegisterInput") {
+                        schema.definitions.map((base) => {
+                            if (base.name.value == "User") {
+                                base.fields.map((baseField) => {
                                     d.fields.push(baseField)
                                 })
                             }
                         })
                     }
-               }
-           })
-
-           schemaType.typeDef = print(typeDef)
-           writeFile(graphqlDirectiory, "user", 
-                "const typeDef = `\n"+schemaType.typeDef+"`\n"+
-                "const resolvers = {"+content.split("const resolvers = {")[1]
-           )
-           
-           fs.readFile(userDirectory+"/src/model.js", (err,x)=>{
-           let  content = "module.exports = function (app) {\n"
-            content += "const mongooseClient = app.get('mongooseClient');\n"
-            content += `const model = new mongooseClient.Schema({\n`
-            // //fields
-            typeDef.definitions.map((m)=>{
-                if(m.name.value == "User"){
-                    let fields = []
-                    m.fields.map((e)=>{
-                        fields.push({
-                            name: e.name.value,
-                            type: e.type.kind == "NamedType" ? e.type.name.value : e.type.type.name.value,
-                            required: e.type.kind == "NonNullType" ? true : false,
-                            directives: e.directives
-                        })
-                    })
-                    //default value
-                    content += "\t\temail: {type: String, unique: true, lowercase: true},\n"
-                    content += "\t\tpassword: { type: String },\n"
-                    content += "\t\tfirstName: { type: String },\n"
-                    content += "\t\tlastName: { type: String },\n"
-                    content += "\t\trole: {type: String},\n"
-
-                    const whitelist = ['email', 'password', 'firstName', 'lastName', 'role']
-                    fields.filter((f)=> !whitelist.includes(f.name)).map((f)=>{
-                        // console.log(f)
-                        types.map((t)=>{
-                            if(t.name == f.type){
-                                content += `${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },`
-                            }
-                        })
-                        let defaultValue = null
-                        f.directives.map((d)=>{
-
-                            if(d.name.value == "default"){
-                                defaultValue = d.arguments[0].value.value
-                            }
-                        })
-                        if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)){
-                            if(defaultValue){
-                                content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
-                            }else{
-                                content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
-                            }
-
-                        }
-                    })
                 }
             })
 
-            content += `
+            schemaType.typeDef = print(typeDef)
+            writeFile(graphqlDirectiory, "user",
+                "const typeDef = `\n" + schemaType.typeDef + "`\n" +
+                "const resolvers = {" + content.split("const resolvers = {")[1]
+            )
+
+            fs.readFile(userDirectory + "/src/model.js", (err, x) => {
+                let content = "module.exports = function (app) {\n"
+                content += "const mongooseClient = app.get('mongooseClient');\n"
+                content += `const model = new mongooseClient.Schema({\n`
+                // //fields
+                typeDef.definitions.map((m) => {
+                    if (m.name.value == "User") {
+                        let fields = []
+                        m.fields.map((e) => {
+                            fields.push({
+                                name: e.name.value,
+                                type: e.type.kind == "NamedType" ? e.type.name.value : e.type.type.name.value,
+                                required: e.type.kind == "NonNullType" ? true : false,
+                                directives: e.directives
+                            })
+                        })
+                        //default value
+                        content += "\t\temail: {type: String, unique: true, lowercase: true},\n"
+                        content += "\t\tpassword: { type: String },\n"
+                        content += "\t\tfirstName: { type: String },\n"
+                        content += "\t\tlastName: { type: String },\n"
+                        content += "\t\trole: {type: String},\n"
+
+                        const whitelist = ['email', 'password', 'firstName', 'lastName', 'role']
+                        fields.filter((f) => !whitelist.includes(f.name)).map((f) => {
+                            // console.log(f)
+                            types.map((t) => {
+                                if (t.name == f.type) {
+                                    content += `${camelize(t.name) + "Id"}: { type: String, required: ${f.required} },`
+                                }
+                            })
+                            let defaultValue = null
+                            f.directives.map((d) => {
+
+                                if (d.name.value == "default") {
+                                    defaultValue = d.arguments[0].value.value
+                                }
+                            })
+                            if (f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)) {
+                                if (defaultValue) {
+                                    content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
+                                } else {
+                                    content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
+                                }
+
+                            }
+                        })
+                    }
+                })
+
+                content += `
                 },{
                     timestamps: true
                 })
@@ -178,8 +179,8 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                 }
             `
 
-            writeFile(featherDirectory+"user/src/", "model", beautify(content))
-        })
+                writeFile(featherDirectory + "user/src/", "model", beautify(content))
+            })
 
         })
     }, 200);
@@ -188,7 +189,7 @@ function hookUser(schema, types, userDirectory, graphqlFile){
     // console.log(type)
 }
 
-function generateAuthentiations(types){
+function generateAuthentiations(types) {
     ncp(authServices, "./outputs/services/user", function (err) {
         if (err) {
             return console.error(err);
@@ -197,7 +198,7 @@ function generateAuthentiations(types){
         ncp(emailServices, "./outputs/services/email", function (err) {
             if (err) {
                 return console.error(err);
-            }   
+            }
         })
 
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
@@ -206,40 +207,40 @@ function generateAuthentiations(types){
             `const permissions = {
                 admin: ['admin:*'],
                 authenticated: [
-                    ${types.map((t,typeIndex)=>{
-                        if(typeIndex == 0){
-                            return actions.map((a, actionIndex)=>{
-                                // if(typeIndex ==0 && actionIndex == 0){
-                                //     return `'${camelize(t.name)}:${a}'\n`
-                                // }
-                                return `'${camelize(t.name)}:${a}'`
-                            }).join(", ")
-                        }
-                        return  `\n`+actions.map((a, actionIndex)=>{
-                            // if(typeIndex ==0 && actionIndex == 0){
-                            //     return `'${camelize(t.name)}:${a}'\n`
-                            // }
-                            return `'${camelize(t.name)}:${a}'`
-                        }).join(", ")
-                    })}
+                    ${types.map((t, typeIndex) => {
+                if (typeIndex == 0) {
+                    return actions.map((a, actionIndex) => {
+                        // if(typeIndex ==0 && actionIndex == 0){
+                        //     return `'${camelize(t.name)}:${a}'\n`
+                        // }
+                        return `'${camelize(t.name)}:${a}'`
+                    }).join(", ")
+                }
+                return `\n` + actions.map((a, actionIndex) => {
+                    // if(typeIndex ==0 && actionIndex == 0){
+                    //     return `'${camelize(t.name)}:${a}'\n`
+                    // }
+                    return `'${camelize(t.name)}:${a}'`
+                }).join(", ")
+            })}
                 ],
                 public: [
-                    ${types.map((t, typeIndex)=>{
-                        if(typeIndex == 0){
-                            return actions.filter((a)=> a == "find" || a == "get" ).map((a, actionIndex)=>{
-                                // if(typeIndex ==0 && actionIndex == 0){
-                                //     return `'${camelize(t.name)}:${a}'\n`
-                                // }
-                                return `'${camelize(t.name)}:${a}'`
-                            }).join(", ")
-                        }
-                        return `\n`+actions.filter((a)=> a == "find" || a == "get" ).map((a, actionIndex)=>{
-                            if(typeIndex ==0 && actionIndex == 0){
-                                return `'${camelize(t.name)}:${a}'\n`
-                            }
-                            return `'${camelize(t.name)}:${a}'`
-                        }).join(", ")
-                    })}
+                    ${types.map((t, typeIndex) => {
+                if (typeIndex == 0) {
+                    return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                        // if(typeIndex ==0 && actionIndex == 0){
+                        //     return `'${camelize(t.name)}:${a}'\n`
+                        // }
+                        return `'${camelize(t.name)}:${a}'`
+                    }).join(", ")
+                }
+                return `\n` + actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                    if (typeIndex == 0 && actionIndex == 0) {
+                        return `'${camelize(t.name)}:${a}'\n`
+                    }
+                    return `'${camelize(t.name)}:${a}'`
+                }).join(", ")
+            })}
                 ],
             }
             module.exports = {
@@ -249,28 +250,36 @@ function generateAuthentiations(types){
         // //generate permissions
         fs.writeFileSync("./outputs/services/user/permissions.js", beautify(permissions))
 
-        
+
     });
     ncp(authGraphql, "./outputs/graphql/user.js", function (err) {
         if (err) {
             return console.error(err);
         }
 
-        hookUser(schema,types, "./outputs/services/user", "./outputs/graphql/user.js")
+        hookUser(schema, types, "./outputs/services/user", "./outputs/graphql/user.js")
     })
-      
+
+    ncp(emailGraphql, "./outputs/graphql/email.js", function (err) {
+        if (err) {
+            return console.error(err);
+        }
+
+        // hookUser(schema, types, "./outputs/services/email", "./outputs/graphql/email.js")
+    })
+
 
 
 }
 
-function addNewRequester(content, type, requesterName, requesters){
-    if(requesters.includes(requesterName)){
+function addNewRequester(content, type, requesterName, requesters) {
+    if (requesters.includes(requesterName)) {
         return content
     }
     requesters.push(requesterName)
     let contentSplitResponser = content.split(`${camelize(type)}Service.on`)
-    let addNewRequester = 
-`const ${pluralize.singular(camelize(requesterName))}Requester = new cote.Requester({
+    let addNewRequester =
+        `const ${pluralize.singular(camelize(requesterName))}Requester = new cote.Requester({
     name: '${pluralize.singular(requesterName)} Requester',
     key: '${pluralize.singular(camelize(requesterName))}',
 })\n
@@ -279,18 +288,18 @@ function addNewRequester(content, type, requesterName, requesters){
     content = contentSplitResponser.join(`${camelize(type)}Service.on`)
     return content
 }
-async function main(){
-    if(!fs.existsSync("./outputs")){
+async function main() {
+    if (!fs.existsSync("./outputs")) {
         fs.mkdirSync("./outputs")
     }
 
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
     let types = []
-    schema.definitions.filter((def)=> !reservedTypes.includes(def.name.value)).filter((def)=> !whitelistTypes.includes(def.kind)).map((def)=>{
+    schema.definitions.filter((def) => !reservedTypes.includes(def.name.value)).filter((def) => !whitelistTypes.includes(def.kind)).map((def) => {
         fields = []
 
-        def.fields.map((e)=>{
+        def.fields.map((e) => {
             fields.push({
                 name: e.name.value,
                 type: e.type.kind == "NamedType" ? e.type.name.value : e.type.type.name.value,
@@ -307,32 +316,32 @@ async function main(){
 
     generateAuthentiations(types)
 
-    let outputGraphqlServer = generateGraphqlServer(types.map((t)=> t.name))
+    let outputGraphqlServer = generateGraphqlServer(types.map((t) => t.name))
     writeFile("./outputs/", "graphql", outputGraphqlServer)
 
     // graphql
     let outputGraphqlSchema = generateGraphqlSchema(schema)
-    outputGraphqlSchema.map((s, index)=>{
+    outputGraphqlSchema.map((s, index) => {
         writeFile(graphqlDirectiory, `${types[index].name}`, s)
     })
 
 
-    generatePackageJSON(types.map((t)=> t.name))
+    generatePackageJSON(types.map((t) => t.name))
 
-    
+
     //end of graphql
-    types.map((e, index)=>{
+    types.map((e, index) => {
         //feathers
-        if(!fs.existsSync(featherDirectory)){
+        if (!fs.existsSync(featherDirectory)) {
             fs.mkdirSync(featherDirectory)
         }
-        const path = featherDirectory+camelize(e.name)+"/"
+        const path = featherDirectory + camelize(e.name) + "/"
 
-        if(!fs.existsSync(path)){
+        if (!fs.existsSync(path)) {
             fs.mkdirSync(path)
         }
         const schemaExampleFeather = "./schema/services/example/"
-        fs.readdir(schemaExampleFeather, function(err, fileName){
+        fs.readdir(schemaExampleFeather, function (err, fileName) {
             // const configPath = schemaExampleFeather+"config/"
             // fs.readdir(configPath, (err, file)=>{
             //     fs.readFile(configPath+"default.json", 'utf-8', (err,content)=>{
@@ -355,37 +364,37 @@ async function main(){
             //     })
             // })
             let port = defaultConfigService.port + index
-            fs.writeFileSync(path+".env", 
-                "HOST="+defaultConfigService.host+"\n"+
-                "PORT="+port+"\n"+
-                "MONGODB="+defaultConfigService.mongodb+camelize(e.name)+"_service\n"+
-                "REDIS_HOST="+defaultConfigService.redis.host+"\n"+
-                "REDIS_PORT="+defaultConfigService.redis.port+"\n"
+            fs.writeFileSync(path + ".env",
+                "HOST=" + defaultConfigService.host + "\n" +
+                "PORT=" + port + "\n" +
+                "MONGODB=" + defaultConfigService.mongodb + camelize(e.name) + "_service\n" +
+                "REDIS_HOST=" + defaultConfigService.redis.host + "\n" +
+                "REDIS_PORT=" + defaultConfigService.redis.port + "\n"
             )
             // ncp(configPath+"default.json", path+"/config/default.json")
-            ncp(schemaExampleFeather+"config.js", path+"config.js")
+            ncp(schemaExampleFeather + "config.js", path + "config.js")
             ncp('./schema/config.js', './outputs/config.js')
             ncp('./schema/.env', './outputs/.env')
             // ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
             let requesters = ['user']
-            fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
+            fs.readFile(schemaExampleFeather + "index.js", (err, content) => {
                 content = content.toString()
                 content = content.replace(/examples/g, pluralize(camelize(e.name)))
-                            .replace(/example/g, camelize(e.name))
-                            .replace(/Example/g, camelize(e.name))
-                
+                    .replace(/example/g, camelize(e.name))
+                    .replace(/Example/g, camelize(e.name))
 
-                e.fields.map((f)=>{
+
+                e.fields.map((f) => {
                     //find related field
-                    f.directives.map((directive)=>{
+                    f.directives.map((directive) => {
                         // console.log(directive)
-                        if(directive.name.value == "role"){
-                            directive.arguments.map((args)=>{
-                                if(args.name.value == "onCreate"){
-                                    if(args.value.value == "own"){
+                        if (directive.name.value == "role") {
+                            directive.arguments.map((args) => {
+                                if (args.name.value == "onCreate") {
+                                    if (args.value.value == "own") {
                                         let contentSplit = content.split("//beforeCreate")
-                                        let beforeCreate = 
-                                        `
+                                        let beforeCreate =
+                                            `
                                         context.data.userId = auth.user._id
                                         //beforeCreate     
                                         `
@@ -396,12 +405,12 @@ async function main(){
                                         // content = addNewRequester(content, e.name, f.name, requesters)
                                     }
                                 }
-                                
-                                if(args.name.value == "onUpdateDelete"){
-                                    if(args.value.value == "own"){
+
+                                if (args.name.value == "onUpdateDelete") {
+                                    if (args.value.value == "own") {
                                         let contentSplit = content.split("//beforePatch")
-                                        let beforeUpdate = 
-                                        `
+                                        let beforeUpdate =
+                                            `
                                         if(context.id){
                                             let post = await app.service("posts").get(context.id)
                                             if(post && post.userId !== auth.user._id){
@@ -413,8 +422,8 @@ async function main(){
                                         content = contentSplit[0] + beforeUpdate
 
                                         let contentSplitDelete = content.split("//beforeDelete")
-                                        let beforeDelete = 
-                                        `
+                                        let beforeDelete =
+                                            `
                                         if(context.id){
                                             let post = await app.service("posts").get(context.id)
                                             if(post && post.userId !== auth.user._id){
@@ -431,11 +440,11 @@ async function main(){
                         }
                     })
 
-                    types.map((t)=>{
-                        if(pluralize.isSingular(f.name) && f.type == t.name){
+                    types.map((t) => {
+                        if (pluralize.isSingular(f.name) && f.type == t.name) {
                             let contentSplit = content.split("//beforeCreate")
-                            let beforeCreate = 
-                            `
+                            let beforeCreate =
+                                `
                             //beforeCreate
                             if(context.data && context.data.${pluralize.singular(camelize(t.name))}Id){
                                 let belongsTo = await ${pluralize.singular(camelize(t.name))}Requester.send({ 
@@ -455,9 +464,9 @@ async function main(){
                             content = addNewRequester(content, e.name, f.name, requesters)
                         }
                     })
-                    f.directives.map((d)=>{
+                    f.directives.map((d) => {
                         //hook on delete 
-                        if(d.name.value == "relation"){
+                        if (d.name.value == "relation") {
                             let directiveRelationOnDelete = d.arguments[0].value.value
                             let onDelete = onDeleteRelations(directiveRelationOnDelete, pluralize.singular(camelize(f.name)), pluralize.singular(camelize(e.name)))
                             let contentSplit = content.split("//onDelete")
@@ -467,53 +476,53 @@ async function main(){
                         }
                     })
                 })
-                
+
 
                 //remove unused comments
                 content = content.replace(/\/\/onDelete/g, "").replace(/\/\/beforeCreate/g, "")
                 // console.log("cc", content)
-                fs.writeFileSync(path+"index.js", beautify(content)) 
+                fs.writeFileSync(path + "index.js", beautify(content))
             })
 
-            const srcPath = schemaExampleFeather+"src/"
+            const srcPath = schemaExampleFeather + "src/"
             //read src
-            fs.readdir(srcPath, (err, file)=>{
-                if(!fs.existsSync(path+"src/")){
-                    fs.mkdirSync(path+"src/")
+            fs.readdir(srcPath, (err, file) => {
+                if (!fs.existsSync(path + "src/")) {
+                    fs.mkdirSync(path + "src/")
                 }
 
-                file.map((fileName)=>{
-                    fs.readFile(srcPath+fileName, (err, content)=>{
+                file.map((fileName) => {
+                    fs.readFile(srcPath + fileName, (err, content) => {
                         content = content.toString().replace(/examples/g, pluralize(camelize(e.name)))
                             .replace(/example/g, camelize(e.name))
                             .replace(/Example/g, camelize(e.name))
-                            
-                        if(fileName == "model.js"){
+
+                        if (fileName == "model.js") {
                             content = "module.exports = function (app) {\n"
                             content += "const mongooseClient = app.get('mongooseClient');\n"
                             content += `const model = new mongooseClient.Schema({\n`
                             //fields
-                            e.fields.map((f)=>{
-                                if(f.type == "User"){
+                            e.fields.map((f) => {
+                                if (f.type == "User") {
                                     content += `${f.name}Id: { type: String, required: ${f.required} },`
                                 }
-                                types.map((t)=>{
-                                    if(t.name == f.type && f.kind !== "ListType"){
+                                types.map((t) => {
+                                    if (t.name == f.type && f.kind !== "ListType") {
                                         // console.log("loll",f)
-                                        content += `${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },`
+                                        content += `${camelize(t.name) + "Id"}: { type: String, required: ${f.required} },`
                                     }
                                 })
                                 let defaultValue = null
-                                f.directives.map((d)=>{
-                                    if(d.name.value == "default"){
+                                f.directives.map((d) => {
+                                    if (d.name.value == "default") {
                                         defaultValue = d.arguments[0].value.value
                                     }
                                 })
-                                if(f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type) && f.kind !== "ListType"){
+                                if (f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type) && f.kind !== "ListType") {
 
-                                    if(defaultValue){
+                                    if (defaultValue) {
                                         content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
-                                    }else{
+                                    } else {
                                         content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
                                     }
 
@@ -528,7 +537,7 @@ async function main(){
                             `
                         }
                         // console.log(content)
-                        fs.writeFileSync(path+"src/"+fileName, beautify(content))
+                        fs.writeFileSync(path + "src/" + fileName, beautify(content))
                     })
                 })
             })

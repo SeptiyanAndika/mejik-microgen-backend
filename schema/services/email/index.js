@@ -7,11 +7,25 @@ const emailService = new cote.Responder({
 	key: "email"
 });
 
+const emailRequester = new cote.Requester({
+	name: "Email Requester",
+	key: "email"
+});
+
 emailService.on("send", async (req, cb) => {
 	try {
 		await sendEmail(req.body);
 	} catch (err) {
 		throw err;
+	}
+});
+
+emailService.on("store", async (req, cb) => {
+	try {
+		emailRequester.send({ type: "send", body: req.body });
+		cb(null, { message: "Success." });
+	} catch (error) {
+		cb(error.message, null);
 	}
 });
 
