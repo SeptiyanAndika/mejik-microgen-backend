@@ -1,10 +1,4 @@
-const {
-	HOST,
-	REDIS_HOST,
-	REDIS_PORT,
-	forgetPasswordExpired,
-	email
-} = require("./config");
+const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -317,6 +311,32 @@ userService.on("createUser", async (req, cb) => {
 	}
 });
 
+userService.on("updateUser", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let data = await app.service("users").patch(req._id, req.body, {
+			...req.params || {},
+			token
+		})
+		cb(null, data);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("deleteUser", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let data = await app.service("users").remove(req._id, {
+			...req.params || {},
+			token
+		})
+		cb(null, data);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
 userService.on("verifyToken", async (req, cb) => {
 	try {
 		// console.log("verify token", app.service("authentication"))
@@ -367,8 +387,72 @@ app.service("users").hooks({
 					throw Error("UnAuthorized");
 				}
 			}
+		},
+		update: async context => {
+			if (!context.params.token) {
+				cb(null, {
+					user: { permissions: permissions["public"] }
+				});
+				return;
+			}
+
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(context.params.token);
+			let user = await app.service("users").get(verify.sub, {
+				query: {
+					$select: ["_id", "email", "firstName", "lastName", "role"]
+				}
+			});
+
+			user.permissions = permissions[user.role];
+			if (!user.permissions) {
+				throw new Error("UnAuthorized");
+			}
+
+			context.params.user = user
+
+			await checkPermissions({
+				roles: ["admin"]
+			})(context);
+
+			if (!context.params.permitted) {
+				throw Error("UnAuthorized");
+			}
+		},
+		remove: async context => {
+			if (!context.params.token) {
+				cb(null, {
+					user: { permissions: permissions["public"] }
+				});
+				return;
+			}
+
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(context.params.token);
+			let user = await app.service("users").get(verify.sub, {
+				query: {
+					$select: ["_id", "email", "firstName", "lastName", "role"]
+				}
+			});
+
+			user.permissions = permissions[user.role];
+			if (!user.permissions) {
+				throw new Error("UnAuthorized");
+			}
+
+			context.params.user = user
+
+			await checkPermissions({
+				roles: ["admin"]
+			})(context);
+
+			if (!context.params.permitted) {
+				throw Error("UnAuthorized");
+			}
 		}
-	}
+	},
 });
 
 server.on("listening", () =>

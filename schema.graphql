@@ -22,3 +22,57 @@ type Comment {
     text: String!
     user: User! @role(onCreate: "own", onUpdateDelete: "own")
 }
+
+# type Event {
+#     _id: String
+#     type: String
+#     categorie: String
+#     subCategorie: String
+#     startDate: String!
+#     endDate: String!
+#     startTime: String
+#     endTime: String
+#     image: String
+#     name: String!
+#     price: String
+#     description: String!
+#     locationType: String
+#     locationName: String
+#     latitude: String
+#     longitude: String
+#     address: String
+#     state: String
+#     postalCode: String
+#     city: String
+#     country: String
+#     refundPolicy: String
+#     tags: String
+#     organizer: String
+# }
+
+# type Ticket {
+#     _id: String
+#     event: Event!
+#     type: String!
+#     name: String
+#     qty: String!
+#     price: String!
+#     startDate: String!
+#     endDate: String!
+#     startTime: String
+#     endTime: String
+#     description: String
+#     visibility: String
+#     orderMinQty: String
+#     orderMaxQty: String
+#     salesChannel: String
+#     sold: String
+# }
+
+# type eventTaxes {
+#     _id: String
+#     event: Event
+#     ticket: Ticket
+#     taxName: String
+#     taxRate: String
+# }
