@@ -60,6 +60,33 @@ const sendEmail = async ({
 		})
 	);
 
+	let headerImage = ``
+	if (emailImageHeader) {
+		headerImage = `
+		<div style="margin: 20px 20px 0;">
+			<img
+				src=${emailImageHeader}
+				alt="header"
+				width="200px"
+			/>
+		</div>`
+	}
+
+	let buttonLink = ``
+	if (emailLink) {
+		buttonLink = `<a href=${emailLink} style="text-decoration: none">
+		<div
+			style="padding: 1px; background-color: #2480d1; border-radius: 20px; margin: 25px 30px; cursor: pointer;"
+		>
+			<p
+				style="text-align: center; font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif; color: #fff"
+			>
+				Open
+			</p>
+		</div>
+	</a>`
+	}
+
 	await transport.sendMail({
 		to: email,
 		from: from,
@@ -68,13 +95,7 @@ const sendEmail = async ({
 		<div
 			style="max-width: 600px; background: #fff; margin: 0 auto;  padding: 10px 0"
 		>
-			<div style="margin: 20px 20px 0;">
-				<img
-					src=${emailImageHeader}
-					alt="header"
-					width="200px"
-				/>
-			</div>
+			${headerImage}
 			<h1
 				style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;color: #282e33;
 				font-weight: bold;
@@ -90,17 +111,7 @@ const sendEmail = async ({
 			>
 				${emailBody}
 			</p>
-			<a href=${emailLink} style="text-decoration: none">
-				<div
-					style="padding: 1px; background-color: #2480d1; border-radius: 20px; margin: 25px 30px; cursor: pointer;"
-				>
-					<p
-						style="text-align: center; font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif; color: #fff"
-					>
-						Open
-					</p>
-				</div>
-			</a>
+			${buttonLink}
 		</div>
 	</div>`
 	});
