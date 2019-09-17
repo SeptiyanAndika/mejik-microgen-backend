@@ -120,7 +120,7 @@ type Ticket {
     sold: Boolean
 }
 
-type eventTaxes {
+type EventTaxe {
     id: String
     event: Event!
     ticket: Ticket!
@@ -155,7 +155,7 @@ type EventReport {
     totalPayoutPaid: Int
 }
 
-type EventSales {
+type EventSale {
     id: String
     event: Event!
     ticket: Ticket!
@@ -166,7 +166,7 @@ type EventSales {
     phoneNumber: String
 }
 
-type UsersTickets {
+type UsersTicket {
     id: String
     user: User!
     event: Event!

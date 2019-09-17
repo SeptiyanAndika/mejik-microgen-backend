@@ -53,8 +53,8 @@ const typeDef = `
         forgetPassword(input: ForgetPasswordInput): Response
 		resetPassword(input: ResetPasswordInput): Response
 		verifyEmail(input: VerifyEmailInput): Response
-		updateUser(input: UpdateUserInput, _id: String!): User
-		deleteUser(_id: String!): User
+		updateUser(input: UpdateUserInput, id: String!): User
+		deleteUser(id: String!): User
 		changeProfile(input: UpdateUserInput): User
     }
 
@@ -89,12 +89,14 @@ const typeDef = `
 const resolvers = {
 	Query: {
 		users: async (_, { query }, { userRequester }) => {
+			if (query && query.id) { query._id = query.id; delete query.id }
 			return await userRequester.send({
 				type: "index",
 				query
 			});
 		},
 		user: async (_, { query }, { headers, userRequester }) => {
+			if (query && query.id) { query._id = query.id; delete query.id }
 			return await userRequester.send({
 				type: "user",
 				query,
@@ -102,6 +104,7 @@ const resolvers = {
 			});
 		},
 		userConnection: async (_, { query }, { headers, userRequester }) => {
+			if (query && query.id) { query._id = query.id; delete query.id }
 			return await userRequester.send({
 				type: "indexConnection",
 				query,
@@ -133,19 +136,19 @@ const resolvers = {
 				headers
 			});
 		},
-		updateUser: async (_, { input = {}, _id }, { userRequester, headers }) => {
+		updateUser: async (_, { input = {}, id }, { userRequester, headers }) => {
 			return await userRequester.send({
 				type: "updateUser",
 				body: input,
-				_id,
+				_id: id,
 				headers
 			});
 		},
-		deleteUser: async (_, { input = {}, _id }, { userRequester, headers }) => {
+		deleteUser: async (_, { input = {}, id }, { userRequester, headers }) => {
 			return await userRequester.send({
 				type: "deleteUser",
 				body: input,
-				_id,
+				_id: id,
 				headers
 			});
 		},

@@ -292,11 +292,13 @@ const generateGraphqlSchema = (schema) => {
         let requester = camelize(typeName) + "Requester"
         //findall
         resolverQueries += `${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `    if (query && query.id) { query._id = query.id; delete query.id }`
         resolverQueries += `    return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "}, \n"
 
         //connections
         resolverQueries += `${camelize(pluralize(typeName))}Connection: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `    if (query && query.id) { query._id = query.id; delete query.id }`
         resolverQueries += `    return await ${requester}.send({ type: 'indexConnection', query, headers})\n`
         resolverQueries += "}, \n"
 
