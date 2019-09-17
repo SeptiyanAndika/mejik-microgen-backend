@@ -64,7 +64,6 @@ userService.on("user", async (req, cb) => {
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
 
-		console.log(req)
 		data = await app.service("users").get(user._id, {
 			query: req.query,
 			token
@@ -356,6 +355,7 @@ userService.on("deleteUser", async (req, cb) => {
 			...req.params || {},
 			token
 		})
+		data.id = data._id
 		cb(null, data);
 	} catch (error) {
 		cb(error.message, null);

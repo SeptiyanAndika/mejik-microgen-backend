@@ -62,7 +62,7 @@ type User {
 
 type Event {
     id: String
-    user: User @role(onCreate: "own", onDelete: "own")
+    user: User! @role(onCreate: "own", onDelete: "own")
     name: String
     locationType: String
     locationName: String

@@ -6,26 +6,26 @@ const checkPermissions = require('feathers-permissions');
 const { NotFound } = require('@feathersjs/errors');
 const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 
-const exampleService = new cote.Responder({ 
+const exampleService = new cote.Responder({
     name: 'Example Service',
     key: 'example'
 })
 
-const userRequester = new cote.Requester({ 
-    name: 'User Requester', 
+const userRequester = new cote.Requester({
+    name: 'User Requester',
     key: 'user',
 })
 
-exampleService.on("index", async (req,cb) => {
-    try{
+exampleService.on("index", async (req, cb) => {
+    try {
         let token = req.headers.authorization
         let data = await app.service("examples").find({
             query: req.query,
             token
         })
-        
+
         cb(null, data.data)
-    }catch(error){
+    } catch (error) {
         cb(error.message, null)
     }
 })
@@ -45,170 +45,171 @@ exampleService.on("indexConnection", async (req, cb) => {
 })
 
 exampleService.on("store", async (req, cb) => {
-    try{
+    try {
         let token = req.headers.authorization
         let data = await app.service("examples").create(req.body, {
             token
         })
         cb(null, data)
-    }catch(error){
+    } catch (error) {
         cb(error.message, null)
     }
 })
 
 exampleService.on("update", async (req, cb) => {
-    try{
+    try {
         let token = req.headers.authorization
         let data = await app.service("examples").patch(req._id, req.body, {
-            ...req.params||{},
+            ...req.params || {},
             token
         })
         cb(null, data)
-    }catch(error){
+    } catch (error) {
         cb(error.message, null)
     }
 })
 
 exampleService.on("destroy", async (req, cb) => {
-    try{
+    try {
         let token = req.headers.authorization
         let data = await app.service("examples").remove(req._id, {
             ...req.params || {},
             token
         })
+        data.id = data._id
         cb(null, data)
-    }catch(error){
+    } catch (error) {
         cb(error.message, null)
     }
 })
 
 exampleService.on("show", async (req, cb) => {
-    try{
+    try {
         let token = req.headers.authorization
         let data = null
-        if(req._id){
+        if (req._id) {
             data = await app.service("examples").get(req._id, {
                 token
             })
         }
         cb(null, data)
-    }catch(error){
+    } catch (error) {
         cb(null, null)
     }
 })
 
 
-const checkAuthentication = (token)=>{
-    return userRequester.send({ type: 'verifyToken', token})
+const checkAuthentication = (token) => {
+    return userRequester.send({ type: 'verifyToken', token })
 }
 
 
 app.service('examples').hooks({
     before: {
-        find: async (context)=>{
-            try{
+        find: async (context) => {
+            try {
                 let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
-                
+
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)
 
-                if(!context.params.permitted){
+                if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        get: async (context)=>{
-            try{
+        get: async (context) => {
+            try {
                 let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
-                
+
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)
 
-                if(!context.params.permitted){
+                if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        create: async (context)=>{
-            try{
+        create: async (context) => {
+            try {
                 let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
-                
+
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)
 
-                if(!context.params.permitted){
+                if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
                 //beforeCreate
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        update: async (context)=>{
-            try{
+        update: async (context) => {
+            try {
                 let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
-                
+
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)
 
-                if(!context.params.permitted){
+                if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
                 //beforeUpdate
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        patch: async (context)=>{
-            try{
+        patch: async (context) => {
+            try {
                 let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
-                
+
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)
 
-                if(!context.params.permitted){
+                if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
                 //beforePatch
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        remove: async (context)=>{
-            try{
+        remove: async (context) => {
+            try {
                 let auth = await checkAuthentication(context.params.token)
 
                 context.params.user = auth.user
-                
+
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)
 
-                if(!context.params.permitted){
+                if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
                 //beforeDelete
                 //onDelete
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         }
