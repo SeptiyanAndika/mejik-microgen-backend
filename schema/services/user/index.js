@@ -13,18 +13,29 @@ const userService = new cote.Responder({
 });
 
 const emailRequester = new cote.Requester({
-	name: 'Email Requester',
-	key: 'email',
-})
+	name: "Email Requester",
+	key: "email"
+});
 
 userService.on("index", async (req, cb) => {
 	try {
 		const users = await app.service("users").find({
 			query: req.query
 		});
-		cb(null, users);
+		cb(null, users.data);
 	} catch (error) {
 		cb(error, null);
+	}
+});
+
+userService.on("indexConnection", async (req, cb) => {
+	try {
+		const users = await app.service("users").find({
+			query: req.query
+		});
+		cb(null, users);
+	} catch (error) {
+		cb(error.message, null);
 	}
 });
 
@@ -39,7 +50,7 @@ userService.on("show", async (req, cb) => {
 		}
 		cb(null, data);
 	} catch (error) {
-		cb(null, null);
+		cb(error.message, null);
 	}
 });
 
@@ -54,6 +65,7 @@ userService.on("user", async (req, cb) => {
 		let user = await app.service("users").get(verify.sub);
 
 		data = await app.service("users").get(user._id, {
+			query: req.query,
 			token
 		});
 
@@ -69,8 +81,10 @@ userService.on("login", async (req, cb) => {
 			strategy: "local",
 			...req.body
 		});
-		if(user.user.status == 0 || !user.user.status){
-			throw new Error("Your account is not activate, check your email to activate your account.")
+		if (user.user.status == 0 || !user.user.status) {
+			throw new Error(
+				"Your account is not activate, check your email to activate your account."
+			);
 		}
 		user.token = user.accessToken;
 		cb(null, user);
@@ -79,35 +93,36 @@ userService.on("login", async (req, cb) => {
 	}
 });
 
-
 userService.on("forgetPassword", async (req, cb) => {
 	try {
 		let users = await app.service("users").find({
-			query:{
+			query: {
 				email: req.body.email
 			}
-		})
-		if(users.length == 0){
-			console.log("email not registered")
+		});
+		if (users.length == 0) {
+			console.log("email not registered");
 			cb(null, {
 				message: "Success."
 			});
-			return
+			return;
 		}
 		req.body.token = bcrypt.genSaltSync();
+		const emailBody = `You are receiving this email as you have requested to change your account password.
+		Here is your verification code: <strong>${req.body.token}</strong>. Please enter the code on the verification page or simply click this button:`;
 		await app.service("forgetPasswords").create(req.body);
 		emailRequester.send({
-			type: 'send', 
-			body:{
-				email:req.body.email,
-				from:email.from,
-				subject:"Forget Password",
+			type: "send",
+			body: {
+				email: req.body.email,
+				from: email.from,
+				subject: "Forget Password",
 				emailImageHeader: null,
 				emailTitle: "You are forget password",
-				emailBody: "forget",
-				emailLink: HOST+"/user/resetPassword?token="+req.body.token
+				emailBody: emailBody,
+				emailLink: HOST + "/user/resetPassword?token=" + req.body.token
 			}
-		})
+		});
 		cb(null, {
 			message: "Success."
 		});
@@ -141,20 +156,18 @@ userService.on("resetPassword", async (req, cb) => {
 				password: req.body.newPassword
 			},
 			{
-
-				query:{
+				query: {
 					email: data.email
 				}
-		
 			}
-		)
-		await app.service("forgetPasswords").remove(null,{  
+		);
+		await app.service("forgetPasswords").remove(null, {
 			params: {
 				query: {
 					email: data.email
 				}
 			}
-		})
+		});
 		cb(null, {
 			message: "Success."
 		});
@@ -188,20 +201,18 @@ userService.on("verifyEmail", async (req, cb) => {
 				status: 1
 			},
 			{
-
-				query:{
+				query: {
 					email: data.email
 				}
-		
 			}
-		)
-		await app.service("emailVerifications").remove(null,{  
+		);
+		await app.service("emailVerifications").remove(null, {
 			params: {
 				query: {
 					email: data.email
 				}
 			}
-		})
+		});
 		cb(null, {
 			message: "Success."
 		});
@@ -247,24 +258,24 @@ userService.on("register", async (req, cb) => {
 			password: req.body.password
 		});
 
-		const emailToken = bcrypt.genSaltSync()
+		const emailToken = bcrypt.genSaltSync();
 		await app.service("emailVerifications").create({
 			email: req.body.email,
 			token: emailToken
 		});
 
 		emailRequester.send({
-			type: 'send', 
-			body:{
-				email:req.body.email,
-				from:email.from,
-				subject:"Email Verification",
+			type: "send",
+			body: {
+				email: req.body.email,
+				from: email.from,
+				subject: "Email Verification",
 				emailImageHeader: null,
 				emailTitle: "Email Verification",
 				emailBody: "Verification",
-				emailLink: HOST+"/user/verify?token="+emailToken
+				emailLink: HOST + "/user/verify?token=" + emailToken
 			}
-		})
+		});
 		cb(null, {
 			user,
 			token: auth.accessToken
@@ -288,13 +299,8 @@ userService.on("createUser", async (req, cb) => {
 		admin.permissions = permissions[admin.role];
 
 		const user = await app.service("users").create(
-			{
-				...req.body
-			},
-			{
-				type: "createUser",
-				user: admin
-			}
+			{ ...req.body },
+			{ type: "createUser", user: admin }
 		);
 
 		const auth = await app.service("authentication").create({
@@ -307,6 +313,50 @@ userService.on("createUser", async (req, cb) => {
 			user,
 			token: auth.accessToken
 		});
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("update", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		let data = await app.service("users").patch(user._id, req.body, {
+			...req.params || {},
+			token
+		})
+		cb(null, data);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("updateUser", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let data = await app.service("users").patch(req._id, req.body, {
+			...req.params || {},
+			token
+		})
+		cb(null, data);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("deleteUser", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let data = await app.service("users").remove(req._id, {
+			...req.params || {},
+			token
+		})
+		data.id = data._id
+		cb(null, data);
 	} catch (error) {
 		cb(error.message, null);
 	}
@@ -349,7 +399,7 @@ app.service("users").hooks({
 			let users = await app.service("users").find();
 			if (users.length == 0) {
 				context.data.role = "admin";
-				context.data.status = 1
+				context.data.status = 1;
 			}
 
 			if (context.params.type == "createUser") {
@@ -362,8 +412,72 @@ app.service("users").hooks({
 					throw Error("UnAuthorized");
 				}
 			}
+		},
+		update: async context => {
+			if (!context.params.token) {
+				cb(null, {
+					user: { permissions: permissions["public"] }
+				});
+				return;
+			}
+
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(context.params.token);
+			let user = await app.service("users").get(verify.sub, {
+				query: {
+					$select: ["_id", "email", "firstName", "lastName", "role"]
+				}
+			});
+
+			user.permissions = permissions[user.role];
+			if (!user.permissions) {
+				throw new Error("UnAuthorized");
+			}
+
+			context.params.user = user
+
+			await checkPermissions({
+				roles: ["admin"]
+			})(context);
+
+			if (!context.params.permitted) {
+				throw Error("UnAuthorized");
+			}
+		},
+		remove: async context => {
+			if (!context.params.token) {
+				cb(null, {
+					user: { permissions: permissions["public"] }
+				});
+				return;
+			}
+
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(context.params.token);
+			let user = await app.service("users").get(verify.sub, {
+				query: {
+					$select: ["_id", "email", "firstName", "lastName", "role"]
+				}
+			});
+
+			user.permissions = permissions[user.role];
+			if (!user.permissions) {
+				throw new Error("UnAuthorized");
+			}
+
+			context.params.user = user
+
+			await checkPermissions({
+				roles: ["admin"]
+			})(context);
+
+			if (!context.params.permitted) {
+				throw Error("UnAuthorized");
+			}
 		}
-	}
+	},
 });
 
 server.on("listening", () =>

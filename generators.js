@@ -2,10 +2,10 @@ const fs = require("fs")
 const pluralize = require('pluralize')
 const { camelize, beautify } = require("./utils")
 
-const isRelation = (types, name) =>{
-    if(types.includes(name)){
-        console.log(name.toLowerCase()+"Id")
-        return name.toLowerCase()+"Id"
+const isRelation = (types, name) => {
+    if (types.includes(name)) {
+        console.log(name.toLowerCase() + "Id")
+        return name.toLowerCase() + "Id"
     }
 }
 
@@ -26,23 +26,23 @@ const field = (types, name, type, directives) =>{
             fieldType = "String"
         }
     }
-    if(type.kind == "NonNullType"){
+    if (type.kind == "NonNullType") {
         return `${fieldName} : ${fieldType}!`
     }
     return `${fieldName} : ${fieldType}`
 }
 
-const fieldType = (field)=>{
-    if(field.kind == "NonNullType"){
+const fieldType = (field) => {
+    if (field.kind == "NonNullType") {
         return field.type.name.value
     }
-    if(field.kind == "ListType"){
+    if (field.kind == "ListType") {
         return `[${field.type.name.value}]`
     }
     return field.name.value
 }
 
-const generatePackageJSON = (types) =>{
+const generatePackageJSON = (types) => {
     let packageJSON = fs.readFileSync("./schema/package.json")
     packageJSON = JSON.parse(packageJSON.toString())
     packageJSON["scripts"]["graphql"] = "nodemon --exec babel-node graphql --presets env"
@@ -58,7 +58,7 @@ const generatePackageJSON = (types) =>{
     fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON,null,4))
 }
 
-const generateGraphqlServer = (types) =>{
+const generateGraphqlServer = (types) => {
     let content = ""
     content += `import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET } from './config'\n`
     content += `import { merge } from 'lodash'\n`
@@ -68,9 +68,9 @@ const generateGraphqlServer = (types) =>{
     content += `import { PubSub } from 'graphql-subscriptions'\n`
 
     content += `import { typeDef as User, resolvers as userResolvers } from './graphql/user'\n`
-    // content += `import { typeDef as Storage, resolvers as storageResolvers } from './graphql/storage'\n`
+    content += `import { typeDef as Email, resolvers as emailResolvers } from './graphql/email'\n`
     //import all type and resolvers
-    types.map((type)=>{
+    types.map((type) => {
         content += `import { typeDef as ${type}, resolvers as ${camelize(type)}Resolvers } from './graphql/${camelize(type)}'\n`
     })
 
@@ -108,14 +108,14 @@ const generateGraphqlServer = (types) =>{
             }),
         }`
 
-    content += 
+    content +=
         `
         const schema = makeExecutableSchema({
-            typeDefs: [ typeDefs, User, ${types.join(", ")}],
-            resolvers: merge(resolver,  userResolvers, ${types.map((t)=> camelize(t)+"Resolvers({ pubSub })").join(", ")}),
+            typeDefs: [ typeDefs, User, Email, ${types.join(", ")}],
+            resolvers: merge(resolver,  userResolvers, emailResolvers, ${types.map((t) => camelize(t) + "Resolvers({ pubSub })").join(", ")}),
         });
         `
-    
+
     content += `
         const userRequester = new cote.Requester({ 
             name: 'User Requester', 
@@ -129,10 +129,18 @@ const generateGraphqlServer = (types) =>{
             key: 'storage',
         })      
         ` 
+
+
+    content += `
+        const emailRequester = new cote.Requester({ 
+            name: 'Email Requester', 
+            key: 'email',
+        })      
+            `
     //requster
-    types.map((t)=>{
+    types.map((t) => {
         content += `
-            const ${camelize(t)+"Requester"} = new cote.Requester({ 
+            const ${camelize(t) + "Requester"} = new cote.Requester({ 
                 name: '${t} Requester', 
                 key: '${camelize(t)}',
             })
@@ -160,7 +168,8 @@ const generateGraphqlServer = (types) =>{
                 headers: !connection && parseBearerToken(req.headers),
                 userRequester,
                 storageRequester,
-                ${types.map((e)=> camelize(e)+"Requester").join(", ")}
+                emailRequester,
+                ${types.map((e) => camelize(e) + "Requester").join(", ")}
             }
         }\n`
 
@@ -179,15 +188,15 @@ const generateGraphqlServer = (types) =>{
 
 const whitelistTypes = ['DirectiveDefinition', 'ScalarTypeDefinition', 'EnumTypeDefinition']
 const reservedTypes = ['User']
-const generateGraphqlSchema = (schema)=>{
-    let contents =  []
+const generateGraphqlSchema = (schema) => {
+    let contents = []
     let types = ["user"]
     let filesTypes = []
     for(let i =0; i < schema.definitions.length; i++){
         if(reservedTypes.includes(schema.definitions[i].name.value)){
             continue
         }
-        if(whitelistTypes.includes(schema.definitions[i].kind)){
+        if (whitelistTypes.includes(schema.definitions[i].kind)) {
             continue
         }
         let typeName = pluralize.singular(schema.definitions[i].name.value)
@@ -198,7 +207,7 @@ const generateGraphqlSchema = (schema)=>{
         if(reservedTypes.includes(schema.definitions[i].name.value)){
             continue
         }
-        if(whitelistTypes.includes(schema.definitions[i].kind)){
+        if (whitelistTypes.includes(schema.definitions[i].kind)) {
             continue
         }
         let typeName = pluralize.singular(schema.definitions[i].name.value)
@@ -279,7 +288,7 @@ const generateGraphqlSchema = (schema)=>{
         typeConnection += "    }\n"
 
         type += typeConnection
-        
+
         let queriesPrepend = "    extend type Query {"
         let queriesAppend = "\n    } \n"
 
@@ -295,7 +304,7 @@ const generateGraphqlSchema = (schema)=>{
         
         //
         input += `    input ${typeName}Input {\n`
-        schema.definitions[i].fields.map((e)=>{
+        schema.definitions[i].fields.map((e) => {
             let role = []
             let isFile = false
             e.directives.map((d)=>{
@@ -333,22 +342,22 @@ const generateGraphqlSchema = (schema)=>{
             }
         })
         input += "    }\n\n"
-        queriesPrepend+= `\n        ${camelize(pluralize(typeName))} (query: JSON): [${typeName}]`
-        queriesPrepend+= `\n        ${camelize(pluralize(typeName))}Connection (query: JSON): ${typeName}Connection`
+        queriesPrepend += `\n        ${camelize(pluralize(typeName))} (query: JSON): [${typeName}]`
+        queriesPrepend += `\n        ${camelize(pluralize(typeName))}Connection (query: JSON): ${typeName}Connection`
 
-        subscriptionPrepend+= `\n       ${camelize(typeName)}Added: ${typeName}`
-        subscriptionPrepend+= `\n       ${camelize(typeName)}Updated: ${typeName}`
-        subscriptionPrepend+= `\n       ${camelize(typeName)}Deleted: ${typeName}`
+        subscriptionPrepend += `\n       ${camelize(typeName)}Added: ${typeName}`
+        subscriptionPrepend += `\n       ${camelize(typeName)}Updated: ${typeName}`
+        subscriptionPrepend += `\n       ${camelize(typeName)}Deleted: ${typeName}`
 
-        mutationPrepend+= `\n       create${typeName}(input: ${typeName}Input): ${typeName}`
-        mutationPrepend+= `\n       update${typeName}(input: ${typeName}Input, _id: String): ${typeName}`
-        mutationPrepend+= `\n       delete${typeName}(_id: String): ${typeName}`
+        mutationPrepend += `\n       create${typeName}(input: ${typeName}Input): ${typeName}`
+        mutationPrepend += `\n       update${typeName}(input: ${typeName}Input, id: String): ${typeName}`
+        mutationPrepend += `\n       delete${typeName}(id: String): ${typeName}`
 
 
-        const queries = queriesPrepend+queriesAppend
-        const mutations = mutationPrepend+mutationAppend
-        const subscriptions = subscriptionPrepend+subscriptionAppend
-        let result = type+ "\n" + queries + "\n" + input + subscriptions + mutations
+        const queries = queriesPrepend + queriesAppend
+        const mutations = mutationPrepend + mutationAppend
+        const subscriptions = subscriptionPrepend + subscriptionAppend
+        let result = type + "\n" + queries + "\n" + input + subscriptions + mutations
         content += result + "`\n"
 
         //resolver
@@ -358,37 +367,39 @@ const generateGraphqlSchema = (schema)=>{
         let resolverSubscriptions = "    Subscription : {\n"
         let resolverRelations = ""
         let typeNames = []
-        for(let i =0; i < schema.definitions.length; i++){
-            if(reservedTypes.includes(schema.definitions[i].name.value)){
+        for (let i = 0; i < schema.definitions.length; i++) {
+            if (reservedTypes.includes(schema.definitions[i].name.value)) {
                 continue
             }
-            if(whitelistTypes.includes(schema.definitions[i].kind)){
+            if (whitelistTypes.includes(schema.definitions[i].kind)) {
                 continue
             }
             let typeName = schema.definitions[i].name.value
             typeNames.push(typeName)
         }
-        
-        let requester = camelize(typeName)+"Requester"
+
+        let requester = camelize(typeName) + "Requester"
         //findall
-        resolverQueries += `${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `    if (query && query.id) { query._id = query.id; delete query.id }`
         resolverQueries += `    return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "}, \n"
 
         //connections
-        resolverQueries += `${camelize(pluralize(typeName))}Connection: async(_, { query }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `${camelize(pluralize(typeName))}Connection: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `    if (query && query.id) { query._id = query.id; delete query.id }`
         resolverQueries += `    return await ${requester}.send({ type: 'indexConnection', query, headers})\n`
         resolverQueries += "}, \n"
-        
-        if(relationTypes.length > 0){
+
+        if (relationTypes.length > 0) {
             resolverRelations += `    ${typeName}: {\n`
- 
-            relationTypes.map((e)=>{
-                if(e.type == "ListType"){
+
+            relationTypes.map((e) => {
+                if (e.type == "ListType") {
                     resolverRelations += `${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
                     resolverRelations += `  return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
                     resolverRelations += `},\n`
-                }else{
+                } else {
                     resolverRelations += `${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
                     resolverRelations += `  return await ${e.relatedTo}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
                     resolverRelations += `},\n`
@@ -564,8 +575,8 @@ const generateGraphqlSchema = (schema)=>{
     return contents
 }
 
-onDeleteRelations = (type, relatedTable, foreignId) =>{
-    switch(type){
+onDeleteRelations = (type, relatedTable, foreignId) => {
+    switch (type) {
         case "SET_NULL":
             return `
                 //onDelete
