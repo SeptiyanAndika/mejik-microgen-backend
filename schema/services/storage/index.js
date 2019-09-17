@@ -1,31 +1,29 @@
-const AWS = require('aws-sdk')
-AWS.config.update({ region: 'ap-southeast-1	' })
+require('./utils')
+const { REDIS_HOST, REDIS_PORT } = require("./config")
+const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
+const { uploadFile, deleteFile} = require('./storage')
 
-let s3 = new AWS.S3({apiVersion: '2006-03-01'})
+const storageService = new cote.Responder({
+    name: 'Storage Service',
+    key: 'storage'
+})
 
-const createBucket = ({Bucket, ACL}) =>{
-    return new Promise((resolve, reject)=>{
-        s3.createBucket({
-            Bucket,
-            ACL
-        }, (err, data)=>{
-            if(err){
-                reject(err)
-            }else{
-                resolve(data)
-            }
-        })
-    })
-}
 
-const uploadFile = ({Bucket, Key = '', Body = '',}) => {
-    return new Promise((resolve, reject)=>{
-        s3.uploadFile({ Bucket, Key, Body }, (err, data)=>{
-            if(err){
-                reject(err)
-            }else{
-                resolve(data)
-            }
-        })
-    })
-}
+storageService.on("uploadFile", async (req, cb) => {
+    try {
+        let res = await uploadFile(req.body)
+        cb(null, res)
+    } catch (error) {
+        cb(error.message, null)
+    }
+})
+
+storageService.on("deleteFile", async (req, cb) => {
+    try {
+        let res = await deleteFile(req.body)
+        cb(null, res)
+    } catch (error) {
+        cb(error.message, null)
+    }
+})
+

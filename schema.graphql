@@ -1,24 +1,9 @@
-type Post {
-    _id: String!
-    text: String!
-    comments: [Comment] @relation(onDelete: CASCADE)
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
-}
-
-type UserFriend {
-    _id: String
+type ProfileImage{
+    id: String!
     user: User!
-    friend: User!
+    url: String @File
 }
 
-type User {
-    phoneNumbers: String
-    image: String
-}
-
-type Comment {
-    _id: String
-    post: Post!
-    text: String!
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+type User{
+    profileImages: [ProfileImage]
 }

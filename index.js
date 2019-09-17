@@ -1,17 +1,16 @@
 const fs = require("fs")
-const {printSchema, parse, GraphQLSchema, print} = require("graphql")
-const merge = require("lodash").merge
-const { makeExecutableSchema, } = require("graphql-tools")
+const { parse, print } = require("graphql")
 const path = require("path")
 const {generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes} = require("./generators")
 const ncp = require('ncp').ncp;
-const config = JSON.parse(fs.readFileSync("./config.json").toString())
 const pluralize = require('pluralize')
-const { camelize, beautify } = require("./utils")
-let type = fs.readFileSync("./schema.graphql").toString()
 const directives = require('./directives')
 const scalars = require('./scalars')
+const { createBucket } = require('./schema/services/storage/storage')
 
+const { camelize, beautify } = require('./utils')
+let type = fs.readFileSync('./schema.graphql').toString()
+const { APP_NAME } = require('./config')
 // let buildSchema = makeExecutableSchema({
 //     typeDefs: [scalars, type ],
 //     schemaDirectives: {
@@ -25,6 +24,7 @@ const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
 const emailServices = "./schema/services/email"
 const authServices = "./schema/services/user"
+const storageServices = "./schema/services/storage"
 const authGraphql =  "./schema/graphql/user.js"
 const baseTypeUser = `
     type User {
@@ -147,8 +147,9 @@ function hookUser(schema, types, userDirectory, graphqlFile){
                     fields.filter((f)=> !whitelist.includes(f.name)).map((f)=>{
                         // console.log(f)
                         types.map((t)=>{
+                
                             if(t.name == f.type){
-                                content += `${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },`
+                                content += `${camelize(f.name)+"Id"}: { type: String, required: ${f.required} },`
                             }
                         })
                         let defaultValue = null
@@ -193,12 +194,6 @@ function generateAuthentiations(types){
         if (err) {
             return console.error(err);
         }
-
-        ncp(emailServices, "./outputs/services/email", function (err) {
-            if (err) {
-                return console.error(err);
-            }   
-        })
 
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
 
@@ -251,7 +246,7 @@ function generateAuthentiations(types){
 
         
     });
-    ncp(authGraphql, "./outputs/graphql/user.js", function (err) {
+    ncp('./schema/graphql', './outputs/graphql' , function (err) {
         if (err) {
             return console.error(err);
         }
@@ -280,6 +275,11 @@ function addNewRequester(content, type, requesterName, requesters){
     return content
 }
 async function main(){
+    //create bucket
+    let bucketName = await createBucket({
+        Bucket: APP_NAME
+    })
+
     if(!fs.existsSync("./outputs")){
         fs.mkdirSync("./outputs")
     }
@@ -303,6 +303,19 @@ async function main(){
             name: pluralize.singular(def.name.value),
             fields
         })
+    })
+
+    //generate email services
+    ncp(emailServices, "./outputs/services/email", function (err) {
+        if (err) {
+            return console.error(err);
+        }   
+    })
+    //generate storage services
+    ncp(storageServices, './outputs/services/storage', function (err){
+        if(err){
+            return console.log(err)
+        }
     })
 
     generateAuthentiations(types)
@@ -365,7 +378,13 @@ async function main(){
             // ncp(configPath+"default.json", path+"/config/default.json")
             ncp(schemaExampleFeather+"config.js", path+"config.js")
             ncp('./schema/config.js', './outputs/config.js')
-            ncp('./schema/.env', './outputs/.env')
+            // ncp('./schema/.env', './outputs/.env')
+            fs.readFile('./schema/.env', (err, content)=>{
+                content =  content.toString()
+                content += '\nAPP_NAME='+APP_NAME+"\n"
+                content += 'BUCKET='+bucketName+"\n"
+                fs.writeFileSync('./outputs/.env', content)
+            })
             // ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
             let requesters = ['user']
             fs.readFile(schemaExampleFeather+"index.js", (err, content)=>{
@@ -465,6 +484,53 @@ async function main(){
                             content = contentSplit[0] + onDelete
                             content = addNewRequester(content, e.name, f.name, requesters)
                         }
+                    
+                        if(d.name.value == "File"){
+                            content = addNewRequester(content,e.name,"Storage", requesters)
+
+                            let contentSplit = content.split("//afterCreate")
+                            let hookStorageAfterCreate = `
+                                storageRequester.send({
+                                    type: "uploadFile",
+                                    body: {
+                                        buffer: context.params.file.buffer,
+                                        key: context.params.file.key,
+                                        mimeType: context.params.file.mimeType,
+                                        bucket: context.params.file.bucket
+                                    }
+                                })
+                            `
+                            hookStorageAfterCreate += contentSplit[1]
+                            content = contentSplit[0] + hookStorageAfterCreate
+                            
+                            content = content.split("//afterPatch")
+                            let hookStorageAferUpdate = `
+                                storageRequester.send({
+                                    type: "uploadFile",
+                                    body: {
+                                        buffer: context.params.file.buffer,
+                                        key: context.result.image.split(".com/")[1],
+                                        mimeType: context.params.file.mimeType,
+                                        bucket: context.params.file.bucket
+                                    }
+                                })
+                            `
+                            hookStorageAferUpdate += content[1]
+                            content = content[0] + hookStorageAferUpdate
+
+                            content = content.split("//afterDelete")
+                            let hookStorageAferDelete = `
+                                storageRequester.send({
+                                    type: "deleteFile",
+                                    body: {
+                                        key: context.result.image.split(".com/")[1],
+                                        bucket: context.params.file.bucket
+                                    }
+                                })
+                            `
+                            hookStorageAferDelete += content[1]
+                            content = content[0] + hookStorageAferDelete
+                        }
                     })
                 })
                 
@@ -499,8 +565,8 @@ async function main(){
                                 }
                                 types.map((t)=>{
                                     if(t.name == f.type && f.kind !== "ListType"){
-                                        // console.log("loll",f)
-                                        content += `${camelize(t.name)+"Id"}: { type: String, required: ${f.required} },`
+          
+                                        content += `${camelize(f.name)+"Id"}: { type: String, required: ${f.required} },`
                                     }
                                 })
                                 let defaultValue = null

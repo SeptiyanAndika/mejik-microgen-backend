@@ -48,7 +48,8 @@ exampleService.on("store", async (req, cb) => {
     try{
         let token = req.headers.authorization
         let data = await app.service("examples").create(req.body, {
-            token
+            token,
+            file: req.file
         })
         cb(null, data)
     }catch(error){
@@ -61,7 +62,8 @@ exampleService.on("update", async (req, cb) => {
         let token = req.headers.authorization
         let data = await app.service("examples").patch(req._id, req.body, {
             ...req.params||{},
-            token
+            token,
+            file: req.file
         })
         cb(null, data)
     }catch(error){
@@ -74,7 +76,8 @@ exampleService.on("destroy", async (req, cb) => {
         let token = req.headers.authorization
         let data = await app.service("examples").remove(req._id, {
             ...req.params || {},
-            token
+            token,
+            file: req.file
         })
         cb(null, data)
     }catch(error){
@@ -213,6 +216,29 @@ app.service('examples').hooks({
             }
         }
     },
+    after:{
+        create: async (context)=>{
+            try{
+                //afterCreate
+            }catch(err){
+                throw new Error(err)
+            }
+        },
+        patch: async (context)=>{
+            try{
+                //afterPatch
+            }catch(err){
+                throw new Error(err)
+            }
+        },
+        remove: async (context)=>{
+            try{
+                //afterDelete
+            }catch(err){
+                throw new Error(err)
+            }
+        }
+    }
 })
 
 
