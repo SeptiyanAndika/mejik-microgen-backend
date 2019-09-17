@@ -419,8 +419,8 @@ async function main() {
                                         let beforeUpdate =
                                             `
                                         if(context.id){
-                                            let post = await app.service("posts").get(context.id)
-                                            if(post && post.userId !== auth.user._id){
+                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user._id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }
@@ -432,8 +432,8 @@ async function main() {
                                         let beforeDelete =
                                             `
                                         if(context.id){
-                                            let post = await app.service("posts").get(context.id)
-                                            if(post && post.userId !== auth.user._id){
+                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user._id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }

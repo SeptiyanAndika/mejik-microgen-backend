@@ -176,7 +176,7 @@ type UsersTickets {
 type Order {
     id: String
     event: Event!
-    tickets: [Ticket]
+    ticket: Ticket!
     user: User! @role(onCreate: "own", onUpdateDelete: "own")
     price: Int
     fee: Int
