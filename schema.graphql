@@ -1,4 +1,6 @@
+# =======================================
 # TESTING
+# =======================================
 # type Post {
 #     _id: String!
 #     text: String!
@@ -25,34 +27,37 @@
 # }
 
 
+# =======================================
 # RAJAKARCIS
+# =======================================
+
+# ADMIN
+type Type {
+    _id: String
+    name: String!
+}
+
+type Categorie {
+    _id: String
+    name: String!
+    subcategories: [Subcategorie] @relation(onDelete: CASCADE)
+}
+
+type Subcategorie {
+    _id: String
+    categorie: Categorie!
+    name: String!
+}
+
 type Bank {
     _id: String
     name: String!
 }
 
+# USER
 type User {
-    phoneNumbers: String
+    phoneNumber: String
     image: String
-}
-
-type Ticket {
-    _id: String
-    type: String
-    name: String
-    event: Event
-    qty: Int
-    price: Int
-    startDate: String
-    endDate: String
-    startTime: String
-    endTime: String
-    description: String
-    visibility: String
-    orderMinQty: Int
-    orderMaxQty: Int
-    # salesChannels: String
-    sold: Int
 }
 
 type Event {
@@ -68,78 +73,110 @@ type Event {
     postalCode: String
     city: String
     country: String
-    type: String
-    categorie: String
-    subCategorie: String
-    tags: String
+    type: Type!
+    categorie: Categorie!
+    subcategorie: Subcategorie!
     startDate: String
     endDate: String
     startTime: String
     endTime: String
-    image: String
     tickets: [Ticket] @relation(onDelete: CASCADE)
+    images: [Image] @relation(onDelete: CASCADE)
+    tags: [Tag] @relation(onDelete: CASCADE)
     description: String
     organizer: String
+    tos: String
     refundPolicy: String
     link: String
 }
 
-# type eventTaxes {
-#     _id: String
-#     event: Event!
-#     ticket: Ticket!
-#     taxName: String
-#     taxRate: String
-# }
+type Image {
+    _id: String
+    name: String
+    link: String!
+}
 
-type payout {
+type Tag {
+    _id: String
+    name: String
+}
+
+type Ticket {
+    _id: String
+    event: Event!
+    type: String
+    name: String
+    qty: Int
+    price: Int
+    startDate: String
+    endDate: String
+    startTime: String
+    endTime: String
+    description: String
+    visibility: Int
+    orderMinQty: Int
+    orderMaxQty: Int
+    salesChannels: String
+    sold: Boolean
+}
+
+type eventTaxes {
+    _id: String
+    event: Event!
+    ticket: Ticket!
+    isUsingTax: Boolean
+    taxName: String
+    taxRate: String
+}
+
+type Payout {
     _id: String
     user: User!
+    bank: Bank!
     accountHolder: String
     name: String
     address: String
     city: String
     postalCode: String
     state: String
-    bank: Bank
     branch: String
-    accountNumber: Int
+    accountNumber: String
     accountNickname: String
 }
 
-# type eventReports {
-#     _id: String
-#     event: Event!
-#     totalTicketAvailable: Int
-#     totalTicketPending: Int
-#     totalTicketSold: Int
-#     pageViews: Int
-#     totalPayoutUnpaid: Int
-#     totalPayoutPaid: Int
-# }
+type EventReport {
+    _id: String
+    event: Event!
+    totalTicketAvailable: Int
+    totalTicketPending: Int
+    totalTicketSold: Int
+    pageViews: Int
+    totalPayoutUnpaid: Int
+    totalPayoutPaid: Int
+}
 
-# type eventSales {
-#     _id: String
-#     event: Event
-#     ticket: Ticket
-#     price: Int
-#     firstName: String
-#     lastName: String
-#     email: String
-#     phoneNumber: String
-# }
+type EventSales {
+    _id: String
+    event: Event!
+    ticket: Ticket!
+    price: Int
+    firstName: String
+    lastName: String
+    email: String
+    phoneNumber: String
+}
 
-# type usersTickets {
-#     _id: String
-#     user: User
-#     event: Event
-#     ticket: Ticket
-# }
+type UsersTickets {
+    _id: String
+    user: User!
+    event: Event!
+    ticket: Ticket!
+}
 
 type Order {
     _id: String
     event: Event!
-    ticket: Ticket!
+    tickets: [Ticket]
     user: User! @role(onCreate: "own", onUpdateDelete: "own")
     price: Int
     fee: Int
@@ -153,8 +190,15 @@ type Transaction {
     user: User!
     firstName: String
     lastName: String
+    phoneNumber: String
     email: String
-    # paymentMethod: Bank
+    payment: Payment!
     total: Int
-    status: Int
+    status: Boolean
+}
+
+type Payment {
+    _id: String
+    type: String
+    bank: Bank!
 }
