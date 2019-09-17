@@ -59,7 +59,7 @@ const typeDef = `
     }
 
     type User {
-        _id: ID!
+        id: ID!
         firstName: String
         lastName: String
 		email: String

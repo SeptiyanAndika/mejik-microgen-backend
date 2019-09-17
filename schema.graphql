@@ -2,7 +2,7 @@
 # TESTING
 # =======================================
 # type Post {
-#     _id: String!
+#     id: String!
 #     text: String!
 #     comments: [Comment] @relation(onDelete: CASCADE)
 #     user: User! @role(onCreate: "own", onUpdateDelete: "own")
@@ -33,24 +33,24 @@
 
 # ADMIN
 type Type {
-    _id: String
+    id: String
     name: String!
 }
 
 type Categorie {
-    _id: String
+    id: String
     name: String!
     subcategories: [Subcategorie] @relation(onDelete: CASCADE)
 }
 
 type Subcategorie {
-    _id: String
+    id: String
     categorie: Categorie!
     name: String!
 }
 
 type Bank {
-    _id: String
+    id: String
     name: String!
 }
 
@@ -61,7 +61,7 @@ type User {
 }
 
 type Event {
-    _id: String
+    id: String
     user: User @role(onCreate: "own", onDelete: "own")
     name: String
     locationType: String
@@ -91,18 +91,18 @@ type Event {
 }
 
 type Image {
-    _id: String
+    id: String
     name: String
     link: String!
 }
 
 type Tag {
-    _id: String
+    id: String
     name: String
 }
 
 type Ticket {
-    _id: String
+    id: String
     event: Event!
     type: String
     name: String
@@ -121,7 +121,7 @@ type Ticket {
 }
 
 type eventTaxes {
-    _id: String
+    id: String
     event: Event!
     ticket: Ticket!
     isUsingTax: Boolean
@@ -130,7 +130,7 @@ type eventTaxes {
 }
 
 type Payout {
-    _id: String
+    id: String
     user: User!
     bank: Bank!
     accountHolder: String
@@ -145,7 +145,7 @@ type Payout {
 }
 
 type EventReport {
-    _id: String
+    id: String
     event: Event!
     totalTicketAvailable: Int
     totalTicketPending: Int
@@ -156,7 +156,7 @@ type EventReport {
 }
 
 type EventSales {
-    _id: String
+    id: String
     event: Event!
     ticket: Ticket!
     price: Int
@@ -167,14 +167,14 @@ type EventSales {
 }
 
 type UsersTickets {
-    _id: String
+    id: String
     user: User!
     event: Event!
     ticket: Ticket!
 }
 
 type Order {
-    _id: String
+    id: String
     event: Event!
     tickets: [Ticket]
     user: User! @role(onCreate: "own", onUpdateDelete: "own")
@@ -186,7 +186,7 @@ type Order {
 }
 
 type Transaction {
-    _id: String
+    id: String
     user: User!
     firstName: String
     lastName: String
@@ -198,7 +198,7 @@ type Transaction {
 }
 
 type Payment {
-    _id: String
+    id: String
     type: String
     bank: Bank!
 }

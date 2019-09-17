@@ -123,6 +123,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
 
             fs.readFile(userDirectory + "/src/model.js", (err, x) => {
                 let content = "module.exports = function (app) {\n"
+                content += "const mongooseVirtuals = require('mongoose-lean-virtuals');\n"
                 content += "const mongooseClient = app.get('mongooseClient');\n"
                 content += `const model = new mongooseClient.Schema({\n`
                 // //fields
@@ -175,6 +176,12 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                 },{
                     timestamps: true
                 })
+                    model.virtual('id').get(function () {
+                        return this._id
+                    })
+                    model.set('toObject', { virtuals: true })
+                    model.set('toJSON', { virtuals: true })
+                    model.plugin(mongooseVirtuals)
                     return mongooseClient.model("users", model)
                 }
             `
@@ -499,6 +506,7 @@ async function main() {
 
                         if (fileName == "model.js") {
                             content = "module.exports = function (app) {\n"
+                            content += "const mongooseVirtuals = require('mongoose-lean-virtuals');\n"
                             content += "const mongooseClient = app.get('mongooseClient');\n"
                             content += `const model = new mongooseClient.Schema({\n`
                             //fields
@@ -532,6 +540,12 @@ async function main() {
                                 },{
                                     timestamps: true
                                 })
+                                    model.virtual('id').get(function () {
+                                        return this._id
+                                    })
+                                    model.set('toObject', { virtuals: true })
+                                    model.set('toJSON', { virtuals: true })
+                                    model.plugin(mongooseVirtuals)
                                     return mongooseClient.model("${pluralize(camelize(e.name))}", model)
                                 }
                             `

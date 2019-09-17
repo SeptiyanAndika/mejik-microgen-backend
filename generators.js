@@ -261,8 +261,8 @@ const generateGraphqlSchema = (schema) => {
         subscriptionPrepend += `\n       ${camelize(typeName)}Deleted: ${typeName}`
 
         mutationPrepend += `\n       create${typeName}(input: ${typeName}Input): ${typeName}`
-        mutationPrepend += `\n       update${typeName}(input: ${typeName}Input, _id: String): ${typeName}`
-        mutationPrepend += `\n       delete${typeName}(_id: String): ${typeName}`
+        mutationPrepend += `\n       update${typeName}(input: ${typeName}Input, id: String): ${typeName}`
+        mutationPrepend += `\n       delete${typeName}(id: String): ${typeName}`
 
 
         const queries = queriesPrepend + queriesAppend
@@ -325,14 +325,14 @@ const generateGraphqlSchema = (schema) => {
                                 return data
                             },`
 
-        resolverMutations += `update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                                let data = await ${requester}.send({ type: 'update', body: input, _id, headers})
+        resolverMutations += `update${typeName}: async(_, { input = {} , id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
+                                let data = await ${requester}.send({ type: 'update', body: input, _id: id, headers})
                                 pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: data })
                                 return data
                             },`
 
-        resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                                let data = await ${requester}.send({ type: 'destroy', _id,  headers})
+        resolverMutations += `delete${typeName}: async(_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
+                                let data = await ${requester}.send({ type: 'destroy', _id: id,  headers})
                                 pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: data })
                                 return data
                             },`
