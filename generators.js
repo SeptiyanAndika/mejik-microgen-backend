@@ -9,20 +9,20 @@ const isRelation = (types, name) => {
     }
 }
 
-const field = (types, name, type, directives) =>{
+const field = (types, name, type, directives) => {
     let fieldName = name
-    let fieldType = type.kind == "NamedType" ?  type.name.value  : type.type.name.value
-    directives.map((d)=>{
-        if(d.name.value == "File"){
+    let fieldType = type.kind == "NamedType" ? type.name.value : type.type.name.value
+    directives.map((d) => {
+        if (d.name.value == "File") {
             fieldType = "Upload"
         }
     })
-    if( type.name && types.includes(camelize(type.name.value))){
-        fieldName =  camelize(name)+"Id"
+    if (type.name && types.includes(camelize(type.name.value))) {
+        fieldName = camelize(name) + "Id"
         fieldType = "String"
-    }else{
-        if(types.includes(name) || fieldType == "User"){
-            fieldName =  camelize(name)+"Id"
+    } else {
+        if (types.includes(name) || fieldType == "User") {
+            fieldName = camelize(name) + "Id"
             fieldType = "String"
         }
     }
@@ -49,13 +49,13 @@ const generatePackageJSON = (types) => {
     packageJSON["scripts"]["user-services"] = "cd ./services/user && nodemon index.js"
     packageJSON["scripts"]["email-services"] = "cd ./services/email && nodemon index.js"
     packageJSON["scripts"]["storage-services"] = "cd ./services/storage && nodemon index.js"
-    types.map((type)=>{
-        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/"+camelize(type)+ " && nodemon index.js"
+    types.map((type) => {
+        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/" + camelize(type) + " && nodemon index.js"
     })
 
-    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services storage-services user-services ${types.map((type)=> `${camelize(type)}-services`).join(" ")}`
+    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services storage-services user-services ${types.map((type) => `${camelize(type)}-services`).join(" ")}`
 
-    fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON,null,4))
+    fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON, null, 4))
 }
 
 const generateGraphqlServer = (types) => {
@@ -75,16 +75,16 @@ const generateGraphqlServer = (types) => {
     })
 
     content +=
-        `const pubSub = new PubSub()\n`+ 
-        `\nconst cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })\n`+
-        "const typeDefs = gql`\n"+
-        "   type Query { default: String }\n"+
-        "   type Response { message: String }\n"+
-        "   type Mutation { default: String }\n"+
-        "   type Subscription { default: String }\n"+
-        "   scalar JSON\n"+
-        "   scalar Upload\n"+
-        "   scalar Date\n`"+
+        `const pubSub = new PubSub()\n` +
+        `\nconst cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })\n` +
+        "const typeDefs = gql`\n" +
+        "   type Query { default: String }\n" +
+        "   type Response { message: String }\n" +
+        "   type Mutation { default: String }\n" +
+        "   type Subscription { default: String }\n" +
+        "   scalar JSON\n" +
+        "   scalar Upload\n" +
+        "   scalar Date\n`" +
 
         `
         const resolver = {
@@ -121,14 +121,14 @@ const generateGraphqlServer = (types) => {
             name: 'User Requester', 
             key: 'user',
         })      
-            ` 
+            `
 
     content += `
         const storageRequester = new cote.Requester({ 
             name: 'Storage Requester', 
             key: 'storage',
         })      
-        ` 
+        `
 
 
     content += `
@@ -192,8 +192,8 @@ const generateGraphqlSchema = (schema) => {
     let contents = []
     let types = ["user"]
     let filesTypes = []
-    for(let i =0; i < schema.definitions.length; i++){
-        if(reservedTypes.includes(schema.definitions[i].name.value)){
+    for (let i = 0; i < schema.definitions.length; i++) {
+        if (reservedTypes.includes(schema.definitions[i].name.value)) {
             continue
         }
         if (whitelistTypes.includes(schema.definitions[i].kind)) {
@@ -202,9 +202,9 @@ const generateGraphqlSchema = (schema) => {
         let typeName = pluralize.singular(schema.definitions[i].name.value)
         types.push(camelize(typeName))
     }
-    for(let i =0; i < schema.definitions.length; i++){
+    for (let i = 0; i < schema.definitions.length; i++) {
 
-        if(reservedTypes.includes(schema.definitions[i].name.value)){
+        if (reservedTypes.includes(schema.definitions[i].name.value)) {
             continue
         }
         if (whitelistTypes.includes(schema.definitions[i].kind)) {
@@ -215,7 +215,7 @@ const generateGraphqlSchema = (schema) => {
         let type = `    type ${typeName} {\n`
 
         let relationTypes = []
-        schema.definitions[i].fields.map((e)=>{
+        schema.definitions[i].fields.map((e) => {
             // console.log("1/111", e)
             // let isFile = false
 
@@ -228,9 +228,9 @@ const generateGraphqlSchema = (schema) => {
             // if(e.type.type){
             //     console.log(e.type.type.name.value)
             // }
-            if(e.type.type){
-               
-                if(types.includes(camelize(e.type.type.name.value))){
+            if (e.type.type) {
+
+                if (types.includes(camelize(e.type.type.name.value))) {
                     // for(let j = 0; j < schema.definitions.length ; j++){
                     //     if(schema.definitions[j].name.value == e.type.type.name.value){
                     //         for(let k = 0; k < schema.definitions[j].fields.length; k ++){
@@ -245,23 +245,23 @@ const generateGraphqlSchema = (schema) => {
                     relationTypes.push({
                         name: e.name.value,
                         relatedTo: camelize(e.type.type.name.value),
-                        type: e.type.kind, 
+                        type: e.type.kind,
                     })
 
                     // if(isFile){
                     //     type += `       ${e.name.value} (query: JSON): Upload \n`
                     // }else{
-                        type += `       ${e.name.value} (query: JSON): ${fieldType(e.type)} \n`
+                    type += `       ${e.name.value} (query: JSON): ${fieldType(e.type)} \n`
                     // }
 
-                    
-                }else{
+
+                } else {
                     type += `       ${e.name.value}: ${fieldType(e.type)} \n`
                 }
-            }else{
-                if(e.type.name.value){
+            } else {
+                if (e.type.name.value) {
 
-                    if(types.includes(camelize(e.type.name.value))){
+                    if (types.includes(camelize(e.type.name.value))) {
                         relationTypes.push({
                             name: e.name.value,
                             relatedTo: camelize(e.type.name.value),
@@ -269,13 +269,13 @@ const generateGraphqlSchema = (schema) => {
                         })
 
                         type += `       ${e.name.value} (query: JSON): ${fieldType(e.type)} \n`
-                    }else{
+                    } else {
                         type += `       ${e.name.value}: ${fieldType(e.type)} \n`
                     }
-                }else{
+                } else {
                     type += `       ${e.name.value}: ${fieldType(e.type)} \n`
                 }
-               
+
             }
         })
         type += "    }\n"
@@ -299,26 +299,26 @@ const generateGraphqlSchema = (schema) => {
 
         let mutationPrepend = "    extend type Mutation {"
         let mutationAppend = "\n    }\n"
-    
+
         let files = []
-        
+
         //
         input += `    input ${typeName}Input {\n`
         schema.definitions[i].fields.map((e) => {
             let role = []
             let isFile = false
-            e.directives.map((d)=>{
-                if(d.name.value == "role"){
-                    d.arguments.map((args)=>{
-                        if(args.name.value == "onCreate"){
-                            if(args.value.value == "own"){
+            e.directives.map((d) => {
+                if (d.name.value == "role") {
+                    d.arguments.map((args) => {
+                        if (args.name.value == "onCreate") {
+                            if (args.value.value == "own") {
                                 role.push(args.value.value)
                                 return
                             }
                         }
                     })
                 }
-                if(d.name.value == "File"){
+                if (d.name.value == "File") {
                     // filesTypes.push(schema.definitions[i])
                     files.push(e)
                 }
@@ -337,7 +337,7 @@ const generateGraphqlSchema = (schema) => {
             //         }
             //     }
             // }
-            if(!role.includes("own") && e.type.kind !== "ListType" && e.name.value !== "_id"){
+            if (!role.includes("own") && e.type.kind !== "ListType" && e.name.value !== "_id") {
                 input += `       ${field(types, e.name.value, e.type, e.directives)}\n`
             }
         })
@@ -381,13 +381,17 @@ const generateGraphqlSchema = (schema) => {
         let requester = camelize(typeName) + "Requester"
         //findall
         resolverQueries += `${camelize(pluralize(typeName))}: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
-        resolverQueries += `    if (query && query.id) { query._id = query.id; delete query.id }`
+        resolverQueries += `    if (query && query.id) {\n`
+        resolverQueries += `        query._id = query.id\n`
+        resolverQueries += `        delete query.id }\n`
         resolverQueries += `    return await ${requester}.send({ type: 'index', query, headers})\n`
         resolverQueries += "}, \n"
 
         //connections
         resolverQueries += `${camelize(pluralize(typeName))}Connection: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
-        resolverQueries += `    if (query && query.id) { query._id = query.id; delete query.id }`
+        resolverQueries += `    if (query && query.id) {\n`
+        resolverQueries += `        query._id = query.id\n`
+        resolverQueries += `        delete query.id }\n`
         resolverQueries += `    return await ${requester}.send({ type: 'indexConnection', query, headers})\n`
         resolverQueries += "}, \n"
 
@@ -426,10 +430,10 @@ const generateGraphqlSchema = (schema) => {
         // })
         // console.log("fttt", filesTypes, )
         // console.log("relation file", relationFile)
-        if(files.length > 0){
+        if (files.length > 0) {
             let file = files[0].name.value
             resolverMutations += `
-                create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester })=>{
+                create${typeName}: async(_, { input = {} }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester })=>{
                     if(input.${file}){
                         let image = await input.${file}
                         const key = "${camelize(typeName)}/"+uuid()+"."+image.mimetype.split("/")[1]
@@ -465,20 +469,19 @@ const generateGraphqlSchema = (schema) => {
                     }
                 },
             `
-        }else{
-            resolverMutations +=`create${typeName}: async(_, { input = {} }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{
-
+        } else {
+            resolverMutations += `create${typeName}: async(_, { input = {} }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
                 let data = await ${requester}.send({ type: 'store', body: input, headers})
                 pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: data })
                 return data
             },`
         }
-        
 
-        if(files.length > 0){
+
+        if (files.length > 0) {
             let file = files[0].name.value
             resolverMutations += ` 
-                update${typeName}: async (_, { input = {}, _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
+                update${typeName}: async (_, { input = {}, _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
                     if (input.${file}) {
                         let image = await input.${file}
                         delete input.${file}
@@ -514,17 +517,17 @@ const generateGraphqlSchema = (schema) => {
                     }
 
                 },`
-        }else{
-            resolverMutations +=`update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{
+        } else {
+            resolverMutations += `update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
                 let data = await ${requester}.send({ type: 'update', body: input, _id, headers})
                 pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: data })
                 return data
             },`
         }
 
-        if(files.length > 0){
+        if (files.length > 0) {
             resolverMutations += `
-                delete${typeName}: async (_, { _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
+                delete${typeName}: async (_, { _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
                     let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'destroy', _id, headers })
                     if(${camelize(typeName)}.url){
                         const key = ${camelize(typeName)}.url.split(storageUrl).join("")
@@ -540,8 +543,8 @@ const generateGraphqlSchema = (schema) => {
                     return ${camelize(typeName)}
                 },
             `
-        }else{
-            resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e)=> camelize(e)+"Requester").join(", ")}, headers })=>{
+        } else {
+            resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
                 let data = await ${requester}.send({ type: 'destroy', _id,  headers})
                 pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: data })
                 return data

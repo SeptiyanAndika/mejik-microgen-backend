@@ -25,7 +25,7 @@ const featherDirectory = './outputs/services/';
 const emailServices = "./schema/services/email"
 const authServices = "./schema/services/user"
 const storageServices = "./schema/services/storage"
-const authGraphql =  "./schema/graphql/user.js"
+const authGraphql = "./schema/graphql/user.js"
 const emailGraphql = "./schema/graphql/email.js"
 const baseTypeUser = `
     type User {
@@ -60,7 +60,7 @@ const convertToFeatherTypes = (type) => {
     if (type == "Float") {
         return "String"
     }
-    if (type == "Int"){
+    if (type == "Int") {
         return "Number"
     }
     return type
@@ -106,7 +106,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                     }
                 }
                 if (d.kind == "InputObjectTypeDefinition") {
-                    if (d.name.value == "RegisterInput") {
+                    if (d.name.value == "RegisterInput" || d.name.value == "UpdateUserInput" || d.name.value == "ChangeProfileInput" || d.name.value == "CreateUserInput") {
                         schema.definitions.map((base) => {
                             if (base.name.value == "User") {
                                 base.fields.map((baseField) => {
@@ -261,7 +261,7 @@ function generateAuthentiations(types) {
 
 
     });
-    ncp('./schema/graphql', './outputs/graphql' , function (err) {
+    ncp('./schema/graphql', './outputs/graphql', function (err) {
         if (err) {
             return console.error(err);
         }
@@ -297,13 +297,13 @@ function addNewRequester(content, type, requesterName, requesters) {
     content = contentSplitResponser.join(`${camelize(type)}Service.on`)
     return content
 }
-async function main(){
+async function main() {
     //create bucket
     let bucketName = await createBucket({
         Bucket: APP_NAME
     })
 
-    if(!fs.existsSync("./outputs")){
+    if (!fs.existsSync("./outputs")) {
         fs.mkdirSync("./outputs")
     }
 
@@ -332,11 +332,11 @@ async function main(){
     ncp(emailServices, "./outputs/services/email", function (err) {
         if (err) {
             return console.error(err);
-        }   
+        }
     })
     //generate storage services
-    ncp(storageServices, './outputs/services/storage', function (err){
-        if(err){
+    ncp(storageServices, './outputs/services/storage', function (err) {
+        if (err) {
             return console.log(err)
         }
     })
@@ -402,10 +402,10 @@ async function main(){
             ncp(schemaExampleFeather + "config.js", path + "config.js")
             ncp('./schema/config.js', './outputs/config.js')
             // ncp('./schema/.env', './outputs/.env')
-            fs.readFile('./schema/.env', (err, content)=>{
-                content =  content.toString()
-                content += '\nAPP_NAME='+APP_NAME+"\n"
-                content += 'BUCKET='+bucketName+"\n"
+            fs.readFile('./schema/.env', (err, content) => {
+                content = content.toString()
+                content += '\nAPP_NAME=' + APP_NAME + "\n"
+                content += 'BUCKET=' + bucketName + "\n"
                 fs.writeFileSync('./outputs/.env', content)
             })
             // ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
@@ -507,9 +507,9 @@ async function main(){
                             content = contentSplit[0] + onDelete
                             content = addNewRequester(content, e.name, f.name, requesters)
                         }
-                    
-                        if(d.name.value == "File"){
-                            content = addNewRequester(content,e.name,"Storage", requesters)
+
+                        if (d.name.value == "File") {
+                            content = addNewRequester(content, e.name, "Storage", requesters)
 
                             let contentSplit = content.split("//afterCreate")
                             let hookStorageAfterCreate = `
@@ -525,7 +525,7 @@ async function main(){
                             `
                             hookStorageAfterCreate += contentSplit[1]
                             content = contentSplit[0] + hookStorageAfterCreate
-                            
+
                             content = content.split("//afterPatch")
                             let hookStorageAferUpdate = `
                                 storageRequester.send({
@@ -587,10 +587,10 @@ async function main(){
                                 if (f.type == "User") {
                                     content += `${f.name}Id: { type: String, required: ${f.required} },`
                                 }
-                                types.map((t)=>{
-                                    if(t.name == f.type && f.kind !== "ListType"){
-          
-                                        content += `${camelize(f.name)+"Id"}: { type: String, required: ${f.required} },`
+                                types.map((t) => {
+                                    if (t.name == f.type && f.kind !== "ListType") {
+
+                                        content += `${camelize(f.name) + "Id"}: { type: String, required: ${f.required} },`
                                     }
                                 })
                                 let defaultValue = null
