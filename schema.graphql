@@ -1,24 +1,11 @@
-type Post {
+type Class {
     _id: String!
-    text: String!
-    comments: [Comment] @relation(onDelete: CASCADE)
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+    name: String!
+    students: [Student]
 }
 
-type UserFriend {
-    _id: String
-    user: User!
-    friend: User!
-}
-
-type User {
-    phoneNumbers: String
-    image: String
-}
-
-type Comment {
-    _id: String
-    post: Post!
-    text: String!
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+type Student {
+    _id: String!
+    name: String!
+    class: Class
 }
