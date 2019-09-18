@@ -1,30 +1,30 @@
 # =======================================
 # TESTING
 # =======================================
-type Post {
-    id: String!
-    text: String!
-    comments: [Comment] @relation(onDelete: CASCADE)
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
-}
+# type Post {
+#     id: String!
+#     text: String!
+#     comments: [Comment] @relation(onDelete: CASCADE)
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
 
-type UserFriend {
-    _id: String
-    user: User!
-    friend: User!
-}
+# type UserFriend {
+#     _id: String
+#     user: User!
+#     friend: User!
+# }
 
-type User {
-    phoneNumbers: String
-    image: String
-}
+# type User {
+#     phoneNumbers: String
+#     image: String
+# }
 
-type Comment {
-    _id: String
-    post: Post!
-    text: String!
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
-}
+# type Comment {
+#     _id: String
+#     post: Post!
+#     text: String!
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
 
 
 # =======================================
@@ -32,174 +32,174 @@ type Comment {
 # =======================================
 
 # ADMIN
-# type Type {
-#     id: String
-#     name: String!
-# }
+type Type {
+    id: String
+    name: String!
+}
 
-# type Category {
-#     id: String
-#     name: String!
-#     subCategories: [SubCategory] @relation(onDelete: CASCADE)
-# }
+type Category {
+    id: String
+    name: String!
+    subCategories: [SubCategory] @relation(onDelete: CASCADE)
+}
 
-# type SubCategory {
-#     id: String
-#     category: Category!
-#     name: String!
-# }
+type SubCategory {
+    id: String
+    category: Category!
+    name: String!
+}
 
-# type Bank {
-#     id: String
-#     name: String!
-# }
+type Bank {
+    id: String
+    name: String!
+}
 
-# # USER
-# type User {
-#     phoneNumber: String
-#     image: String
-# }
+# USER
+type User {
+    phoneNumber: String
+    image: String
+}
 
-# type Event {
-#     id: String
-#     user: User! @role(onCreate: "own", onDelete: "own")
-#     name: String
-#     locationType: String
-#     locationName: String
-#     latitude: String
-#     longitude: String
-#     address: String
-#     state: String
-#     postalCode: String
-#     city: String
-#     country: String
-#     type: Type!
-#     category: Category!
-#     subCategory: SubCategory!
-#     startDate: String
-#     endDate: String
-#     startTime: String
-#     endTime: String
-#     tickets: [Ticket] @relation(onDelete: CASCADE)
-#     images: [Image] @relation(onDelete: CASCADE)
-#     tags: [Tag] @relation(onDelete: CASCADE)
-#     description: String
-#     organizer: String
-#     tos: String
-#     refundPolicy: String
-#     link: String
-# }
+type Event {
+    id: String
+    user: User! @role(onCreate: "own", onDelete: "own")
+    name: String
+    locationType: String
+    locationName: String
+    latitude: String
+    longitude: String
+    address: String
+    state: String
+    postalCode: String
+    city: String
+    country: String
+    type: Type!
+    category: Category!
+    subCategory: SubCategory!
+    startDate: String
+    endDate: String
+    startTime: String
+    endTime: String
+    tickets: [Ticket] @relation(onDelete: CASCADE)
+    images: [Image] @relation(onDelete: CASCADE)
+    tags: [Tag] @relation(onDelete: CASCADE)
+    description: String
+    organizer: String
+    tos: String
+    refundPolicy: String
+    link: String
+}
 
-# type Image {
-#     id: String
-#     name: String
-#     link: String! @File
-#     event: Event!
-# }
+type Image {
+    id: String
+    name: String
+    link: String! @File
+    event: Event!
+}
 
-# type Tag {
-#     id: String
-#     name: String
-# }
+type Tag {
+    id: String
+    name: String
+}
 
-# type Ticket {
-#     id: String
-#     event: Event!
-#     type: String
-#     name: String
-#     qty: Int
-#     price: Int
-#     startDate: String
-#     endDate: String
-#     startTime: String
-#     endTime: String
-#     description: String
-#     visibility: Int
-#     orderMinQty: Int
-#     orderMaxQty: Int
-#     salesChannels: String
-#     sold: Boolean
-# }
+type Ticket {
+    id: String
+    event: Event!
+    type: String
+    name: String
+    qty: Int
+    price: Int
+    startDate: String
+    endDate: String
+    startTime: String
+    endTime: String
+    description: String
+    visibility: Int
+    orderMinQty: Int
+    orderMaxQty: Int
+    salesChannels: String
+    sold: Boolean
+}
 
-# type EventTaxe {
-#     id: String
-#     event: Event!
-#     ticket: Ticket!
-#     isUsingTax: Boolean
-#     taxName: String
-#     taxRate: String
-# }
+type EventTaxe {
+    id: String
+    event: Event!
+    ticket: Ticket!
+    isUsingTax: Boolean
+    taxName: String
+    taxRate: String
+}
 
-# type Payout {
-#     id: String
-#     user: User!
-#     bank: Bank!
-#     accountHolder: String
-#     name: String
-#     address: String
-#     city: String
-#     postalCode: String
-#     state: String
-#     branch: String
-#     accountNumber: String
-#     accountNickname: String
-# }
+type Payout {
+    id: String
+    user: User!
+    bank: Bank!
+    accountHolder: String
+    name: String
+    address: String
+    city: String
+    postalCode: String
+    state: String
+    branch: String
+    accountNumber: String
+    accountNickname: String
+}
 
-# type EventReport {
-#     id: String
-#     event: Event!
-#     totalTicketAvailable: Int
-#     totalTicketPending: Int
-#     totalTicketSold: Int
-#     pageViews: Int
-#     totalPayoutUnpaid: Int
-#     totalPayoutPaid: Int
-# }
+type EventReport {
+    id: String
+    event: Event!
+    totalTicketAvailable: Int
+    totalTicketPending: Int
+    totalTicketSold: Int
+    pageViews: Int
+    totalPayoutUnpaid: Int
+    totalPayoutPaid: Int
+}
 
-# type EventSale {
-#     id: String
-#     event: Event!
-#     ticket: Ticket!
-#     price: Int
-#     firstName: String
-#     lastName: String
-#     email: String
-#     phoneNumber: String
-# }
+type EventSale {
+    id: String
+    event: Event!
+    ticket: Ticket!
+    price: Int
+    firstName: String
+    lastName: String
+    email: String
+    phoneNumber: String
+}
 
-# type UsersTicket {
-#     id: String
-#     user: User!
-#     event: Event!
-#     ticket: Ticket!
-# }
+type UsersTicket {
+    id: String
+    user: User!
+    event: Event!
+    ticket: Ticket!
+}
 
-# type Order {
-#     id: String
-#     event: Event!
-#     ticket: Ticket!
-#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
-#     price: Int
-#     fee: Int
-#     qty: Int
-#     subtotal: Int
-#     transaction: Transaction
-# }
+type Order {
+    id: String
+    event: Event!
+    ticket: Ticket!
+    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+    price: Int
+    fee: Int
+    qty: Int
+    subtotal: Int
+    transaction: Transaction
+}
 
-# type Transaction {
-#     id: String
-#     user: User!
-#     firstName: String
-#     lastName: String
-#     phoneNumber: String
-#     email: String
-#     payment: Payment!
-#     total: Int
-#     status: Boolean
-# }
+type Transaction {
+    id: String
+    user: User!
+    firstName: String
+    lastName: String
+    phoneNumber: String
+    email: String
+    payment: Payment!
+    total: Int
+    status: Boolean
+}
 
-# type Payment {
-#     id: String
-#     type: String
-#     bank: Bank!
-# }
+type Payment {
+    id: String
+    type: String
+    bank: Bank!
+}

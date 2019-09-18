@@ -19,17 +19,33 @@ const emailRequester = new cote.Requester({
 
 userService.on("index", async (req, cb) => {
 	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		if (user.role !== 'admin') {
+			throw Error(UnAuthorized)
+		}
 		const users = await app.service("users").find({
-			query: req.query
+			query: req.query,
 		});
 		cb(null, users.data);
 	} catch (error) {
-		cb(error, null);
+		cb(error.message, null);
 	}
 });
 
 userService.on("indexConnection", async (req, cb) => {
 	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		if (user.role !== 'admin') {
+			throw Error(UnAuthorized)
+		}
 		const users = await app.service("users").find({
 			query: req.query
 		});
@@ -71,7 +87,7 @@ userService.on("user", async (req, cb) => {
 
 		cb(null, data);
 	} catch (error) {
-		cb(null, null);
+		cb(error.message, null);
 	}
 });
 
@@ -304,7 +320,7 @@ userService.on("createUser", async (req, cb) => {
 	}
 });
 
-userService.on("update", async (req, cb) => {
+userService.on("changeProfile", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let verify = await app
