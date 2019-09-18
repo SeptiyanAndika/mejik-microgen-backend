@@ -9,7 +9,8 @@ module.exports = {
 
 	forgetPasswordExpired: 1,
 	email: {
-		from: "dev@microgen.com"
+		from: "dev@microgen.com",
+		emailImageHeader: null
 	},
 	feathers: {
 		paginate: {

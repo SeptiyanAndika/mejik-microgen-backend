@@ -16,8 +16,11 @@ const typeDef = `
 		password: String
 		firstName: String
 		lastName: String
-		phoneNumbers: String
-		image: String
+	}
+
+	input ChangeProfileInput {
+		firstName: String
+		lastName: String
 	}
 
     input CreateUserInput {
@@ -25,7 +28,6 @@ const typeDef = `
         password: String!
         firstName: String!
         lastName: String
-        phoneNumbers: String
         role: String!
 	}
 	
@@ -33,7 +35,7 @@ const typeDef = `
 		token: String!
 	}
 
-	type UserConnection {
+	type UsersConnection {
 		total: Int
 		limit: Int
 		skip: Int
@@ -43,7 +45,7 @@ const typeDef = `
     extend type Query {
         users (query: JSON): [User]
 		user (query: JSON): User
-		userConnection (query: JSON): UserConnection
+		usersConnection (query: JSON): UsersConnection
     }
 
     extend type Mutation {
@@ -55,7 +57,7 @@ const typeDef = `
 		verifyEmail(input: VerifyEmailInput): Response
 		updateUser(input: UpdateUserInput, id: String!): User
 		deleteUser(id: String!): User
-		changeProfile(input: UpdateUserInput): User
+		changeProfile(input: ChangeProfileInput): User
     }
 
     type User {
@@ -89,94 +91,56 @@ const typeDef = `
 const resolvers = {
 	Query: {
 		users: async (_, { query }, { userRequester }) => {
-			if (query && query.id) { query._id = query.id; delete query.id }
-			return await userRequester.send({
-				type: "index",
-				query
-			});
+			if (query && query.id) {
+				query._id = query.id
+				delete query.id
+			}
+			return await userRequester.send({ type: "index", query });
 		},
 		user: async (_, { query }, { headers, userRequester }) => {
-			if (query && query.id) { query._id = query.id; delete query.id }
-			return await userRequester.send({
-				type: "user",
-				query,
-				headers
-			});
+			if (query && query.id) {
+				query._id = query.id
+				delete query.id
+			}
+			return await userRequester.send({ type: "user", query, headers });
 		},
-		userConnection: async (_, { query }, { headers, userRequester }) => {
-			if (query && query.id) { query._id = query.id; delete query.id }
-			return await userRequester.send({
-				type: "indexConnection",
-				query,
-				headers
-			});
+		usersConnection: async (_, { query }, { headers, userRequester }) => {
+			if (query && query.id) {
+				query._id = query.id
+				delete query.id
+			}
+			return await userRequester.send({ type: "indexConnection", query, headers });
 		},
 	},
 	Mutation: {
 		resetPassword: async (_, { input = {} }, { userRequester, headers }) => {
-			let data = await userRequester.send({
-				type: "resetPassword",
-				body: input,
-				headers
-			});
+			let data = await userRequester.send({ type: "resetPassword", body: input, headers });
 			return data;
 		},
 		forgetPassword: async (_, { input = {} }, { userRequester, headers }) => {
-			let data = await userRequester.send({
-				type: "forgetPassword",
-				body: input,
-				headers
-			});
+			let data = await userRequester.send({ type: "forgetPassword", body: input, headers });
 			return data;
 		},
 		createUser: async (_, { input }, { userRequester, headers }) => {
-			return await userRequester.send({
-				type: "createUser",
-				body: input,
-				headers
-			});
+			return await userRequester.send({ type: "createUser", body: input, headers });
 		},
 		updateUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({
-				type: "updateUser",
-				body: input,
-				_id: id,
-				headers
-			});
+			return await userRequester.send({ type: "updateUser", body: input, _id: id, headers });
 		},
 		deleteUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({
-				type: "deleteUser",
-				body: input,
-				_id: id,
-				headers
-			});
+			return await userRequester.send({ type: "deleteUser", body: input, _id: id, headers });
 		},
 		changeProfile: async (_, { input = {} }, { userRequester, headers }) => {
-			return await userRequester.send({
-				type: "update",
-				body: input,
-				headers
-			});
+			return await userRequester.send({ type: "update", body: input, headers });
 		},
 		verifyEmail: async (_, { input }, { userRequester, headers }) => {
-			return await userRequester.send({
-				type: "verifyEmail",
-				body: input,
-				headers
-			});
+			return await userRequester.send({ type: "verifyEmail", body: input, headers });
 		},
 		login: async (_, { input }, { userRequester }) => {
-			return await userRequester.send({
-				type: "login",
-				body: input
-			});
+			return await userRequester.send({ type: "login", body: input });
 		},
 		register: async (_, { input }, { userRequester }) => {
-			return await userRequester.send({
-				type: "register",
-				body: input
-			});
+			return await userRequester.send({ type: "register", body: input });
 		}
 	}
 };
