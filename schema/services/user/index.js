@@ -1,4 +1,4 @@
-const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email, emailImageHeader } = require("./config");
+const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email, application } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -107,14 +107,12 @@ userService.on("forgetPassword", async (req, cb) => {
 		emailRequester.send({
 			type: "send",
 			body: {
-				email: req.body.email,
-				from: email.from,
+				to: req.body.email,
 				subject: "Forget Password",
-				emailImageHeader: null,
-				emailTitle: "You are forget password",
-				emailBody: `You are receiving this email as you have requested to change your account password. Here is your verification code:`,
+				emailImageHeader: email.emailImageHeader,
+				title: "You are forget password",
+				body: `You are receiving this email as you have requested to change your account password. Click the button below to reset your password`,
 				emailLink: HOST + "/user/resetPassword?token=" + req.body.token,
-				emailVerificationCode: req.body.token
 			}
 		});
 		cb(null, {
@@ -146,9 +144,7 @@ userService.on("resetPassword", async (req, cb) => {
 
 		await app.service("users").patch(
 			null,
-			{
-				password: req.body.newPassword
-			},
+			{ password: req.body.newPassword },
 			{
 				query: {
 					email: data.email
@@ -191,9 +187,7 @@ userService.on("verifyEmail", async (req, cb) => {
 
 		await app.service("users").patch(
 			null,
-			{
-				status: 1
-			},
+			{ status: 1 },
 			{
 				query: {
 					email: data.email
@@ -260,14 +254,12 @@ userService.on("register", async (req, cb) => {
 		emailRequester.send({
 			type: "send",
 			body: {
-				email: req.body.email,
-				from: email.from,
-				subject: "Email Verification",
+				to: req.body.email,
+				subject: `${application.name} Verification`,
 				emailImageHeader: email.emailImageHeader,
-				emailTitle: "Verify Your Email Immediately",
-				emailBody: `Thank you for joining! Here is the secret code to verify your email:`,
-				emailLink: HOST + "/user/verify?token=" + emailToken,
-				emailVerificationCode: emailToken
+				title: "Verify Your Email Immediately",
+				body: `Thank you for joining! To verify your email click the button below:`,
+				emailLink: HOST + "/user/verify?token=" + emailToken
 			}
 		});
 		cb(null, {

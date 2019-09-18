@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { email, app } = require('../../config')
 
 module.exports = {
 	REDIS_PORT: process.env.REDIS_PORT,
@@ -9,8 +10,10 @@ module.exports = {
 
 	forgetPasswordExpired: 1,
 	email: {
-		from: "dev@microgen.com",
-		emailImageHeader: null
+		emailImageHeader: email.logo
+	},
+	application: {
+		name: app.name
 	},
 	feathers: {
 		paginate: {
