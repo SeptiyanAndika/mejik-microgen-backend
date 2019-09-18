@@ -445,11 +445,11 @@ const generateGraphqlSchema = (schema) => {
             resolverMutations += `
                 create${typeName}: async(_, { input = {} }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester })=>{
                     if(input.${file}){
-                        let image = await input.${file}
-                        const key = "${camelize(typeName)}/"+uuid()+"."+image.mimetype.split("/")[1]
+                        let image${typeName} = await input.${file}
+                        const key = "${camelize(typeName)}/"+uuid()+"."+image${typeName}.mimetype.split("/")[1]
                         const url = storageUrl+key
                         input.${file} = url
-                        const rs = image.createReadStream()
+                        const rs = image${typeName}.createReadStream()
                         let buffers = []
                         return new Promise((resolve, reject)=>{
                             rs.on('data', async (data) => {
@@ -464,7 +464,7 @@ const generateGraphqlSchema = (schema) => {
                                     file: {
                                         buffer,
                                         key,
-                                        mimeType: image.mimetype,
+                                        mimeType: image${typeName}.mimetype,
                                         bucket
                                     }
                                 })
@@ -493,10 +493,10 @@ const generateGraphqlSchema = (schema) => {
             resolverMutations += ` 
                 update${typeName}: async (_, { input = {}, _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
                     if (input.${file}) {
-                        let image = await input.${file}
+                        let image${typeName} = await input.${file}
                         delete input.${file}
   
-                        const rs = image.createReadStream()
+                        const rs = image${typeName}.createReadStream()
                         let buffers = []
                         return new Promise((resolve, reject)=>{
                             rs.on('data', async (data) => {
@@ -511,7 +511,7 @@ const generateGraphqlSchema = (schema) => {
                                     headers,
                                     file: {
                                         buffer,
-                                        mimeType: image.mimetype,
+                                        mimeType: image${typeName}.mimetype,
                                         bucket
                                     }
                                 })
