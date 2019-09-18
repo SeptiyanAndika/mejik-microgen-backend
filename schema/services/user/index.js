@@ -1,4 +1,4 @@
-const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email } = require("./config");
+const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email, emailImageHeader } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -103,8 +103,6 @@ userService.on("forgetPassword", async (req, cb) => {
 			return;
 		}
 		req.body.token = bcrypt.genSaltSync();
-		const emailBody = `You are receiving this email as you have requested to change your account password.
-		Here is your verification code: <strong>${req.body.token}</strong>. Please enter the code on the verification page or simply click this button:`;
 		await app.service("forgetPasswords").create(req.body);
 		emailRequester.send({
 			type: "send",
@@ -114,8 +112,9 @@ userService.on("forgetPassword", async (req, cb) => {
 				subject: "Forget Password",
 				emailImageHeader: null,
 				emailTitle: "You are forget password",
-				emailBody: emailBody,
-				emailLink: HOST + "/user/resetPassword?token=" + req.body.token
+				emailBody: `You are receiving this email as you have requested to change your account password. Here is your verification code:`,
+				emailLink: HOST + "/user/resetPassword?token=" + req.body.token,
+				emailVerificationCode: req.body.token
 			}
 		});
 		cb(null, {
@@ -258,17 +257,17 @@ userService.on("register", async (req, cb) => {
 			email: req.body.email,
 			token: emailToken
 		});
-
 		emailRequester.send({
 			type: "send",
 			body: {
 				email: req.body.email,
 				from: email.from,
 				subject: "Email Verification",
-				emailImageHeader: null,
-				emailTitle: "Email Verification",
-				emailBody: "Verification",
-				emailLink: HOST + "/user/verify?token=" + emailToken
+				emailImageHeader: email.emailImageHeader,
+				emailTitle: "Verify Your Email Immediately",
+				emailBody: `Thank you for joining! Here is the secret code to verify your email:`,
+				emailLink: HOST + "/user/verify?token=" + emailToken,
+				emailVerificationCode: emailToken
 			}
 		});
 		cb(null, {
