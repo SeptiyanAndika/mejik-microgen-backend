@@ -1,12 +1,13 @@
 export const typeDef = `
     input EmailInput {
+        to: String
         from: String!
         subject: String!
         emailImageHeader: String
         emailTitle: String!
         emailBody: String!
         emailLink: String
-
+        emailVerificationCode: String
     }
 
     extend type Mutation {

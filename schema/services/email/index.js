@@ -34,10 +34,14 @@ emailService.on("store", async (req, cb) => {
 		if (isAdmin.user.role !== 'admin') {
 			throw new Error("UnAuthorized");
 		}
-		const users = await userRequester.send({ type: "index" })
-		users.map(user => {
-			emailRequester.send({ type: "send", body: { ...req.body, email: user.email } });
-		})
+		if (req.body.to) {
+			emailRequester.send({ type: "send", body: { ...req.body, email: req.body.to } });
+		} else {
+			const users = await userRequester.send({ type: "index" })
+			users.map(user => {
+				emailRequester.send({ type: "send", body: { ...req.body, email: user.email } });
+			})
+		}
 		cb(null, { message: "Success." });
 	} catch (error) {
 		cb(error, null);
