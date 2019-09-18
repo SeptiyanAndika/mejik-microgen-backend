@@ -27,6 +27,8 @@ const authServices = "./schema/services/user"
 const storageServices = "./schema/services/storage"
 const authGraphql = "./schema/graphql/user.js"
 const emailGraphql = "./schema/graphql/email.js"
+const pushNotificationServices = './schema/services/push-notification'
+const pushNotificationGraphql = './schema/graphql/pushNotification.js'
 const baseTypeUser = `
     type User {
         _id: String
@@ -204,52 +206,53 @@ function generateAuthentiations(types) {
             return console.error(err);
         }
 
-        ncp(emailServices, "./outputs/services/email", function (err) {
-            if (err) {
-                return console.error(err);
-            }
-        })
-
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
-
+        const defaultPermissions = require('./schema/services/user/permissions')
+       
         const permissions =
             `const permissions = {
                 admin: ['admin:*'],
                 authenticated: [
+                    ${ defaultPermissions.permissions.authenticated.map((t,typeIndex)=>{
+                        return `'${t}'`
+                    }).join(", ")},
                     ${types.map((t, typeIndex) => {
-                if (typeIndex == 0) {
-                    return actions.map((a, actionIndex) => {
-                        // if(typeIndex ==0 && actionIndex == 0){
-                        //     return `'${camelize(t.name)}:${a}'\n`
-                        // }
-                        return `'${camelize(t.name)}:${a}'`
-                    }).join(", ")
-                }
-                return `\n` + actions.map((a, actionIndex) => {
-                    // if(typeIndex ==0 && actionIndex == 0){
-                    //     return `'${camelize(t.name)}:${a}'\n`
-                    // }
-                    return `'${camelize(t.name)}:${a}'`
-                }).join(", ")
-            })}
+                        if (typeIndex == 0) {
+                            return actions.map((a, actionIndex) => {
+                                // if(typeIndex ==0 && actionIndex == 0){
+                                //     return `'${camelize(t.name)}:${a}'\n`
+                                // }
+                                return `'${camelize(t.name)}:${a}'`
+                            }).join(", ")
+                        }
+                        return `\n` + actions.map((a, actionIndex) => {
+                            // if(typeIndex ==0 && actionIndex == 0){
+                            //     return `'${camelize(t.name)}:${a}'\n`
+                            // }
+                            return `'${camelize(t.name)}:${a}'`
+                        }).join(", ")
+                    })}
                 ],
                 public: [
+                    ${ defaultPermissions.permissions.public.map((t,typeIndex)=>{
+                        return `'${t}'`
+                    }).join(", ")},
                     ${types.map((t, typeIndex) => {
-                if (typeIndex == 0) {
-                    return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
-                        // if(typeIndex ==0 && actionIndex == 0){
-                        //     return `'${camelize(t.name)}:${a}'\n`
-                        // }
-                        return `'${camelize(t.name)}:${a}'`
-                    }).join(", ")
-                }
-                return `\n` + actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
-                    if (typeIndex == 0 && actionIndex == 0) {
-                        return `'${camelize(t.name)}:${a}'\n`
-                    }
-                    return `'${camelize(t.name)}:${a}'`
-                }).join(", ")
-            })}
+                        if (typeIndex == 0) {
+                            return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                                // if(typeIndex ==0 && actionIndex == 0){
+                                //     return `'${camelize(t.name)}:${a}'\n`
+                                // }
+                                return `'${camelize(t.name)}:${a}'`
+                            }).join(", ")
+                        }
+                        return `\n` + actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                            if (typeIndex == 0 && actionIndex == 0) {
+                                return `'${camelize(t.name)}:${a}'\n`
+                            }
+                            return `'${camelize(t.name)}:${a}'`
+                        }).join(", ")
+            }       )}
                 ],
             }
             module.exports = {
@@ -337,6 +340,18 @@ async function main() {
     //generate storage services
     ncp(storageServices, './outputs/services/storage', function (err) {
         if (err) {
+            return console.log(err)
+        }
+    })
+    //generate pushNotificationServices
+    ncp(pushNotificationServices, './outputs/services/push-notification', function (err){
+        if(err){
+            return console.log(err)
+        }
+    })
+    
+    ncp(pushNotificationGraphql, './outputs/graphql/pushNotification.js', function (err){
+        if(err){
             return console.log(err)
         }
     })
