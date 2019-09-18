@@ -81,11 +81,6 @@ userService.on("login", async (req, cb) => {
 			strategy: "local",
 			...req.body
 		});
-		if (user.user.status == 0 || !user.user.status) {
-			throw new Error(
-				"Your account is not activate, check your email to activate your account."
-			);
-		}
 		user.token = user.accessToken;
 		cb(null, user);
 	} catch (error) {
