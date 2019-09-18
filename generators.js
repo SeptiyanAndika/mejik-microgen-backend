@@ -49,11 +49,12 @@ const generatePackageJSON = (types) => {
     packageJSON["scripts"]["user-services"] = "cd ./services/user && nodemon index.js"
     packageJSON["scripts"]["email-services"] = "cd ./services/email && nodemon index.js"
     packageJSON["scripts"]["storage-services"] = "cd ./services/storage && nodemon index.js"
+    packageJSON["scripts"]["pushNotification-services"] = "cd ./services/push-notification && nodemon index.js"
     types.map((type)=>{
         packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/"+camelize(type)+ " && nodemon index.js"
     })
 
-    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services storage-services user-services ${types.map((type)=> `${camelize(type)}-services`).join(" ")}`
+    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type)=> `${camelize(type)}-services`).join(" ")}`
 
     fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON,null,4))
 }
@@ -69,6 +70,7 @@ const generateGraphqlServer = (types) => {
 
     content += `import { typeDef as User, resolvers as userResolvers } from './graphql/user'\n`
     content += `import { typeDef as Email, resolvers as emailResolvers } from './graphql/email'\n`
+    content += `import { typeDef as PushNotification, resolvers as pushNotificationResolvers } from './graphql/pushNotification'\n`
     //import all type and resolvers
     types.map((type) => {
         content += `import { typeDef as ${type}, resolvers as ${camelize(type)}Resolvers } from './graphql/${camelize(type)}'\n`
@@ -111,8 +113,8 @@ const generateGraphqlServer = (types) => {
     content +=
         `
         const schema = makeExecutableSchema({
-            typeDefs: [ typeDefs, User, Email, ${types.join(", ")}],
-            resolvers: merge(resolver,  userResolvers, emailResolvers, ${types.map((t) => camelize(t) + "Resolvers({ pubSub })").join(", ")}),
+            typeDefs: [ typeDefs, User, Email, PushNotification, ${types.join(", ")}],
+            resolvers: merge(resolver,  userResolvers, emailResolvers,pushNotificationResolvers, ${types.map((t) => camelize(t) + "Resolvers({ pubSub })").join(", ")}),
         });
         `
 
@@ -135,6 +137,13 @@ const generateGraphqlServer = (types) => {
         const emailRequester = new cote.Requester({ 
             name: 'Email Requester', 
             key: 'email',
+        })      
+            `
+
+    content += `
+        const pushNotificationRequester = new cote.Requester({ 
+            name: 'Push Notification Requester', 
+            key: 'pushNotification',
         })      
             `
     //requster
@@ -169,6 +178,7 @@ const generateGraphqlServer = (types) => {
                 userRequester,
                 storageRequester,
                 emailRequester,
+                pushNotificationRequester,
                 ${types.map((e) => camelize(e) + "Requester").join(", ")}
             }
         }\n`

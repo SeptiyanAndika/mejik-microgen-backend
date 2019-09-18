@@ -27,6 +27,8 @@ const authServices = "./schema/services/user"
 const storageServices = "./schema/services/storage"
 const authGraphql =  "./schema/graphql/user.js"
 const emailGraphql = "./schema/graphql/email.js"
+const pushNotificationServices = './schema/services/push-notification'
+const pushNotificationGraphql = './schema/graphql/pushNotification.js'
 const baseTypeUser = `
     type User {
         _id: String
@@ -204,12 +206,6 @@ function generateAuthentiations(types) {
             return console.error(err);
         }
 
-        ncp(emailServices, "./outputs/services/email", function (err) {
-            if (err) {
-                return console.error(err);
-            }
-        })
-
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
 
         const permissions =
@@ -234,6 +230,8 @@ function generateAuthentiations(types) {
             })}
                 ],
                 public: [
+                    'pushNotification:create',
+                    'pushNotification:remove',
                     ${types.map((t, typeIndex) => {
                 if (typeIndex == 0) {
                     return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
@@ -336,6 +334,18 @@ async function main(){
     })
     //generate storage services
     ncp(storageServices, './outputs/services/storage', function (err){
+        if(err){
+            return console.log(err)
+        }
+    })
+    //generate pushNotificationServices
+    ncp(pushNotificationServices, './outputs/services/push-notification', function (err){
+        if(err){
+            return console.log(err)
+        }
+    })
+    
+    ncp(pushNotificationGraphql, './outputs/graphql/pushNotification.js', function (err){
         if(err){
             return console.log(err)
         }
