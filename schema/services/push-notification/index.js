@@ -141,7 +141,7 @@ pushNotificationService.on("store", async (req, cb) => {
 // pushNotificationService.on("unJoinSegment", async (req, cb) => {
 //     try {
 //         let token = req.headers.authorization
-//         let data = await app.service("pushNotifications").remove(req._id, {
+//         let data = await app.service("pushNotifications").remove(req.id, {
 //             ...req.params || {},
 //             token,
 //             file: req.file
@@ -157,7 +157,7 @@ pushNotificationService.on("store", async (req, cb) => {
 pushNotificationService.on("update", async (req, cb) => {
     try {
         let token = req.headers.authorization
-        let data = await app.service("pushNotifications").patch(req._id, req.body, {
+        let data = await app.service("pushNotifications").patch(req.id, req.body, {
             ...req.params||{},
             token,
             file: req.file
@@ -171,7 +171,7 @@ pushNotificationService.on("update", async (req, cb) => {
 pushNotificationService.on("destroy", async (req, cb) => {
     try {
         let token = req.headers.authorization
-        let data = await app.service("pushNotifications").remove(req._id, {
+        let data = await app.service("pushNotifications").remove(req.id, {
             ...req.params || {},
             token,
             file: req.file
@@ -187,8 +187,8 @@ pushNotificationService.on("show", async (req, cb) => {
     try {
         let token = req.headers.authorizations
         let data = null
-        if (req._id) {
-            data = await app.service("pushNotifications").get(req._id, {
+        if (req.id) {
+            data = await app.service("pushNotifications").get(req.id, {
                 token
             })
         }

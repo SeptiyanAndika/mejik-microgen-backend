@@ -347,7 +347,7 @@ const generateGraphqlSchema = (schema) => {
             //         }
             //     }
             // }
-            if (!role.includes("own") && e.type.kind !== "ListType" && e.name.value !== "_id") {
+            if (!role.includes("own") && e.type.kind !== "ListType" && e.name.value !== "id") {
                 input += `       ${field(types, e.name.value, e.type, e.directives)}\n`
             }
         })
@@ -410,12 +410,12 @@ const generateGraphqlSchema = (schema) => {
 
             relationTypes.map((e) => {
                 if (e.type == "ListType") {
-                    resolverRelations += `${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
-                    resolverRelations += `  return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
+                    resolverRelations += `${pluralize(e.name)}: async ({ id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
+                    resolverRelations += `  return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: id }, query), headers })\n`
                     resolverRelations += `},\n`
                 } else {
                     resolverRelations += `${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
-                    resolverRelations += `  return await ${e.relatedTo}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
+                    resolverRelations += `  return await ${e.relatedTo}Requester.send({ type: 'show', id: ${e.name}Id, headers })\n`
                     resolverRelations += `},\n`
                 }
 
@@ -491,7 +491,7 @@ const generateGraphqlSchema = (schema) => {
         if (files.length > 0) {
             let file = files[0].name.value
             resolverMutations += ` 
-                update${typeName}: async (_, { input = {}, _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
+                update${typeName}: async (_, { input = {}, id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
                     if (input.${file}) {
                         let image${typeName} = await input.${file}
                         delete input.${file}
@@ -507,7 +507,7 @@ const generateGraphqlSchema = (schema) => {
                                 const ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ 
                                     type: 'update', 
                                     body: input, 
-                                    _id, 
+                                    id, 
                                     headers,
                                     file: {
                                         buffer,
@@ -521,15 +521,15 @@ const generateGraphqlSchema = (schema) => {
                             
                         })
                     }else{
-                        let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'update', body: input, _id, headers })
+                        let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'update', body: input, id, headers })
                         pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: ${camelize(typeName)} })
                         return ${camelize(typeName)}
                     }
 
                 },`
         } else {
-            resolverMutations += `update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                let data = await ${requester}.send({ type: 'update', body: input, _id, headers})
+            resolverMutations += `update${typeName}: async(_, { input = {} , id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
+                let data = await ${requester}.send({ type: 'update', body: input, id, headers})
                 pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: data })
                 return data
             },`
@@ -537,8 +537,8 @@ const generateGraphqlSchema = (schema) => {
 
         if (files.length > 0) {
             resolverMutations += `
-                delete${typeName}: async (_, { _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
-                    let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'destroy', _id, headers })
+                delete${typeName}: async (_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
+                    let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'destroy', id, headers })
                     if(${camelize(typeName)}.url){
                         const key = ${camelize(typeName)}.url.split(storageUrl).join("")
                         storageRequester.send({
@@ -554,8 +554,8 @@ const generateGraphqlSchema = (schema) => {
                 },
             `
         } else {
-            resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                let data = await ${requester}.send({ type: 'destroy', _id,  headers})
+            resolverMutations += `delete${typeName}: async(_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
+                let data = await ${requester}.send({ type: 'destroy', id,  headers})
                 pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: data })
                 return data
             },`
@@ -595,7 +595,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 //onDelete
                 //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
-                    _id: null,   
+                    id: null,   
                     headers: {
                         authorization: context.params.token
                     }, 
@@ -613,7 +613,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 //onDelete
                 //ON DELETE SET CASCADE
                 await ${relatedTable}Requester.send({ type: 'destroy', 
-                    _id: null,   
+                    id: null,   
                     headers: {
                         authorization: context.params.token
                     }, 
@@ -645,7 +645,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 //onDelete
                 //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
-                    _id: null,   
+                    id: null,   
                     headers: {
                         authorization: context.params.token
                     }, 

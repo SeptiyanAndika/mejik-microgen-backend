@@ -59,8 +59,8 @@ userService.on("show", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let data = null;
-		if (req._id) {
-			data = await app.service("users").get(req._id, {
+		if (req.id) {
+			data = await app.service("users").get(req.id, {
 				token
 			});
 		}
@@ -80,7 +80,7 @@ userService.on("user", async (req, cb) => {
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
 
-		data = await app.service("users").get(user._id, {
+		data = await app.service("users").get(user.id, {
 			query: req.query,
 			token
 		});
@@ -333,7 +333,7 @@ userService.on("changePassword", async (req, cb) => {
 		if (isValid) {
 			const auth = await app
 				.service("users")
-				.patch(user._id, { password: req.body.newPassword });
+				.patch(user.id, { password: req.body.newPassword });
 			cb(null, {
 				status: 1,
 				message: "Success"
@@ -424,7 +424,7 @@ userService.on("changeProfile", async (req, cb) => {
 			.service("authentication")
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
-		let data = await app.service("users").patch(user._id, req.body, {
+		let data = await app.service("users").patch(user.id, req.body, {
 			...req.params || {},
 			token
 		})
@@ -437,7 +437,7 @@ userService.on("changeProfile", async (req, cb) => {
 userService.on("updateUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
-		let data = await app.service("users").patch(req._id, req.body, {
+		let data = await app.service("users").patch(req.id, req.body, {
 			...req.params || {},
 			token
 		})
@@ -450,7 +450,7 @@ userService.on("updateUser", async (req, cb) => {
 userService.on("deleteUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
-		let data = await app.service("users").remove(req._id, {
+		let data = await app.service("users").remove(req.id, {
 			...req.params || {},
 			token
 		})
