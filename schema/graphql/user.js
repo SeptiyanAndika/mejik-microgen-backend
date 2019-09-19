@@ -3,6 +3,12 @@ const typeDef = `
         email: String!,
         password: String
     }
+	input LoginWithGoogleInput{
+		jwtToken: String
+	}
+	input LoginWithFacebookInput{
+		jwtToken: String
+	}
 	
 	input RegisterInput {
 		email: String!,
@@ -50,7 +56,9 @@ const typeDef = `
 
     extend type Mutation {
         login(input: LoginInput): Login
-        register(input: RegisterInput): Login
+		register(input: RegisterInput): Login
+		loginWithGoogle(input: LoginWithGoogleInput): Login
+		loginWithFacebook(input: LoginWithFacebookInput): Login
         createUser(input: CreateUserInput): Login
         forgetPassword(input: ForgetPasswordInput): Response
 		resetPassword(input: ResetPasswordInput): Response
@@ -90,12 +98,12 @@ const typeDef = `
 `;
 const resolvers = {
 	Query: {
-		users: async (_, { query }, { userRequester }) => {
+		users: async (_, { query }, { userRequester, headers }) => {
 			if (query && query.id) {
 				query._id = query.id
 				delete query.id
 			}
-			return await userRequester.send({ type: "index", query });
+			return await userRequester.send({ type: "index", query, headers });
 		},
 		user: async (_, { query }, { headers, userRequester }) => {
 			if (query && query.id) {
@@ -125,19 +133,25 @@ const resolvers = {
 			return await userRequester.send({ type: "createUser", body: input, headers });
 		},
 		updateUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "updateUser", body: input, _id: id, headers });
+			return await userRequester.send({ type: "updateUser", body: input, id, headers });
 		},
 		deleteUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "deleteUser", body: input, _id: id, headers });
+			return await userRequester.send({ type: "deleteUser", body: input, id, headers });
 		},
 		changeProfile: async (_, { input = {} }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "update", body: input, headers });
+			return await userRequester.send({ type: "changeProfile", body: input, headers });
 		},
 		verifyEmail: async (_, { input }, { userRequester, headers }) => {
 			return await userRequester.send({ type: "verifyEmail", body: input, headers });
 		},
 		login: async (_, { input }, { userRequester }) => {
 			return await userRequester.send({ type: "login", body: input });
+		},
+		loginWithGoogle: async (_, { input }, { userRequester }) => {
+			return await userRequester.send({ type: "loginWithGoogle", body: input });
+		},
+		loginWithFacebook: async (_, { input }, { userRequester }) => {
+			return await userRequester.send({ type: "loginWithFacebook", body: input });
 		},
 		register: async (_, { input }, { userRequester }) => {
 			return await userRequester.send({ type: "register", body: input });

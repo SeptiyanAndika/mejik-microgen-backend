@@ -60,7 +60,7 @@ exampleService.on("store", async (req, cb) => {
 exampleService.on("update", async (req, cb) => {
     try {
         let token = req.headers.authorization
-        let data = await app.service("examples").patch(req._id, req.body, {
+        let data = await app.service("examples").patch(req.id, req.body, {
             ...req.params||{},
             token,
             file: req.file
@@ -74,7 +74,7 @@ exampleService.on("update", async (req, cb) => {
 exampleService.on("destroy", async (req, cb) => {
     try {
         let token = req.headers.authorization
-        let data = await app.service("examples").remove(req._id, {
+        let data = await app.service("examples").remove(req.id, {
             ...req.params || {},
             token,
             file: req.file
@@ -90,8 +90,8 @@ exampleService.on("show", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let data = null
-        if (req._id) {
-            data = await app.service("examples").get(req._id, {
+        if (req.id) {
+            data = await app.service("examples").get(req.id, {
                 token
             })
         }

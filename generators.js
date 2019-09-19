@@ -49,11 +49,12 @@ const generatePackageJSON = (types) => {
     packageJSON["scripts"]["user-services"] = "cd ./services/user && nodemon index.js"
     packageJSON["scripts"]["email-services"] = "cd ./services/email && nodemon index.js"
     packageJSON["scripts"]["storage-services"] = "cd ./services/storage && nodemon index.js"
-    types.map((type) => {
-        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/" + camelize(type) + " && nodemon index.js"
+    packageJSON["scripts"]["pushNotification-services"] = "cd ./services/push-notification && nodemon index.js"
+    types.map((type)=>{
+        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/"+camelize(type)+ " && nodemon index.js"
     })
 
-    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services storage-services user-services ${types.map((type) => `${camelize(type)}-services`).join(" ")}`
+    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type)=> `${camelize(type)}-services`).join(" ")}`
 
     fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON, null, 4))
 }
@@ -69,6 +70,7 @@ const generateGraphqlServer = (types) => {
 
     content += `import { typeDef as User, resolvers as userResolvers } from './graphql/user'\n`
     content += `import { typeDef as Email, resolvers as emailResolvers } from './graphql/email'\n`
+    content += `import { typeDef as PushNotification, resolvers as pushNotificationResolvers } from './graphql/pushNotification'\n`
     //import all type and resolvers
     types.map((type) => {
         content += `import { typeDef as ${type}, resolvers as ${camelize(type)}Resolvers } from './graphql/${camelize(type)}'\n`
@@ -111,8 +113,8 @@ const generateGraphqlServer = (types) => {
     content +=
         `
         const schema = makeExecutableSchema({
-            typeDefs: [ typeDefs, User, Email, ${types.join(", ")}],
-            resolvers: merge(resolver,  userResolvers, emailResolvers, ${types.map((t) => camelize(t) + "Resolvers({ pubSub })").join(", ")}),
+            typeDefs: [ typeDefs, User, Email, PushNotification, ${types.join(", ")}],
+            resolvers: merge(resolver,  userResolvers, emailResolvers,pushNotificationResolvers, ${types.map((t) => camelize(t) + "Resolvers({ pubSub })").join(", ")}),
         });
         `
 
@@ -135,6 +137,13 @@ const generateGraphqlServer = (types) => {
         const emailRequester = new cote.Requester({ 
             name: 'Email Requester', 
             key: 'email',
+        })      
+            `
+
+    content += `
+        const pushNotificationRequester = new cote.Requester({ 
+            name: 'Push Notification Requester', 
+            key: 'pushNotification',
         })      
             `
     //requster
@@ -169,6 +178,7 @@ const generateGraphqlServer = (types) => {
                 userRequester,
                 storageRequester,
                 emailRequester,
+                pushNotificationRequester,
                 ${types.map((e) => camelize(e) + "Requester").join(", ")}
             }
         }\n`
@@ -337,7 +347,7 @@ const generateGraphqlSchema = (schema) => {
             //         }
             //     }
             // }
-            if (!role.includes("own") && e.type.kind !== "ListType" && e.name.value !== "_id") {
+            if (!role.includes("own") && e.type.kind !== "ListType" && e.name.value !== "id") {
                 input += `       ${field(types, e.name.value, e.type, e.directives)}\n`
             }
         })
@@ -400,12 +410,12 @@ const generateGraphqlSchema = (schema) => {
 
             relationTypes.map((e) => {
                 if (e.type == "ListType") {
-                    resolverRelations += `${pluralize(e.name)}: async ({ _id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
-                    resolverRelations += `  return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: _id }, query), headers })\n`
+                    resolverRelations += `${pluralize(e.name)}: async ({ id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
+                    resolverRelations += `  return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: id }, query), headers })\n`
                     resolverRelations += `},\n`
                 } else {
                     resolverRelations += `${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
-                    resolverRelations += `  return await ${e.relatedTo}Requester.send({ type: 'show', _id: ${e.name}Id, headers })\n`
+                    resolverRelations += `  return await ${e.relatedTo}Requester.send({ type: 'show', id: ${e.name}Id, headers })\n`
                     resolverRelations += `},\n`
                 }
 
@@ -435,11 +445,11 @@ const generateGraphqlSchema = (schema) => {
             resolverMutations += `
                 create${typeName}: async(_, { input = {} }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester })=>{
                     if(input.${file}){
-                        let image = await input.${file}
-                        const key = "${camelize(typeName)}/"+uuid()+"."+image.mimetype.split("/")[1]
+                        let image${typeName} = await input.${file}
+                        const key = "${camelize(typeName)}/"+uuid()+"."+image${typeName}.mimetype.split("/")[1]
                         const url = storageUrl+key
                         input.${file} = url
-                        const rs = image.createReadStream()
+                        const rs = image${typeName}.createReadStream()
                         let buffers = []
                         return new Promise((resolve, reject)=>{
                             rs.on('data', async (data) => {
@@ -454,7 +464,7 @@ const generateGraphqlSchema = (schema) => {
                                     file: {
                                         buffer,
                                         key,
-                                        mimeType: image.mimetype,
+                                        mimeType: image${typeName}.mimetype,
                                         bucket
                                     }
                                 })
@@ -481,12 +491,12 @@ const generateGraphqlSchema = (schema) => {
         if (files.length > 0) {
             let file = files[0].name.value
             resolverMutations += ` 
-                update${typeName}: async (_, { input = {}, _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
+                update${typeName}: async (_, { input = {}, id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
                     if (input.${file}) {
-                        let image = await input.${file}
+                        let image${typeName} = await input.${file}
                         delete input.${file}
   
-                        const rs = image.createReadStream()
+                        const rs = image${typeName}.createReadStream()
                         let buffers = []
                         return new Promise((resolve, reject)=>{
                             rs.on('data', async (data) => {
@@ -497,11 +507,11 @@ const generateGraphqlSchema = (schema) => {
                                 const ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ 
                                     type: 'update', 
                                     body: input, 
-                                    _id, 
+                                    id, 
                                     headers,
                                     file: {
                                         buffer,
-                                        mimeType: image.mimetype,
+                                        mimeType: image${typeName}.mimetype,
                                         bucket
                                     }
                                 })
@@ -511,15 +521,15 @@ const generateGraphqlSchema = (schema) => {
                             
                         })
                     }else{
-                        let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'update', body: input, _id, headers })
+                        let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'update', body: input, id, headers })
                         pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: ${camelize(typeName)} })
                         return ${camelize(typeName)}
                     }
 
                 },`
         } else {
-            resolverMutations += `update${typeName}: async(_, { input = {} , _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                let data = await ${requester}.send({ type: 'update', body: input, _id, headers})
+            resolverMutations += `update${typeName}: async(_, { input = {} , id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
+                let data = await ${requester}.send({ type: 'update', body: input, id, headers})
                 pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: data })
                 return data
             },`
@@ -527,8 +537,8 @@ const generateGraphqlSchema = (schema) => {
 
         if (files.length > 0) {
             resolverMutations += `
-                delete${typeName}: async (_, { _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
-                    let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'destroy', _id, headers })
+                delete${typeName}: async (_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
+                    let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'destroy', id, headers })
                     if(${camelize(typeName)}.url){
                         const key = ${camelize(typeName)}.url.split(storageUrl).join("")
                         storageRequester.send({
@@ -544,8 +554,8 @@ const generateGraphqlSchema = (schema) => {
                 },
             `
         } else {
-            resolverMutations += `delete${typeName}: async(_, { _id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                let data = await ${requester}.send({ type: 'destroy', _id,  headers})
+            resolverMutations += `delete${typeName}: async(_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
+                let data = await ${requester}.send({ type: 'destroy', id,  headers})
                 pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: data })
                 return data
             },`
@@ -585,7 +595,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 //onDelete
                 //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
-                    _id: null,   
+                    id: null,   
                     headers: {
                         authorization: context.params.token
                     }, 
@@ -603,7 +613,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 //onDelete
                 //ON DELETE SET CASCADE
                 await ${relatedTable}Requester.send({ type: 'destroy', 
-                    _id: null,   
+                    id: null,   
                     headers: {
                         authorization: context.params.token
                     }, 
@@ -635,7 +645,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 //onDelete
                 //ON DELETE SET NULL
                 await ${relatedTable}Requester.send({ type: 'update', 
-                    _id: null,   
+                    id: null,   
                     headers: {
                         authorization: context.params.token
                     }, 
