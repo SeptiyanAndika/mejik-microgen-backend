@@ -1,10 +1,4 @@
-const {
-	HOST,
-	REDIS_HOST,
-	REDIS_PORT,
-	forgetPasswordExpired,
-	email
-} = require("./config");
+const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email, emailImageHeader } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -28,9 +22,20 @@ userService.on("index", async (req, cb) => {
 		const users = await app.service("users").find({
 			query: req.query
 		});
-		cb(null, users);
+		cb(null, users.data);
 	} catch (error) {
 		cb(error, null);
+	}
+});
+
+userService.on("indexConnection", async (req, cb) => {
+	try {
+		const users = await app.service("users").find({
+			query: req.query
+		});
+		cb(null, users);
+	} catch (error) {
+		cb(error.message, null);
 	}
 });
 
@@ -45,7 +50,7 @@ userService.on("show", async (req, cb) => {
 		}
 		cb(null, data);
 	} catch (error) {
-		cb(null, null);
+		cb(error.message, null);
 	}
 });
 
@@ -60,6 +65,7 @@ userService.on("user", async (req, cb) => {
 		let user = await app.service("users").get(verify.sub);
 
 		data = await app.service("users").get(user._id, {
+			query: req.query,
 			token
 		});
 
@@ -75,11 +81,6 @@ userService.on("login", async (req, cb) => {
 			strategy: "local",
 			...req.body
 		});
-		if (user.user.status == 0 || !user.user.status) {
-			throw new Error(
-				"Your account is not activate, check your email to activate your account."
-			);
-		}
 		user.token = user.accessToken;
 		cb(null, user);
 	} catch (error) {
@@ -102,8 +103,6 @@ userService.on("forgetPassword", async (req, cb) => {
 			return;
 		}
 		req.body.token = bcrypt.genSaltSync();
-		const emailBody = `You are receiving this email as you have requested to change your account password.
-		Here is your verification code: <strong>${req.body.token}</strong>. Please enter the code on the verification page or simply click this button:`;
 		await app.service("forgetPasswords").create(req.body);
 		emailRequester.send({
 			type: "send",
@@ -113,8 +112,9 @@ userService.on("forgetPassword", async (req, cb) => {
 				subject: "Forget Password",
 				emailImageHeader: null,
 				emailTitle: "You are forget password",
-				emailBody: emailBody,
-				emailLink: HOST + "/user/resetPassword?token=" + req.body.token
+				emailBody: `You are receiving this email as you have requested to change your account password. Here is your verification code:`,
+				emailLink: HOST + "/user/resetPassword?token=" + req.body.token,
+				emailVerificationCode: req.body.token
 			}
 		});
 		cb(null, {
@@ -257,17 +257,17 @@ userService.on("register", async (req, cb) => {
 			email: req.body.email,
 			token: emailToken
 		});
-
 		emailRequester.send({
 			type: "send",
 			body: {
 				email: req.body.email,
 				from: email.from,
 				subject: "Email Verification",
-				emailImageHeader: null,
-				emailTitle: "Email Verification",
-				emailBody: "Verification",
-				emailLink: HOST + "/user/verify?token=" + emailToken
+				emailImageHeader: email.emailImageHeader,
+				emailTitle: "Verify Your Email Immediately",
+				emailBody: `Thank you for joining! Here is the secret code to verify your email:`,
+				emailLink: HOST + "/user/verify?token=" + emailToken,
+				emailVerificationCode: emailToken
 			}
 		});
 		cb(null, {
@@ -293,13 +293,8 @@ userService.on("createUser", async (req, cb) => {
 		admin.permissions = permissions[admin.role];
 
 		const user = await app.service("users").create(
-			{
-				...req.body
-			},
-			{
-				type: "createUser",
-				user: admin
-			}
+			{ ...req.body },
+			{ type: "createUser", user: admin }
 		);
 
 		const auth = await app.service("authentication").create({
@@ -312,6 +307,50 @@ userService.on("createUser", async (req, cb) => {
 			user,
 			token: auth.accessToken
 		});
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("update", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		let data = await app.service("users").patch(user._id, req.body, {
+			...req.params || {},
+			token
+		})
+		cb(null, data);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("updateUser", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let data = await app.service("users").patch(req._id, req.body, {
+			...req.params || {},
+			token
+		})
+		cb(null, data);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("deleteUser", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let data = await app.service("users").remove(req._id, {
+			...req.params || {},
+			token
+		})
+		data.id = data._id
+		cb(null, data);
 	} catch (error) {
 		cb(error.message, null);
 	}
@@ -367,8 +406,72 @@ app.service("users").hooks({
 					throw Error("UnAuthorized");
 				}
 			}
+		},
+		update: async context => {
+			if (!context.params.token) {
+				cb(null, {
+					user: { permissions: permissions["public"] }
+				});
+				return;
+			}
+
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(context.params.token);
+			let user = await app.service("users").get(verify.sub, {
+				query: {
+					$select: ["_id", "email", "firstName", "lastName", "role"]
+				}
+			});
+
+			user.permissions = permissions[user.role];
+			if (!user.permissions) {
+				throw new Error("UnAuthorized");
+			}
+
+			context.params.user = user
+
+			await checkPermissions({
+				roles: ["admin"]
+			})(context);
+
+			if (!context.params.permitted) {
+				throw Error("UnAuthorized");
+			}
+		},
+		remove: async context => {
+			if (!context.params.token) {
+				cb(null, {
+					user: { permissions: permissions["public"] }
+				});
+				return;
+			}
+
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(context.params.token);
+			let user = await app.service("users").get(verify.sub, {
+				query: {
+					$select: ["_id", "email", "firstName", "lastName", "role"]
+				}
+			});
+
+			user.permissions = permissions[user.role];
+			if (!user.permissions) {
+				throw new Error("UnAuthorized");
+			}
+
+			context.params.user = user
+
+			await checkPermissions({
+				roles: ["admin"]
+			})(context);
+
+			if (!context.params.permitted) {
+				throw Error("UnAuthorized");
+			}
 		}
-	}
+	},
 });
 
 server.on("listening", () =>
