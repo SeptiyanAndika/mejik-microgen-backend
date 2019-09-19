@@ -9,11 +9,8 @@ module.exports = {
 	MONGODB: process.env.MONGODB,
 
 	forgetPasswordExpired: 1,
-	email: {
-		emailImageHeader: email.logo
-	},
 	application: {
-		name: app.name
+		name: process.env.APP_NAME
 	},
 	feathers: {
 		paginate: {
@@ -38,7 +35,7 @@ module.exports = {
 				usernameField: "email",
 				passwordField: "password"
 			},
-			oauth:{
+			oauth: {
 				"redirect": "/frontend",
 				google: {
 					clientID: process.env.GOOGLE_CLIENT_ID,

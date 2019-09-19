@@ -121,27 +121,27 @@ userService.on("loginWithGoogle", async (req, cb) => {
 			status: 1
 		}
 		let users = await app.service("users").find({
-			query:{
+			query: {
 				email: payload.email
 			}
 		})
 		let user = null
 		let token = null
-		if(users.data.length > 0){
+		if (users.data.length > 0) {
 			let auth = await app.service("authentication").create({
 				strategy: 'google',
 				user: users.data[0]
-			},{
+			}, {
 				authStrategies: ['google']
 			});
 			token = auth.accessToken
 			user = auth.user
-		}else{
+		} else {
 			const createUser = await app.service("users").create(payload);
 			let auth = await app.service("authentication").create({
 				strategy: 'google',
 				user: createUser
-			},{
+			}, {
 				authStrategies: ['google']
 			});
 			token = auth.accessToken
@@ -170,27 +170,27 @@ userService.on("loginWithFacebook", async (req, cb) => {
 			status: 0
 		}
 		let users = await app.service("users").find({
-			query:{
+			query: {
 				email: payload.email,
 			}
 		})
 		let user = null
 		let token = null
-		if(users.data.length > 0){
+		if (users.data.length > 0) {
 			let auth = await app.service("authentication").create({
 				strategy: 'facebook',
 				user: users.data[0]
-			},{
+			}, {
 				authStrategies: ['facebook']
 			});
 			token = auth.accessToken
 			user = auth.user
-		}else{
+		} else {
 			const createUser = await app.service("users").create(payload);
 			let auth = await app.service("authentication").create({
 				strategy: 'facebook',
 				user: createUser
-			},{
+			}, {
 				authStrategies: ['facebook']
 			});
 			token = auth.accessToken
@@ -226,7 +226,6 @@ userService.on("forgetPassword", async (req, cb) => {
 			body: {
 				to: req.body.email,
 				subject: "Forget Password",
-				emailImageHeader: email.emailImageHeader,
 				title: "You are forget password",
 				body: `You are receiving this email as you have requested to change your account password. Click the button below to reset your password`,
 				emailLink: HOST + "/user/resetPassword?token=" + req.body.token,
@@ -372,8 +371,7 @@ userService.on("register", async (req, cb) => {
 			type: "send",
 			body: {
 				to: req.body.email,
-				subject: `${application.name} Verification`,
-				emailImageHeader: email.emailImageHeader,
+				subject: `${application.name.slice(0, 1).toUpperCase() + application.name.slice(1)} Verification`,
 				title: "Verify Your Email Immediately",
 				body: `Thank you for joining! To verify your email click the button below:`,
 				emailLink: HOST + "/user/verify?token=" + emailToken

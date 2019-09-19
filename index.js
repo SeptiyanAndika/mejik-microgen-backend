@@ -646,6 +646,16 @@ async function main() {
                         }
                         // console.log(content)
                         fs.writeFileSync(path + "src/" + fileName, beautify(content))
+                        fs.readFile('./schema/services/email/.env', (err, content) => {
+                            content = content.toString()
+                            content += '\nAPP_NAME=' + APP_NAME + "\n"
+                            fs.writeFileSync('./outputs/services/email/.env', content)
+                        })
+                        fs.readFile('./schema/services/user/.env', (err, content) => {
+                            content = content.toString()
+                            content += '\nAPP_NAME=' + APP_NAME + "\n"
+                            fs.writeFileSync('./outputs/services/user/.env', content)
+                        })
                     })
                 })
             })
