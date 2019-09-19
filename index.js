@@ -57,7 +57,7 @@ const writeFile = (dir, fileName, file) => {
     });
 }
 
-const primitiveTypes = ["String", "Number", "Float", "Double"]
+const primitiveTypes = ["String", "Number", "Float", "Double", "Int"]
 const convertToFeatherTypes = (type) => {
     if (type == "Float") {
         return "String"
@@ -126,7 +126,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                 "const resolvers = {" + content.split("const resolvers = {")[1]
             )
 
-            fs.readFile(userDirectory + "/src/model.js", (err, x) => {
+            fs.readFile(userDirectory + "/src/models/user.js", (err, x) => {
                 let content = "module.exports = function (app) {\n"
                 content += "const mongooseVirtuals = require('mongoose-lean-virtuals');\n"
                 content += "const mongooseClient = app.get('mongooseClient');\n"
@@ -160,7 +160,6 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                             })
                             let defaultValue = null
                             f.directives.map((d) => {
-
                                 if (d.name.value == "default") {
                                     defaultValue = d.arguments[0].value.value
                                 }
@@ -190,7 +189,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                 }
             `
 
-                writeFile(featherDirectory + "user/src/", "model", beautify(content))
+                writeFile(featherDirectory + "user/src/models/", "user", beautify(content))
             })
 
         })
