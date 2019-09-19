@@ -133,10 +133,10 @@ const resolvers = {
 			return await userRequester.send({ type: "createUser", body: input, headers });
 		},
 		updateUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "updateUser", body: input, _id: id, headers });
+			return await userRequester.send({ type: "updateUser", body: input, id, headers });
 		},
 		deleteUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "deleteUser", body: input, _id: id, headers });
+			return await userRequester.send({ type: "deleteUser", body: input, id, headers });
 		},
 		changeProfile: async (_, { input = {} }, { userRequester, headers }) => {
 			return await userRequester.send({ type: "changeProfile", body: input, headers });
