@@ -1,4 +1,4 @@
-const { SENDGRID_API, REDIS_HOST, REDIS_PORT } = require("./config");
+const { SENDGRID_API, REDIS_HOST, REDIS_PORT, email, application } = require("./config");
 const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(SENDGRID_API)
@@ -19,13 +19,13 @@ const emailRequester = new cote.Requester({
 
 emailService.on("send", async (req, cb) => {
 	try {
-		await sendEmail(req.body);
+		await sendEmail({ ...req.body, from: email.from });
 	} catch (err) {
 		throw err;
 	}
 });
 
-emailService.on("store", async (req, cb) => {
+emailService.on("sendToUser", async (req, cb) => {
 	try {
 		const isAdmin = await userRequester.send({
 			type: "verifyToken",
@@ -34,27 +34,52 @@ emailService.on("store", async (req, cb) => {
 		if (isAdmin.user.role !== 'admin') {
 			throw new Error("UnAuthorized");
 		}
-		if (req.body.to) {
-			emailRequester.send({ type: "send", body: { ...req.body, email: req.body.to } });
+		let to = []
+		const emailSplit = req.body.to.split(';')
+		emailSplit.map(email => to.push({ email: email }))
+		if (from = req.body.from) {
+			emailRequester.send({ type: "send", body: { ...req.body, from, to } });
 		} else {
-			const users = await userRequester.send({ type: "index" })
-			users.map(user => {
-				emailRequester.send({ type: "send", body: { ...req.body, email: user.email } });
-			})
+			emailRequester.send({ type: "send", body: { ...req.body, from: email.from, to } });
 		}
 		cb(null, { message: "Success." });
 	} catch (error) {
-		cb(error, null);
+		cb(error.message, null);
+	}
+});
+
+emailService.on("sendToUsers", async (req, cb) => {
+	try {
+		const isAdmin = await userRequester.send({
+			type: "verifyToken",
+			token: req.headers.authorization
+		})
+		if (isAdmin.user.role !== 'admin') {
+			throw new Error("UnAuthorized");
+		}
+		let to = []
+		const users = await userRequester.send({ type: "index" })
+		users.map(user => {
+			to.push({ email: user.email })
+		})
+		if (from = req.body.from) {
+			emailRequester.send({ type: "send", body: { ...req.body, from, to } });
+		} else {
+			emailRequester.send({ type: "send", body: { ...req.body, from: email.from, to } });
+		}
+		cb(null, { message: "Success." });
+	} catch (error) {
+		cb(error.message, null);
 	}
 });
 
 const sendEmail = async ({
-	email,
+	to,
 	from,
 	subject,
 	emailImageHeader,
-	emailTitle,
-	emailBody,
+	title,
+	body,
 	emailLink,
 	emailVerificationCode
 }) => {
@@ -86,7 +111,7 @@ const sendEmail = async ({
 	}
 
 	if (emailVerificationCode) {
-		emailBody += `
+		body += `
 		<div 
 			style="height:38px;line-height:38px;font-weight:bold;margin:15px 10px;border:1px dashed #979797"
 			align="center"
@@ -101,8 +126,8 @@ const sendEmail = async ({
 	}
 
 	sgMail.send({
-		to: email,
-		from: from,
+		to: to,
+		from: { email: from, name: application.name },
 		subject: subject,
 		html: `
 		<div style="background: #fdfdfd; padding: 100px 20px;">
@@ -113,12 +138,12 @@ const sendEmail = async ({
 					style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; color:#474a52;
 					font-weight: bold; letter-spacing: 0.5px; padding: 0px 20px 0px 20px; font-size: 25px; text-align: center"
 				>
-					${emailTitle}
+					${title}
 				</h1>
 				<div
 					style="font-size: 16px; font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif; color: #474a52; line-height: 24px; text-align: center; margin: 0 20px;"
 				>
-					${emailBody}
+					${body}
 				</div>
 				${buttonLink}
 			</div>

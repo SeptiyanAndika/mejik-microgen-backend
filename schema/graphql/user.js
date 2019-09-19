@@ -98,12 +98,12 @@ const typeDef = `
 `;
 const resolvers = {
 	Query: {
-		users: async (_, { query }, { userRequester }) => {
+		users: async (_, { query }, { userRequester, headers }) => {
 			if (query && query.id) {
 				query._id = query.id
 				delete query.id
 			}
-			return await userRequester.send({ type: "index", query });
+			return await userRequester.send({ type: "index", query, headers });
 		},
 		user: async (_, { query }, { headers, userRequester }) => {
 			if (query && query.id) {
@@ -139,7 +139,7 @@ const resolvers = {
 			return await userRequester.send({ type: "deleteUser", body: input, _id: id, headers });
 		},
 		changeProfile: async (_, { input = {} }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "update", body: input, headers });
+			return await userRequester.send({ type: "changeProfile", body: input, headers });
 		},
 		verifyEmail: async (_, { input }, { userRequester, headers }) => {
 			return await userRequester.send({ type: "verifyEmail", body: input, headers });
