@@ -126,7 +126,7 @@ type EventTaxe {
     id: String
     event: Event!
     ticket: Ticket!
-    isUsingTax: Boolean
+    isUsingTax: Boolean! @default(value: "false")
     taxName: String
     taxRate: String
 }
@@ -142,7 +142,6 @@ type Payout {
     city: String
     postalCode: String
     state: String
-    bank: Bank!
     branch: String!
     accountNumber: String!
     accountNickname: String
