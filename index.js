@@ -31,7 +31,7 @@ const pushNotificationServices = './schema/services/push-notification'
 const pushNotificationGraphql = './schema/graphql/pushNotification.js'
 const baseTypeUser = `
     type User {
-        _id: String
+        id: String
     }
 `
 let defaultConfigService = {
@@ -444,7 +444,7 @@ async function main() {
                                         let contentSplit = content.split("//beforeCreate")
                                         let beforeCreate =
                                             `
-                                        context.data.userId = auth.user._id
+                                        context.data.userId = auth.user.id
                                         //beforeCreate     
                                         `
                                         beforeCreate += contentSplit[1]
@@ -462,7 +462,7 @@ async function main() {
                                             `
                                         if(context.id){
                                             let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
-                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user._id){
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }
@@ -475,7 +475,7 @@ async function main() {
                                             `
                                         if(context.id){
                                             let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
-                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user._id){
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }
@@ -498,7 +498,7 @@ async function main() {
                             if(context.data && context.data.${pluralize.singular(camelize(t.name))}Id){
                                 let belongsTo = await ${pluralize.singular(camelize(t.name))}Requester.send({ 
                                     type: "show", 
-                                    _id: context.data.${pluralize.singular(camelize(t.name))}Id, 
+                                    id: context.data.${pluralize.singular(camelize(t.name))}Id, 
                                     headers:{
                                         token: context.params.token
                                     }

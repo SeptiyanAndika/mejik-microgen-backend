@@ -9,7 +9,7 @@
 # }
 
 # type UserFriend {
-#     _id: String
+#     _id: String!
 #     user: User!
 #     friend: User!
 # }
@@ -20,7 +20,7 @@
 # }
 
 # type Comment {
-#     _id: String
+#     id: String!
 #     post: Post!
 #     text: String!
 #     user: User! @role(onCreate: "own", onUpdateDelete: "own")

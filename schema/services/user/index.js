@@ -6,7 +6,7 @@ const checkPermissions = require("feathers-permissions");
 const { permissions } = require("./permissions");
 const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const bcrypt = require("bcryptjs");
-
+const ObjectId = require('mongodb').ObjectID;
 const userService = new cote.Responder({
 	name: "User Service",
 	key: "user"
@@ -63,8 +63,8 @@ userService.on("show", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let data = null;
-		if (req._id) {
-			data = await app.service("users").get(req._id, {
+		if (req.id) {
+			data = await app.service("users").get(req.id, {
 				token
 			});
 		}
@@ -84,7 +84,7 @@ userService.on("user", async (req, cb) => {
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
 
-		data = await app.service("users").get(user._id, {
+		data = await app.service("users").get(user.id, {
 			query: req.query,
 			token
 		});
@@ -103,6 +103,103 @@ userService.on("login", async (req, cb) => {
 		});
 		user.token = user.accessToken;
 		cb(null, user);
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("loginWithGoogle", async (req, cb) => {
+	try {
+		let result = await app.get('parseGoogleToken')(req.body.jwtToken)
+		let payload = result.getPayload();
+		payload = {
+			email: payload.email,
+			firstName: payload.given_name,
+			lastName: payload.family_name,
+			role: 'authenticated',
+			strategy: 'google',
+			status: 1
+		}
+		let users = await app.service("users").find({
+			query:{
+				email: payload.email
+			}
+		})
+		let user = null
+		let token = null
+		if(users.data.length > 0){
+			let auth = await app.service("authentication").create({
+				strategy: 'google',
+				user: users.data[0]
+			},{
+				authStrategies: ['google']
+			});
+			token = auth.accessToken
+			user = auth.user
+		}else{
+			const createUser = await app.service("users").create(payload);
+			let auth = await app.service("authentication").create({
+				strategy: 'google',
+				user: createUser
+			},{
+				authStrategies: ['google']
+			});
+			token = auth.accessToken
+			user = auth.user
+		}
+		cb(null, {
+			token,
+			user
+		})
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("loginWithFacebook", async (req, cb) => {
+	try {
+		let result = await app.get('parseFacebookToken')(req.body.jwtToken)
+		let payload = result.data
+		payload = {
+			_id: ObjectId(JSON.parse(payload.id)),
+			email: payload.email,
+			firstName: payload.first_name,
+			lastName: payload.last_name,
+			role: 'authenticated',
+			strategy: 'facebook',
+			status: 0
+		}
+		let users = await app.service("users").find({
+			query:{
+				email: payload.email,
+			}
+		})
+		let user = null
+		let token = null
+		if(users.data.length > 0){
+			let auth = await app.service("authentication").create({
+				strategy: 'facebook',
+				user: users.data[0]
+			},{
+				authStrategies: ['facebook']
+			});
+			token = auth.accessToken
+			user = auth.user
+		}else{
+			const createUser = await app.service("users").create(payload);
+			let auth = await app.service("authentication").create({
+				strategy: 'facebook',
+				user: createUser
+			},{
+				authStrategies: ['facebook']
+			});
+			token = auth.accessToken
+			user = auth.user
+		}
+		cb(null, {
+			token,
+			user
+		})
 	} catch (error) {
 		cb(error.message, null);
 	}
@@ -240,7 +337,7 @@ userService.on("changePassword", async (req, cb) => {
 		if (isValid) {
 			const auth = await app
 				.service("users")
-				.patch(user._id, { password: req.body.newPassword });
+				.patch(user.id, { password: req.body.newPassword });
 			cb(null, {
 				status: 1,
 				message: "Success"
@@ -331,7 +428,7 @@ userService.on("changeProfile", async (req, cb) => {
 			.service("authentication")
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
-		let data = await app.service("users").patch(user._id, req.body, {
+		let data = await app.service("users").patch(user.id, req.body, {
 			...req.params || {},
 			token
 		})
@@ -344,7 +441,7 @@ userService.on("changeProfile", async (req, cb) => {
 userService.on("updateUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
-		let data = await app.service("users").patch(req._id, req.body, {
+		let data = await app.service("users").patch(req.id, req.body, {
 			...req.params || {},
 			token
 		})
@@ -357,7 +454,7 @@ userService.on("updateUser", async (req, cb) => {
 userService.on("deleteUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
-		let data = await app.service("users").remove(req._id, {
+		let data = await app.service("users").remove(req.id, {
 			...req.params || {},
 			token
 		})
