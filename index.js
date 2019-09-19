@@ -165,9 +165,9 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                                 }
                             })
                             if (f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)) {
-                                if (defaultValue && defaultValue !== 'false') {
+                                if (defaultValue && defaultValue !== false) {
                                     content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
-                                } else if (defaultValue === 'false') {
+                                } else if (defaultValue === false) {
                                     content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: ${defaultValue} },`
                                 } else {
                                     content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
@@ -620,9 +620,9 @@ async function main() {
                                     }
                                 })
                                 if (f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type) && f.kind !== "ListType") {
-                                    if (defaultValue && defaultValue !== 'false') {
+                                    if (defaultValue && defaultValue !== false) {
                                         content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
-                                    } else if (defaultValue === 'false') {
+                                    } else if (defaultValue === false) {
                                         content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: ${defaultValue} },`
                                     } else {
                                         content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`

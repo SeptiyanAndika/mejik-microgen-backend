@@ -126,7 +126,7 @@ type EventTaxe {
     id: String
     event: Event!
     ticket: Ticket!
-    isUsingTax: Boolean! @default(value: "false")
+    isUsingTax: Boolean! @default(value: false)
     taxName: String
     taxRate: String
 }
