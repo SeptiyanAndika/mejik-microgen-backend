@@ -24,12 +24,14 @@ userService.on("index", async (req, cb) => {
 			.service("authentication")
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
-		if (user.role !== 'admin') {
+		let users
+		if (user.role === 'admin' || user.role === 'authenticated') {
+			users = await app.service("users").find({
+				query: req.query,
+			});
+		} else {
 			throw Error(UnAuthorized)
 		}
-		const users = await app.service("users").find({
-			query: req.query,
-		});
 		cb(null, users.data);
 	} catch (error) {
 		cb(error.message, null);
@@ -43,12 +45,14 @@ userService.on("indexConnection", async (req, cb) => {
 			.service("authentication")
 			.verifyAccessToken(token);
 		let user = await app.service("users").get(verify.sub);
-		if (user.role !== 'admin') {
+		let users
+		if (user.role === 'admin' || user.role === 'authenticated') {
+			users = await app.service("users").find({
+				query: req.query,
+			});
+		} else {
 			throw Error(UnAuthorized)
 		}
-		const users = await app.service("users").find({
-			query: req.query
-		});
 		cb(null, users);
 	} catch (error) {
 		cb(error.message, null);

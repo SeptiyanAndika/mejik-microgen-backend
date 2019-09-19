@@ -208,51 +208,51 @@ function generateAuthentiations(types) {
 
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
         const defaultPermissions = require('./schema/services/user/permissions')
-       
+
         const permissions =
             `const permissions = {
                 admin: ['admin:*'],
                 authenticated: [
-                    ${ defaultPermissions.permissions.authenticated.map((t,typeIndex)=>{
-                        return `'${t}'`
-                    }).join(", ")},
+                    ${ defaultPermissions.permissions.authenticated.map((t, typeIndex) => {
+                return `'${t}'`
+            }).join(", ")},
                     ${types.map((t, typeIndex) => {
-                        if (typeIndex == 0) {
-                            return actions.map((a, actionIndex) => {
-                                // if(typeIndex ==0 && actionIndex == 0){
-                                //     return `'${camelize(t.name)}:${a}'\n`
-                                // }
-                                return `'${camelize(t.name)}:${a}'`
-                            }).join(", ")
-                        }
-                        return `\n` + actions.map((a, actionIndex) => {
-                            // if(typeIndex ==0 && actionIndex == 0){
-                            //     return `'${camelize(t.name)}:${a}'\n`
-                            // }
-                            return `'${camelize(t.name)}:${a}'`
-                        }).join(", ")
-                    })}
+                if (typeIndex == 0) {
+                    return actions.map((a, actionIndex) => {
+                        // if(typeIndex ==0 && actionIndex == 0){
+                        //     return `'${camelize(t.name)}:${a}'\n`
+                        // }
+                        return `'${camelize(t.name)}:${a}'`
+                    }).join(", ")
+                }
+                return `\n` + actions.map((a, actionIndex) => {
+                    // if(typeIndex ==0 && actionIndex == 0){
+                    //     return `'${camelize(t.name)}:${a}'\n`
+                    // }
+                    return `'${camelize(t.name)}:${a}'`
+                }).join(", ")
+            })}
                 ],
                 public: [
-                    ${ defaultPermissions.permissions.public.map((t,typeIndex)=>{
-                        return `'${t}'`
-                    }).join(", ")},
+                    ${ defaultPermissions.permissions.public.map((t, typeIndex) => {
+                return `'${t}'`
+            }).join(", ")},
                     ${types.map((t, typeIndex) => {
-                        if (typeIndex == 0) {
-                            return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
-                                // if(typeIndex ==0 && actionIndex == 0){
-                                //     return `'${camelize(t.name)}:${a}'\n`
-                                // }
-                                return `'${camelize(t.name)}:${a}'`
-                            }).join(", ")
-                        }
-                        return `\n` + actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
-                            if (typeIndex == 0 && actionIndex == 0) {
-                                return `'${camelize(t.name)}:${a}'\n`
-                            }
-                            return `'${camelize(t.name)}:${a}'`
-                        }).join(", ")
-            }       )}
+                if (typeIndex == 0) {
+                    return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                        // if(typeIndex ==0 && actionIndex == 0){
+                        //     return `'${camelize(t.name)}:${a}'\n`
+                        // }
+                        return `'${camelize(t.name)}:${a}'`
+                    }).join(", ")
+                }
+                return `\n` + actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                    if (typeIndex == 0 && actionIndex == 0) {
+                        return `'${camelize(t.name)}:${a}'\n`
+                    }
+                    return `'${camelize(t.name)}:${a}'`
+                }).join(", ")
+            })}
                 ],
             }
             module.exports = {
@@ -344,14 +344,14 @@ async function main() {
         }
     })
     //generate pushNotificationServices
-    ncp(pushNotificationServices, './outputs/services/push-notification', function (err){
-        if(err){
+    ncp(pushNotificationServices, './outputs/services/push-notification', function (err) {
+        if (err) {
             return console.log(err)
         }
     })
-    
-    ncp(pushNotificationGraphql, './outputs/graphql/pushNotification.js', function (err){
-        if(err){
+
+    ncp(pushNotificationGraphql, './outputs/graphql/pushNotification.js', function (err) {
+        if (err) {
             return console.log(err)
         }
     })
@@ -543,28 +543,32 @@ async function main() {
 
                             content = content.split("//afterPatch")
                             let hookStorageAferUpdate = `
-                                storageRequester.send({
-                                    type: "uploadFile",
-                                    body: {
-                                        buffer: context.params.file.buffer,
-                                        key: context.result.image.split(".com/")[1],
-                                        mimeType: context.params.file.mimeType,
-                                        bucket: context.params.file.bucket
-                                    }
-                                })
+                                if (context.result.length > 0) {
+                                    storageRequester.send({
+                                        type: "uploadFile",
+                                        body: {
+                                            buffer: context.params.file.buffer,
+                                            key: context.result.image.split(".com/")[1],
+                                            mimeType: context.params.file.mimeType,
+                                            bucket: context.params.file.bucket
+                                        }
+                                    })
+                                }
                             `
                             hookStorageAferUpdate += content[1]
                             content = content[0] + hookStorageAferUpdate
 
                             content = content.split("//afterDelete")
                             let hookStorageAferDelete = `
-                                storageRequester.send({
-                                    type: "deleteFile",
-                                    body: {
-                                        key: context.result.image.split(".com/")[1],
-                                        bucket: context.params.file.bucket
-                                    }
-                                })
+                                if (context.result.length > 0) {
+                                    storageRequester.send({
+                                        type: "deleteFile",
+                                        body: {
+                                            key: context.result.image.split(".com/")[1],
+                                            bucket: context.params.file.bucket
+                                        }
+                                    })
+                                }
                             `
                             hookStorageAferDelete += content[1]
                             content = content[0] + hookStorageAferDelete
