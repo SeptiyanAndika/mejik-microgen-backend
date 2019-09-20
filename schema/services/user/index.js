@@ -63,15 +63,16 @@ userService.on("show", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let data = null;
+
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
 		if (req.id) {
 			data = await app.service("users").get(req.id, {
 				token
 			});
 		} else {
-			let verify = await app
-				.service("authentication")
-				.verifyAccessToken(token);
-			let user = await app.service("users").get(verify.sub);
 			data = await app.service("users").get(user.id, {
 				token
 			});
