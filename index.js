@@ -1,3 +1,4 @@
+global.__basedir = __dirname;
 const fs = require("fs")
 const { parse, print } = require("graphql")
 const path = require("path")
@@ -7,7 +8,6 @@ const pluralize = require('pluralize')
 const directives = require('./directives')
 const scalars = require('./scalars')
 const { createBucket } = require('./schema/services/storage/storage')
-
 const { camelize, beautify } = require('./utils')
 let type = fs.readFileSync('./schema.graphql').toString()
 const { APP_NAME } = require('./config')
@@ -295,8 +295,11 @@ function addNewRequester(content, type, requesterName, requesters) {
         `const ${pluralize.singular(camelize(requesterName))}Requester = new cote.Requester({
     name: '${pluralize.singular(requesterName)} Requester',
     key: '${pluralize.singular(camelize(requesterName))}',
-})\n
+})
 `
+    addNewRequester += `
+         app.set('${pluralize.singular(camelize(requesterName))}Requester', ${pluralize.singular(camelize(requesterName))}Requester)\n
+    `
     contentSplitResponser[0] += addNewRequester
     content = contentSplitResponser.join(`${camelize(type)}Service.on`)
     return content
@@ -500,7 +503,7 @@ async function main() {
                                     type: "show", 
                                     id: context.data.${pluralize.singular(camelize(t.name))}Id, 
                                     headers:{
-                                        token: context.params.token
+                                        token: context.params.headers.authorization
                                     }
                                 })
                                 if(!belongsTo){

@@ -32,7 +32,7 @@
 # =======================================
 
 # ADMIN
-type Type {
+type Type{
     name: String!
 }
 
