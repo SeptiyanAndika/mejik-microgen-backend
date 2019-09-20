@@ -199,7 +199,6 @@ pushNotificationService.on("destroy", async (req, cb) => {
             },
             token
         })
-        console.log("d", data)
         cb(null, {
             message: 'Success.'
         })
