@@ -67,28 +67,15 @@ userService.on("show", async (req, cb) => {
 			data = await app.service("users").get(req.id, {
 				token
 			});
+		} else {
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(token);
+			let user = await app.service("users").get(verify.sub);
+			data = await app.service("users").get(user.id, {
+				token
+			});
 		}
-		cb(null, data);
-	} catch (error) {
-		cb(error.message, null);
-	}
-});
-
-userService.on("user", async (req, cb) => {
-	try {
-		let token = req.headers.authorization;
-		let data = null;
-
-		let verify = await app
-			.service("authentication")
-			.verifyAccessToken(token);
-		let user = await app.service("users").get(verify.sub);
-
-		data = await app.service("users").get(user.id, {
-			query: req.query,
-			token
-		});
-
 		cb(null, data);
 	} catch (error) {
 		cb(error.message, null);
@@ -371,7 +358,7 @@ userService.on("register", async (req, cb) => {
 			type: "send",
 			body: {
 				to: req.body.email,
-				subject: `${application.name.slice(0, 1).toUpperCase() + application.name.slice(1)} Verification`,
+				subject: `${application.name} Verification`,
 				title: "Verify Your Email Immediately",
 				body: `Thank you for joining! To verify your email click the button below:`,
 				emailLink: HOST + "/user/verify?token=" + emailToken

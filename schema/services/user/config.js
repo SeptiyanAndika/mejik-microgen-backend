@@ -1,5 +1,4 @@
 require("dotenv").config();
-const { email, app } = require('../../config')
 
 module.exports = {
 	REDIS_PORT: process.env.REDIS_PORT,
@@ -10,7 +9,7 @@ module.exports = {
 
 	forgetPasswordExpired: 1,
 	application: {
-		name: process.env.APP_NAME
+		name: process.env.APP_NAME.slice(0, 1).toUpperCase() + process.env.APP_NAME.slice(1)
 	},
 	feathers: {
 		paginate: {

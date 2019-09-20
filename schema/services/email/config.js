@@ -4,6 +4,7 @@ module.exports = {
 	SENDGRID_API: process.env.SENDGRID_API,
 	REDIS_PORT: process.env.REDIS_PORT,
 	REDIS_HOST: process.env.REDIS_HOST,
+
 	email: {
 		from: `${process.env.APP_NAME}@microgen.com`,
 		logo: null

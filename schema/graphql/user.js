@@ -50,7 +50,7 @@ const typeDef = `
 
     extend type Query {
         users (query: JSON): [User]
-		user (query: JSON): User
+		user (id: String): User
 		usersConnection (query: JSON): UsersConnection
     }
 
@@ -105,12 +105,8 @@ const resolvers = {
 			}
 			return await userRequester.send({ type: "index", query, headers });
 		},
-		user: async (_, { query }, { headers, userRequester }) => {
-			if (query && query.id) {
-				query._id = query.id
-				delete query.id
-			}
-			return await userRequester.send({ type: "user", query, headers });
+		user: async (_, { id }, { headers, userRequester }) => {
+			return await userRequester.send({ type: "show", id, headers });
 		},
 		usersConnection: async (_, { query }, { headers, userRequester }) => {
 			if (query && query.id) {
