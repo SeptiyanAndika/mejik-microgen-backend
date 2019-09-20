@@ -466,3 +466,68 @@ Documentation WIP
 ### Social Media Auth
 
 Documentation WIP
+
+## Hooks - Code Customization
+
+You can fully customize Your code directly on outputs, but that's not the best practice! Output will always replacing your code with a new code, and its ignored from our versioning tools. 
+
+Hooks are the best place to custom Your code, and will not harm the outputs. Your code will stay clean, and less dependant. To use it, Microgen automatically generate "hooks" folder for You. Inside it, there are the hook for each services generated.
+
+**Basic Usage Example**
+
+```javascript
+module.exports = (app) => ({
+    before: {
+        ...
+        create: async (context) => {
+            //do something before create request
+            
+            //accessing current data
+            const headers = context.params.headers
+            const body = context.data
+            
+            //accessing user
+            const user = context.params.user
+
+            //accessing event sourcing
+            app.get('ownServiceRequester').send({
+                type: 'create' //more documentation WIP
+            })
+            app.get('relatedServiceRequester').send({
+                type: 'create' //more documentation WIP
+            })
+        },
+        ...       
+    },
+    after:{
+        find: async (context) => {
+            //do something after find request
+
+            //all of above before context and service also can be used here
+
+            //accessing result
+            const result = context.result
+        },
+        ...      
+    },
+})
+
+```
+
+**Usage Example on User Service with Custom Permissions**
+
+```javascript
+module.exports = (app) => ({
+    before: ...,
+    after: ...,
+    //customize your permissions here
+    permissions: {
+        admin: ['admin:*'],
+        authenticated: [
+            'user:find', 'user:get'
+        ],
+        ...
+    }
+})
+
+```
