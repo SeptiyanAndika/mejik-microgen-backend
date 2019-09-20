@@ -8,7 +8,6 @@ module.exports = function (app) {
         firstName: { type: String },
         lastName: { type: String },
         role: { type: String },
-        phoneNumbers: { type: String, required: false },
     }, {
         timestamps: true
     })
