@@ -23,6 +23,8 @@ const userRequester = new cote.Requester({
     key: 'user',
 })
 
+app.set('userRequester', userRequester)
+
 exampleService.on("index", async (req, cb) => {
     try {
         let data = await app.service("examples").find({
