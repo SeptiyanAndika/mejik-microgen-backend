@@ -1,7 +1,7 @@
 const permissions = {
     admin: ['admin:*'],
     authenticated: [
-        'users:find', 'users:get'
+        'user:find', 'user:get'
     ],
     public: [
         'pushNotification:create',
