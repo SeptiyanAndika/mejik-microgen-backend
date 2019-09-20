@@ -427,6 +427,18 @@ userService.on("changeProfile", async (req, cb) => {
 userService.on("updateUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub, {
+			query: {
+				$select: ["role"]
+			}
+		});
+		if (user.role !== 'admin') {
+			throw new Error("UnAuthorized");
+		}
+
 		let data = await app.service("users").patch(req.id, req.body, {
 			...req.params || {},
 			token
