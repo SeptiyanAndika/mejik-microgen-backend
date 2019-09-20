@@ -1,6 +1,6 @@
 module.exports = (app) => ({
     before: {
-        get: async (context) => {
+        get: async (context) => {            
         },
         find: async (context) => {
         },
