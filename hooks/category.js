@@ -1,23 +1,30 @@
 module.exports = (app) => ({
     before: {
+        get: async (context) => {
+        },
         find: async (context) => {
-            console.log("external hook")
         },
         create: async (context) => {
-            
-        }
+        },
+        update: async (context) => {
+        },
+        delete: async (context) => {
+        },
+        patch: async (context) => {
+        }, 
     },
     after:{
+        get: async (context) => {
+        },
+        find: async (context) => {
+        },
         create: async (context) => {
-            let category = context.result
-            let subCategory = await app.get('subCategoryRequester').send({
-                type: 'store', 
-                body: {
-                    categoryId : category.id,
-                    name : "new sub category"
-                },
-                headers: context.params.headers
-            })
-        }
-    }
+        },
+        update: async (context) => {
+        },
+        delete: async (context) => {
+        },
+        patch: async (context) => {
+        }, 
+    },
 })
