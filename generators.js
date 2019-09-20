@@ -50,11 +50,11 @@ const generatePackageJSON = (types) => {
     packageJSON["scripts"]["email-services"] = "cd ./services/email && nodemon index.js"
     packageJSON["scripts"]["storage-services"] = "cd ./services/storage && nodemon index.js"
     packageJSON["scripts"]["pushNotification-services"] = "cd ./services/push-notification && nodemon index.js"
-    types.map((type)=>{
-        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/"+camelize(type)+ " && nodemon index.js"
+    types.map((type) => {
+        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/" + camelize(type) + " && nodemon index.js"
     })
 
-    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type)=> `${camelize(type)}-services`).join(" ")}`
+    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type) => `${camelize(type)}-services`).join(" ")}`
 
     fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON, null, 4))
 }

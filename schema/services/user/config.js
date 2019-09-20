@@ -1,5 +1,4 @@
 require("dotenv").config();
-const { email, app } = require('../../config')
 
 module.exports = {
 	REDIS_PORT: process.env.REDIS_PORT,
@@ -9,11 +8,8 @@ module.exports = {
 	MONGODB: process.env.MONGODB,
 
 	forgetPasswordExpired: 1,
-	email: {
-		emailImageHeader: email.logo
-	},
 	application: {
-		name: app.name
+		name: process.env.APP_NAME.slice(0, 1).toUpperCase() + process.env.APP_NAME.slice(1)
 	},
 	feathers: {
 		paginate: {
@@ -38,7 +34,7 @@ module.exports = {
 				usernameField: "email",
 				passwordField: "password"
 			},
-			oauth:{
+			oauth: {
 				"redirect": "/frontend",
 				google: {
 					clientID: process.env.GOOGLE_CLIENT_ID,

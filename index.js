@@ -57,7 +57,7 @@ const writeFile = (dir, fileName, file) => {
     });
 }
 
-const primitiveTypes = ["String", "Number", "Float", "Double"]
+const primitiveTypes = ["String", "Number", "Float", "Double", "Int", "Boolean"]
 const convertToFeatherTypes = (type) => {
     if (type == "Float") {
         return "String"
@@ -126,7 +126,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                 "const resolvers = {" + content.split("const resolvers = {")[1]
             )
 
-            fs.readFile(userDirectory + "/src/model.js", (err, x) => {
+            fs.readFile(userDirectory + "/src/models/user.js", (err, x) => {
                 let content = "module.exports = function (app) {\n"
                 content += "const mongooseVirtuals = require('mongoose-lean-virtuals');\n"
                 content += "const mongooseClient = app.get('mongooseClient');\n"
@@ -160,14 +160,15 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                             })
                             let defaultValue = null
                             f.directives.map((d) => {
-
                                 if (d.name.value == "default") {
                                     defaultValue = d.arguments[0].value.value
                                 }
                             })
                             if (f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type)) {
-                                if (defaultValue) {
+                                if (defaultValue && defaultValue !== false) {
                                     content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
+                                } else if (defaultValue === false) {
+                                    content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: ${defaultValue} },`
                                 } else {
                                     content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
                                 }
@@ -190,7 +191,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                 }
             `
 
-                writeFile(featherDirectory + "user/src/", "model", beautify(content))
+                writeFile(featherDirectory + "user/src/models/", "user", beautify(content))
             })
 
         })
@@ -208,51 +209,51 @@ function generateAuthentiations(types) {
 
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
         const defaultPermissions = require('./schema/services/user/permissions')
-       
+
         const permissions =
             `const permissions = {
                 admin: ['admin:*'],
                 authenticated: [
-                    ${ defaultPermissions.permissions.authenticated.map((t,typeIndex)=>{
-                        return `'${t}'`
-                    }).join(", ")},
+                    ${ defaultPermissions.permissions.authenticated.map((t, typeIndex) => {
+                return `'${t}'`
+            }).join(", ")},
                     ${types.map((t, typeIndex) => {
-                        if (typeIndex == 0) {
-                            return actions.map((a, actionIndex) => {
-                                // if(typeIndex ==0 && actionIndex == 0){
-                                //     return `'${camelize(t.name)}:${a}'\n`
-                                // }
-                                return `'${camelize(t.name)}:${a}'`
-                            }).join(", ")
-                        }
-                        return `\n` + actions.map((a, actionIndex) => {
-                            // if(typeIndex ==0 && actionIndex == 0){
-                            //     return `'${camelize(t.name)}:${a}'\n`
-                            // }
-                            return `'${camelize(t.name)}:${a}'`
-                        }).join(", ")
-                    })}
+                if (typeIndex == 0) {
+                    return actions.map((a, actionIndex) => {
+                        // if(typeIndex ==0 && actionIndex == 0){
+                        //     return `'${camelize(t.name)}:${a}'\n`
+                        // }
+                        return `'${camelize(t.name)}:${a}'`
+                    }).join(", ")
+                }
+                return `\n` + actions.map((a, actionIndex) => {
+                    // if(typeIndex ==0 && actionIndex == 0){
+                    //     return `'${camelize(t.name)}:${a}'\n`
+                    // }
+                    return `'${camelize(t.name)}:${a}'`
+                }).join(", ")
+            })}
                 ],
                 public: [
-                    ${ defaultPermissions.permissions.public.map((t,typeIndex)=>{
-                        return `'${t}'`
-                    }).join(", ")},
+                    ${ defaultPermissions.permissions.public.map((t, typeIndex) => {
+                return `'${t}'`
+            }).join(", ")},
                     ${types.map((t, typeIndex) => {
-                        if (typeIndex == 0) {
-                            return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
-                                // if(typeIndex ==0 && actionIndex == 0){
-                                //     return `'${camelize(t.name)}:${a}'\n`
-                                // }
-                                return `'${camelize(t.name)}:${a}'`
-                            }).join(", ")
-                        }
-                        return `\n` + actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
-                            if (typeIndex == 0 && actionIndex == 0) {
-                                return `'${camelize(t.name)}:${a}'\n`
-                            }
-                            return `'${camelize(t.name)}:${a}'`
-                        }).join(", ")
-            }       )}
+                if (typeIndex == 0) {
+                    return actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                        // if(typeIndex ==0 && actionIndex == 0){
+                        //     return `'${camelize(t.name)}:${a}'\n`
+                        // }
+                        return `'${camelize(t.name)}:${a}'`
+                    }).join(", ")
+                }
+                return `\n` + actions.filter((a) => a == "find" || a == "get").map((a, actionIndex) => {
+                    if (typeIndex == 0 && actionIndex == 0) {
+                        return `'${camelize(t.name)}:${a}'\n`
+                    }
+                    return `'${camelize(t.name)}:${a}'`
+                }).join(", ")
+            })}
                 ],
             }
             module.exports = {
@@ -344,14 +345,14 @@ async function main() {
         }
     })
     //generate pushNotificationServices
-    ncp(pushNotificationServices, './outputs/services/push-notification', function (err){
-        if(err){
+    ncp(pushNotificationServices, './outputs/services/push-notification', function (err) {
+        if (err) {
             return console.log(err)
         }
     })
-    
-    ncp(pushNotificationGraphql, './outputs/graphql/pushNotification.js', function (err){
-        if(err){
+
+    ncp(pushNotificationGraphql, './outputs/graphql/pushNotification.js', function (err) {
+        if (err) {
             return console.log(err)
         }
     })
@@ -543,28 +544,32 @@ async function main() {
 
                             content = content.split("//afterPatch")
                             let hookStorageAferUpdate = `
-                                storageRequester.send({
-                                    type: "uploadFile",
-                                    body: {
-                                        buffer: context.params.file.buffer,
-                                        key: context.result.image.split(".com/")[1],
-                                        mimeType: context.params.file.mimeType,
-                                        bucket: context.params.file.bucket
-                                    }
-                                })
+                                if (context.result.length > 0) {
+                                    storageRequester.send({
+                                        type: "uploadFile",
+                                        body: {
+                                            buffer: context.params.file.buffer,
+                                            key: context.result.image.split(".com/")[1],
+                                            mimeType: context.params.file.mimeType,
+                                            bucket: context.params.file.bucket
+                                        }
+                                    })
+                                }
                             `
                             hookStorageAferUpdate += content[1]
                             content = content[0] + hookStorageAferUpdate
 
                             content = content.split("//afterDelete")
                             let hookStorageAferDelete = `
-                                storageRequester.send({
-                                    type: "deleteFile",
-                                    body: {
-                                        key: context.result.image.split(".com/")[1],
-                                        bucket: context.params.file.bucket
-                                    }
-                                })
+                                if (context.result.length > 0) {
+                                    storageRequester.send({
+                                        type: "deleteFile",
+                                        body: {
+                                            key: context.result.image.split(".com/")[1],
+                                            bucket: context.params.file.bucket
+                                        }
+                                    })
+                                }
                             `
                             hookStorageAferDelete += content[1]
                             content = content[0] + hookStorageAferDelete
@@ -615,9 +620,10 @@ async function main() {
                                     }
                                 })
                                 if (f.name !== "_id" && f.name !== "id" && primitiveTypes.includes(f.type) && f.kind !== "ListType") {
-
-                                    if (defaultValue) {
+                                    if (defaultValue && defaultValue !== false) {
                                         content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: "${defaultValue}" },`
+                                    } else if (defaultValue === false) {
+                                        content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required}, default: ${defaultValue} },`
                                     } else {
                                         content += `${f.name}: { type: ${convertToFeatherTypes(f.type)}, required: ${f.required} },`
                                     }
@@ -640,6 +646,16 @@ async function main() {
                         }
                         // console.log(content)
                         fs.writeFileSync(path + "src/" + fileName, beautify(content))
+                        fs.readFile('./schema/services/email/.env', (err, content) => {
+                            content = content.toString()
+                            content += '\nAPP_NAME=' + APP_NAME + "\n"
+                            fs.writeFileSync('./outputs/services/email/.env', content)
+                        })
+                        fs.readFile('./schema/services/user/.env', (err, content) => {
+                            content = content.toString()
+                            content += '\nAPP_NAME=' + APP_NAME + "\n"
+                            fs.writeFileSync('./outputs/services/user/.env', content)
+                        })
                     })
                 })
             })

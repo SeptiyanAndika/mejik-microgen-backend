@@ -1,30 +1,30 @@
 # =======================================
 # TESTING
 # =======================================
-type Post {
-    id: String!
-    text: String!
-    comments: [Comment] @relation(onDelete: CASCADE)
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
-}
+# type Post {
+#     id: String!
+#     text: String!
+#     comments: [Comment] @relation(onDelete: CASCADE)
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
 
-type UserFriend {
-    _id: String!
-    user: User!
-    friend: User!
-}
+# type UserFriend {
+#     _id: String!
+#     user: User!
+#     friend: User!
+# }
 
-type User {
-    phoneNumbers: String
-    image: String
-}
+# type User {
+#     phoneNumbers: String
+#     image: String
+# }
 
-type Comment {
-    id: String!
-    post: Post!
-    text: String!
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
-}
+# type Comment {
+#     id: String!
+#     post: Post!
+#     text: String!
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
 
 
 # =======================================
@@ -32,22 +32,22 @@ type Comment {
 # =======================================
 
 # ADMIN
-# type Type {
-#     id: String
-#     name: String!
-# }
+type Type {
+    id: String
+    name: String!
+}
 
-# type Category {
-#     id: String
-#     name: String!
-#     subCategories: [SubCategory] @relation(onDelete: CASCADE)
-# }
+type Category {
+    id: String
+    name: String!
+    subCategories: [SubCategory] @relation(onDelete: CASCADE)
+}
 
-# type SubCategory {
-#     id: String
-#     category: Category!
-#     name: String!
-# }
+type SubCategory {
+    id: String
+    category: Category!
+    name: String!
+}
 
 # type Bank {
 #     id: String
@@ -63,8 +63,8 @@ type Comment {
 # type Event {
 #     id: String
 #     user: User! @role(onCreate: "own", onDelete: "own")
-#     name: String
-#     locationType: String
+#     name: String!
+#     locationType: String @default(value: "tbd")
 #     locationName: String
 #     latitude: String
 #     longitude: String
@@ -76,18 +76,22 @@ type Comment {
 #     type: Type!
 #     category: Category!
 #     subCategory: SubCategory!
-#     startDate: String
-#     endDate: String
-#     startTime: String
-#     endTime: String
+#     startDate: String!
+#     endDate: String!
+#     startTime: String!
+#     endTime: String!
 #     tickets: [Ticket] @relation(onDelete: CASCADE)
+#     showRemainingTicket: Boolean @default(value: false)
 #     images: [Image] @relation(onDelete: CASCADE)
-#     tags: [Tag] @relation(onDelete: CASCADE)
-#     description: String
-#     organizer: String
-#     tos: String
+#     # tags: [Tag] @relation(onDelete: CASCADE)
+#     description: String!
+#     organizer: String!
+#     organizerDescription: String!
+#     termsAndCondition: String
 #     refundPolicy: String
 #     link: String
+#     private: Boolean
+
 # }
 
 # type Image {
@@ -97,27 +101,28 @@ type Comment {
 #     event: Event!
 # }
 
-# type Tag {
-#     id: String
-#     name: String
-# }
+# # type Tag {
+# #     id: String
+# #     name: String
+# # }
 
 # type Ticket {
 #     id: String
 #     event: Event!
-#     type: String
-#     name: String
+#     # type: String!
+#     name: String!
 #     qty: Int
-#     price: Int
-#     startDate: String
-#     endDate: String
-#     startTime: String
-#     endTime: String
+#     price: Int!
+#     includeFees: Boolean
+#     startDate: String!
+#     endDate: String!
+#     startTime: String!
+#     endTime: String!
 #     description: String
-#     visibility: Int
+#     visibility: Boolean
 #     orderMinQty: Int
 #     orderMaxQty: Int
-#     salesChannels: String
+#     salesChannel: String
 #     sold: Boolean
 # }
 
@@ -125,7 +130,7 @@ type Comment {
 #     id: String
 #     event: Event!
 #     ticket: Ticket!
-#     isUsingTax: Boolean
+#     isUsingTax: Boolean! @default(value: false)
 #     taxName: String
 #     taxRate: String
 # }
@@ -134,20 +139,22 @@ type Comment {
 #     id: String
 #     user: User!
 #     bank: Bank!
-#     accountHolder: String
-#     name: String
-#     address: String
+#     accountHolder: String!
+#     name: String!
+#     address1: String!
+#     address2: String
 #     city: String
 #     postalCode: String
 #     state: String
-#     branch: String
-#     accountNumber: String
+#     branch: String!
+#     accountNumber: String!
 #     accountNickname: String
 # }
 
 # type EventReport {
 #     id: String
 #     event: Event!
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
 #     totalTicketAvailable: Int
 #     totalTicketPending: Int
 #     totalTicketSold: Int
@@ -169,7 +176,7 @@ type Comment {
 
 # type UsersTicket {
 #     id: String
-#     user: User!
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
 #     event: Event!
 #     ticket: Ticket!
 # }
@@ -179,27 +186,49 @@ type Comment {
 #     event: Event!
 #     ticket: Ticket!
 #     user: User! @role(onCreate: "own", onUpdateDelete: "own")
-#     price: Int
-#     fee: Int
-#     qty: Int
-#     subtotal: Int
+#     price: Int!
+#     fee: Int!
+#     qty: Int!
+#     subtotal: Int!
 #     transaction: Transaction
 # }
 
 # type Transaction {
 #     id: String
-#     user: User!
-#     firstName: String
-#     lastName: String
-#     phoneNumber: String
-#     email: String
+#     user: User! @role(onCreate: "own")
+#     customerFirstName: String!
+#     customerLastName: String!
+#     customerPhoneNumber: String!
+#     customerEmail: String!
+#     takerFirstName: String!
+#     takerLastName: String!
+#     takerPhoneNumber: String!
+#     takerEmail: String!
+#     takerID: String
 #     payment: Payment!
-#     total: Int
-#     status: Boolean
+#     total: Int!
+#     userAddInformation: UserAddInformation
+#     status: Boolean @default(value: false)
+# }
+
+# type UsersInterest {
+#     id: String
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+#     event: Event!
+# }
+
+# type UserAddInformation {
+#     id: String
+#     user: User @role(onCreate: "own", onUpdateDelete: "own")
+#     bussiness: Boolean
+#     bussinessType: String
+#     community: String!
 # }
 
 # type Payment {
 #     id: String
-#     type: String
 #     bank: Bank!
+#     accountName: String!
+#     accountNumber: String!
+#     type: String @default(value: "transfer")
 # }
