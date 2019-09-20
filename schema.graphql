@@ -49,10 +49,11 @@ type SubCategory {
     name: String!
 }
 
-# type Bank {
-#     id: String
-#     name: String!
-# }
+type AdminBank {
+    id: String
+    name: String!
+    # userAccount
+}
 
 # # USER
 # type User {
