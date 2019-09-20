@@ -391,7 +391,6 @@ async function main() {
         }
         if(!fs.existsSync(hooksDirectory+camelize(e.name)+'.js')){
             ncp('./schema/hooks/example.js', hooksDirectory+camelize(e.name)+'.js', (err)=>{
-                console.log("er", err)
             })
         }
   
