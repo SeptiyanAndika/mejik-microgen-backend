@@ -209,9 +209,16 @@ function generateAuthentiations(types) {
 
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
         const defaultPermissions = require('./schema/services/user/permissions')
-
         const permissions =
-            `const permissions = {
+            `
+            const appRoot = require('app-root-path');
+            let externalPermission = null
+            try {
+                externalPermission = require(appRoot + '/permissions')
+            } catch (e) {
+
+            }
+            const permissions = externalPermission.permissions || {
                 admin: ['admin:*'],
                 authenticated: [
                     ${ defaultPermissions.permissions.authenticated.map((t, typeIndex) => {
