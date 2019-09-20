@@ -224,6 +224,9 @@ const generateGraphqlSchema = (schema) => {
         let content = "export const typeDef = `\n"
         let type = `    type ${typeName} {\n`
 
+        //defaultId
+        type += `       id: String \n`
+
         let relationTypes = []
         schema.definitions[i].fields.map((e) => {
             // console.log("1/111", e)

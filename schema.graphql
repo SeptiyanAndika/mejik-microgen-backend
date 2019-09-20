@@ -33,18 +33,15 @@
 
 # ADMIN
 type Type {
-    id: String
     name: String!
 }
 
 type Category {
-    id: String
     name: String!
     subCategories: [SubCategory] @relation(onDelete: CASCADE)
 }
 
 type SubCategory {
-    id: String
     category: Category!
     name: String!
 }
