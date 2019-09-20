@@ -186,11 +186,6 @@ pushNotificationService.on("destroy", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let auth = await checkAuthentication(token)
-        console.log("auth", {
-            playerId: req.body.playerId,
-            userId: auth.sub,
-            segment:req.body.segment
-        })
         let data = await app.service("pushNotifications").remove(null, {
             query: {
                 playerId: req.body.playerId,
