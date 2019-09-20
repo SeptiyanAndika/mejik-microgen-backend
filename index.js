@@ -219,7 +219,7 @@ function generateAuthentiations(types) {
             } catch (e) {
 
             }
-            const permissions = externalPermission && externalPermission.permissions || {
+            const permissions = externalPermission && externalPermission().permissions || {
                 admin: ['admin:*'],
                 authenticated: [
                     ${ defaultPermissions.permissions.authenticated.map((t, typeIndex) => {
