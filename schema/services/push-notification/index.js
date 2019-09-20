@@ -20,11 +20,10 @@ const userRequester = new cote.Requester({
 
 pushNotificationService.on("sendAll", async (req, cb) => {
     try {
-        let res = await sendNotifications({
+        sendNotifications({
             contents: {"en": req.body.contents},
             included_segments: ["All"]
         })
-        console.log(res.data)
         cb(null, {
             message: 'Success.'
         })
@@ -36,9 +35,18 @@ pushNotificationService.on("sendAll", async (req, cb) => {
 
 pushNotificationService.on("sendById", async (req, cb) => {
     try {
-        let res = await sendNotifications({
-            contents: {"en": req.body.contents},
-            include_player_ids: [req.playerId]
+        let users = await app.service("pushNotifications").find({
+            query: {
+                userId: req.userId,
+            },
+           
+        })
+        let playersId = []
+        users.data.map((user)=> !playersId.includes(user.playerId) && playersId.push(user.playerId))
+        sendNotifications({
+            "include_player_ids": playersId,
+            "data": {"foo": "bar"},
+            "contents": {"en": "English Message"}
         })
         cb(null, {
             message: 'Success.'
@@ -55,8 +63,8 @@ pushNotificationService.on("sendBySegment", async (req, cb) => {
                 segment: req.segment
             }
         })
-        let playersId = users.map((user)=> user.playerId)
-        let res = await sendNotifications({
+        let playersId = users.data.map((user)=> user.playerId)
+        sendNotifications({
             contents: {"en": req.body.contents},
             include_player_ids: playersId
         })
@@ -100,10 +108,12 @@ pushNotificationService.on("indexConnection", async (req, cb) => {
 pushNotificationService.on("store", async (req, cb) => {
     try {
         let token = req.headers.authorization
+        let auth = await checkAuthentication(token)
         let users = await app.service("pushNotifications").find({
             query: {
                 playerId: req.body.playerId,
-                segment:req.body.segment
+                segment:req.body.segment,
+                userId: auth.sub
             }
         })
         if(users.data.length > 0){
@@ -112,7 +122,10 @@ pushNotificationService.on("store", async (req, cb) => {
             })
             return
         }
-        let data = await app.service("pushNotifications").create(req.body, {
+        let data = await app.service("pushNotifications").create({
+            ...req.body,
+            userId: auth.sub
+        }, {
             token,
             file: req.file
         })
@@ -120,7 +133,8 @@ pushNotificationService.on("store", async (req, cb) => {
             message: "Success."
         })
     } catch (error) {
-        cb(error.message, null)
+        console.log(error)
+        cb(error.message || error, null)
     }
 })
 
@@ -171,13 +185,18 @@ pushNotificationService.on("update", async (req, cb) => {
 pushNotificationService.on("destroy", async (req, cb) => {
     try {
         let token = req.headers.authorization
-        let data = await app.service("pushNotifications").remove(req.id, {
-            ...req.params || {},
-            token,
-            file: req.file
+        let auth = await checkAuthentication(token)
+        let data = await app.service("pushNotifications").remove(null, {
+            query: {
+                playerId: req.body.playerId,
+                userId: auth.sub,
+                segment:req.body.segment
+            },
+            token
         })
-        data.id = data._id
-        cb(null, data)
+        cb(null, {
+            message: 'Success.'
+        })
     } catch (error) {
         cb(error.message, null)
     }
