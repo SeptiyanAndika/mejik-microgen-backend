@@ -1,30 +1,36 @@
 module.exports = (app) => ({
     before: {
-        get: async (context) => {
-        },
         find: async (context) => {
+            //do something before find request
         },
+        get: async (context) => {
+            //do something before get request            
+        },        
         create: async (context) => {
-        },
-        update: async (context) => {
-        },
-        delete: async (context) => {
+            //do something before create request
         },
         patch: async (context) => {
+            //do something before patch request
         }, 
+        delete: async (context) => {
+            //do something before delete request
+        },        
     },
     after:{
-        get: async (context) => {
-        },
         find: async (context) => {
+            //do something after find request
         },
+        get: async (context) => {
+            //do something after get request
+        },        
         create: async (context) => {
-        },
-        update: async (context) => {
-        },
-        delete: async (context) => {
+            //do something after create request
         },
         patch: async (context) => {
-        }, 
+            //do something after patch request
+        },         
+        delete: async (context) => {
+            //do something after delete request
+        }        
     },
 })
