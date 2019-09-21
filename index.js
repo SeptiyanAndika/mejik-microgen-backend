@@ -203,6 +203,13 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
 }
 
 function generateAuthentiations(types) {
+    if(!fs.existsSync(hooksDirectory)){
+        fs.mkdirSync(hooksDirectory)
+    }
+    if(!fs.existsSync(hooksDirectory+'user.js')){
+        ncp('./schema/hooks/user.js', hooksDirectory+'user.js', (err)=>{
+        })
+    }
     ncp(authServices, "./outputs/services/user", function (err) {
         if (err) {
             return console.error(err);
@@ -385,7 +392,6 @@ async function main() {
 
     //end of graphql
     types.map((e, index) => {
-        console.log("e", e.name)
         if(!fs.existsSync(hooksDirectory)){
             fs.mkdirSync(hooksDirectory)
         }
