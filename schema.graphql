@@ -39,11 +39,17 @@ type Type{
 type Category {
     name: String!
     subCategories: [SubCategory] @relation(onDelete: CASCADE)
+    images: [Image] @relation(onDelete: CASCADE)
 }
 
 type SubCategory {
     category: Category!
     name: String!
+}
+
+type Image {
+    name: String
+    url: String! @File
 }
 
 # type Bank {
