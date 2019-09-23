@@ -38,7 +38,7 @@ module.exports = (app) => ({
 
             let total = 0
             orders.map(order => {
-                total += order.subtotal
+                total += order.subTotal
             })
 
             app.service("transactions").patch(context.id, {

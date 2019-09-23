@@ -139,7 +139,7 @@ type Order {
     price: Int
     fee: Int
     qty: Int
-    subtotal: Int
+    subTotal: Int
     transaction: Transaction
 }
 

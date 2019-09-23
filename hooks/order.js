@@ -1,5 +1,3 @@
-const mongoose = require('mongoose')
-
 module.exports = (app) => ({
     before: {
         find: async (context) => {
@@ -35,7 +33,7 @@ module.exports = (app) => ({
 
             app.service("orders").patch(context.result.id, {
                 price: ticket.price,
-                subtotal: ticket.price * context.data.qty,
+                subTotal: ticket.price * context.data.qty + context.data.fee,
             }, {
                 headers: context.params.headers,
             })
