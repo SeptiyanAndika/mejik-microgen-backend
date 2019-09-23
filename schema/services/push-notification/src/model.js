@@ -7,6 +7,7 @@ module.exports = function (app) {
     const mongooseClient = app.get('mongooseClient');
     const model = new mongooseClient.Schema({
         playerId: { type: String, required: true },
+        userId: {type: String, required: true},
         segment: { type: String }
     }, {
         timestamps: true

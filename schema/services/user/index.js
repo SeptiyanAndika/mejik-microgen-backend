@@ -7,6 +7,13 @@ const { permissions } = require("./permissions");
 const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const bcrypt = require("bcryptjs");
 const ObjectId = require('mongodb').ObjectID;
+let externalHook = null
+try {
+	externalHook = require(appRoot + '/hooks/user')
+} catch (e) {
+
+}
+
 const userService = new cote.Responder({
 	name: "User Service",
 	key: "user"
@@ -496,6 +503,20 @@ userService.on("verifyToken", async (req, cb) => {
 
 app.service("users").hooks({
 	before: {
+		find: async (context) => {
+			try {
+				externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
+			} catch (err) {
+				throw new Error(err)
+			}
+		},
+		get: async (context) => {
+			try {
+				externalHook && externalHook(app).before && externalHook(app).before.get && externalHook(app).before.get(context)
+			} catch (err) {
+				throw new Error(err)
+			}
+		},
 		create: async context => {
 			let users = await app.service("users").find();
 			if (users.length == 0) {
@@ -513,6 +534,7 @@ app.service("users").hooks({
 					throw Error("UnAuthorized");
 				}
 			}
+			externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
 		},
 		update: async context => {
 			if (!context.params.token) {
@@ -545,6 +567,40 @@ app.service("users").hooks({
 			if (!context.params.permitted) {
 				throw Error("UnAuthorized");
 			}
+			externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
+		},
+		patch: async context => {
+			if (!context.params.token) {
+				cb(null, {
+					user: { permissions: permissions["public"] }
+				});
+				return;
+			}
+
+			let verify = await app
+				.service("authentication")
+				.verifyAccessToken(context.params.token);
+			let user = await app.service("users").get(verify.sub, {
+				query: {
+					$select: ["_id", "email", "firstName", "lastName", "role"]
+				}
+			});
+
+			user.permissions = permissions[user.role];
+			if (!user.permissions) {
+				throw new Error("UnAuthorized");
+			}
+
+			context.params.user = user
+
+			await checkPermissions({
+				roles: ["admin", 'user']
+			})(context);
+
+			if (!context.params.permitted) {
+				throw Error("UnAuthorized");
+			}
+			externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
 		},
 		remove: async context => {
 			if (!context.params.token) {
@@ -577,8 +633,43 @@ app.service("users").hooks({
 			if (!context.params.permitted) {
 				throw Error("UnAuthorized");
 			}
+			externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)
 		}
 	},
+	after: {
+		create: async (context) => {
+			try {
+				externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
+				//afterFind
+			} catch (err) {
+				throw new Error(err)
+			}
+		},
+		create: async (context) => {
+			try {
+				externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
+				//afterCreate
+			} catch (err) {
+				throw new Error(err)
+			}
+		},
+		patch: async (context) => {
+			try {
+				externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
+				//afterPatch
+			} catch (err) {
+				throw new Error(err)
+			}
+		},
+		remove: async (context) => {
+			try {
+				externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
+				//afterDelete
+			} catch (err) {
+				throw new Error(err)
+			}
+		}
+	}
 });
 
 server.on("listening", () =>

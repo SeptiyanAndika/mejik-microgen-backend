@@ -1,3 +1,4 @@
+global.__basedir = __dirname;
 const fs = require("fs")
 const { parse, print } = require("graphql")
 const path = require("path")
@@ -7,7 +8,6 @@ const pluralize = require('pluralize')
 const directives = require('./directives')
 const scalars = require('./scalars')
 const { createBucket } = require('./schema/services/storage/storage')
-
 const { camelize, beautify } = require('./utils')
 let type = fs.readFileSync('./schema.graphql').toString()
 const { APP_NAME } = require('./config')
@@ -29,6 +29,7 @@ const authGraphql = "./schema/graphql/user.js"
 const emailGraphql = "./schema/graphql/email.js"
 const pushNotificationServices = './schema/services/push-notification'
 const pushNotificationGraphql = './schema/graphql/pushNotification.js'
+const hooksDirectory = './hooks/'
 const baseTypeUser = `
     type User {
         id: String
@@ -202,6 +203,13 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
 }
 
 function generateAuthentiations(types) {
+    if(!fs.existsSync(hooksDirectory)){
+        fs.mkdirSync(hooksDirectory)
+    }
+    if(!fs.existsSync(hooksDirectory+'user.js')){
+        ncp('./schema/hooks/user.js', hooksDirectory+'user.js', (err)=>{
+        })
+    }
     ncp(authServices, "./outputs/services/user", function (err) {
         if (err) {
             return console.error(err);
@@ -209,9 +217,16 @@ function generateAuthentiations(types) {
 
         let actions = ['find', 'get', 'create', 'update', 'remove', 'patch']
         const defaultPermissions = require('./schema/services/user/permissions')
-
         const permissions =
-            `const permissions = {
+            `
+            const appRoot = require('app-root-path');
+            let externalPermission = null
+            try {
+                externalPermission = require(appRoot + '/hooks/user')
+            } catch (e) {
+
+            }
+            const permissions = externalPermission && externalPermission().permissions || {
                 admin: ['admin:*'],
                 authenticated: [
                     ${ defaultPermissions.permissions.authenticated.map((t, typeIndex) => {
@@ -295,8 +310,11 @@ function addNewRequester(content, type, requesterName, requesters) {
         `const ${pluralize.singular(camelize(requesterName))}Requester = new cote.Requester({
     name: '${pluralize.singular(requesterName)} Requester',
     key: '${pluralize.singular(camelize(requesterName))}',
-})\n
+})
 `
+    addNewRequester += `
+         app.set('${pluralize.singular(camelize(requesterName))}Requester', ${pluralize.singular(camelize(requesterName))}Requester)\n
+    `
     contentSplitResponser[0] += addNewRequester
     content = contentSplitResponser.join(`${camelize(type)}Service.on`)
     return content
@@ -374,6 +392,14 @@ async function main() {
 
     //end of graphql
     types.map((e, index) => {
+        if(!fs.existsSync(hooksDirectory)){
+            fs.mkdirSync(hooksDirectory)
+        }
+        if(!fs.existsSync(hooksDirectory+camelize(e.name)+'.js')){
+            ncp('./schema/hooks/example.js', hooksDirectory+camelize(e.name)+'.js', (err)=>{
+            })
+        }
+  
         //feathers
         if (!fs.existsSync(featherDirectory)) {
             fs.mkdirSync(featherDirectory)
@@ -500,7 +526,7 @@ async function main() {
                                     type: "show", 
                                     id: context.data.${pluralize.singular(camelize(t.name))}Id, 
                                     headers:{
-                                        token: context.params.token
+                                        token: context.params.headers.authorization
                                     }
                                 })
                                 if(!belongsTo){

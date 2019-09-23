@@ -600,7 +600,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 await ${relatedTable}Requester.send({ type: 'update', 
                     id: null,   
                     headers: {
-                        authorization: context.params.token
+                        authorization: context.params.headers.authorization
                     }, 
                     body: {
                         ${foreignId}Id: null
@@ -618,7 +618,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 await ${relatedTable}Requester.send({ type: 'destroy', 
                     id: null,   
                     headers: {
-                        authorization: context.params.token
+                        authorization: context.params.headers.authorization
                     }, 
                     params: {
                         query: {
@@ -636,7 +636,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                         ${foreignId}Id: context.id
                     }, 
                     headers: {
-                        authorization: context.params.token
+                        authorization: context.params.headers.authorization
                     }
                 })
                 if(${pluralize(relatedTable)}.length > 0){
@@ -650,7 +650,7 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
                 await ${relatedTable}Requester.send({ type: 'update', 
                     id: null,   
                     headers: {
-                        authorization: context.params.token
+                        authorization: context.params.headers.authorization
                     }, 
                     body: {
                         ${foreignId}Id: null

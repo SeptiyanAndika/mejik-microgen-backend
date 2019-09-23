@@ -45,8 +45,7 @@ pushNotificationService.on("sendById", async (req, cb) => {
         users.data.map((user)=> !playersId.includes(user.playerId) && playersId.push(user.playerId))
         sendNotifications({
             "include_player_ids": playersId,
-            "data": {"foo": "bar"},
-            "contents": {"en": "English Message"}
+            "contents": {"en": req.body.contents}
         })
         cb(null, {
             message: 'Success.'

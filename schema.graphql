@@ -32,7 +32,7 @@
 # =======================================
 
 # ADMIN
-type Type {
+type Type{
     name: String!
     events: [Event] @relation(onDelete: RESTRICT)
     tickets: [Ticket] @relation(onDelete: RESTRICT)
@@ -42,12 +42,18 @@ type Category {
     name: String!
     subCategories: [SubCategory] @relation(onDelete: CASCADE)
     events: [Event]
+    images: [Image] @relation(onDelete: CASCADE)
 }
 
 type SubCategory {
     category: Category!
     name: String!
     events: [Event]
+}
+
+type Image {
+    name: String
+    url: String! @File
 }
 
 # type Bank {
