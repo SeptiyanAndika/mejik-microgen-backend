@@ -1,0 +1,19 @@
+type Workspace {
+    _id: String
+    name: String!
+    projects: [Project] @relation(onDelete: CASCADE)
+    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+}
+
+type User {
+    phoneNumbers: String
+    image: String
+}
+
+type Project {
+    _id: String
+    workspace: Workspace!
+    name: String!
+    path: String
+    user: User! @role(onCreate: "own", onUpdateDelete: "own")
+}
