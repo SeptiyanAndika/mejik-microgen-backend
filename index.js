@@ -203,11 +203,11 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
 }
 
 function generateAuthentiations(types) {
-    if(!fs.existsSync(hooksDirectory)){
+    if (!fs.existsSync(hooksDirectory)) {
         fs.mkdirSync(hooksDirectory)
     }
-    if(!fs.existsSync(hooksDirectory+'user.js')){
-        ncp('./schema/hooks/user.js', hooksDirectory+'user.js', (err)=>{
+    if (!fs.existsSync(hooksDirectory + 'user.js')) {
+        ncp('./schema/hooks/user.js', hooksDirectory + 'user.js', (err) => {
         })
     }
     ncp(authServices, "./outputs/services/user", function (err) {
@@ -392,14 +392,14 @@ async function main() {
 
     //end of graphql
     types.map((e, index) => {
-        if(!fs.existsSync(hooksDirectory)){
+        if (!fs.existsSync(hooksDirectory)) {
             fs.mkdirSync(hooksDirectory)
         }
-        if(!fs.existsSync(hooksDirectory+camelize(e.name)+'.js')){
-            ncp('./schema/hooks/example.js', hooksDirectory+camelize(e.name)+'.js', (err)=>{
+        if (!fs.existsSync(hooksDirectory + camelize(e.name) + '.js')) {
+            ncp('./schema/hooks/example.js', hooksDirectory + camelize(e.name) + '.js', (err) => {
             })
         }
-  
+
         //feathers
         if (!fs.existsSync(featherDirectory)) {
             fs.mkdirSync(featherDirectory)
@@ -487,7 +487,7 @@ async function main() {
                                         let beforeUpdate =
                                             `
                                         if(context.id){
-                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
+                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id, { headers: context.params.headers })
                                             if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
@@ -500,7 +500,7 @@ async function main() {
                                         let beforeDelete =
                                             `
                                         if(context.id){
-                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
+                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id, { headers: context.params.headers })
                                             if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
