@@ -7,9 +7,9 @@ const { NotFound } = require('@feathersjs/errors');
 const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 const appRoot = require('app-root-path');
 let externalHook = null
-try{
-    externalHook = require(appRoot+'/hooks/example')
-}catch(e){
+try {
+    externalHook = require(appRoot + '/hooks/example')
+} catch (e) {
 
 }
 
@@ -66,7 +66,7 @@ exampleService.on("store", async (req, cb) => {
 exampleService.on("update", async (req, cb) => {
     try {
         let data = await app.service("examples").patch(req.id, req.body, {
-            ...req.params||{},
+            ...req.params || {},
             headers: req.headers,
             file: req.file
         })
@@ -100,7 +100,7 @@ exampleService.on("show", async (req, cb) => {
         }
         cb(null, data)
     } catch (error) {
-        cb(null, null)
+        cb(error.message, null)
     }
 })
 
@@ -218,7 +218,7 @@ app.service('examples').hooks({
                 if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
-                
+
                 //beforeDelete
                 //onDelete
                 externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)
@@ -227,36 +227,36 @@ app.service('examples').hooks({
             }
         }
     },
-    after:{
-        create: async (context)=>{
-            try{
+    after: {
+        create: async (context) => {
+            try {
                 externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
                 //afterFind
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        create: async (context)=>{
-            try{
+        create: async (context) => {
+            try {
                 externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
                 //afterCreate
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        patch: async (context)=>{
-            try{
+        patch: async (context) => {
+            try {
                 externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
                 //afterPatch
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        remove: async (context)=>{
-            try{
+        remove: async (context) => {
+            try {
                 externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
                 //afterDelete
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         }
