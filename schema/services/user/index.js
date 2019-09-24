@@ -505,14 +505,14 @@ app.service("users").hooks({
 	before: {
 		find: async (context) => {
 			try {
-				externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
+				return externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
 			} catch (err) {
 				throw new Error(err)
 			}
 		},
 		get: async (context) => {
 			try {
-				externalHook && externalHook(app).before && externalHook(app).before.get && externalHook(app).before.get(context)
+				return externalHook && externalHook(app).before && externalHook(app).before.get && externalHook(app).before.get(context)
 			} catch (err) {
 				throw new Error(err)
 			}
@@ -534,7 +534,7 @@ app.service("users").hooks({
 					throw Error("UnAuthorized");
 				}
 			}
-			externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
+			return externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
 		},
 		update: async context => {
 			if (!context.params.token) {
@@ -567,7 +567,7 @@ app.service("users").hooks({
 			if (!context.params.permitted) {
 				throw Error("UnAuthorized");
 			}
-			externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
+			return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
 		},
 		patch: async context => {
 			if (!context.params.token) {
@@ -600,7 +600,7 @@ app.service("users").hooks({
 			if (!context.params.permitted) {
 				throw Error("UnAuthorized");
 			}
-			externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
+			return externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
 		},
 		remove: async context => {
 			if (!context.params.token) {
@@ -633,13 +633,13 @@ app.service("users").hooks({
 			if (!context.params.permitted) {
 				throw Error("UnAuthorized");
 			}
-			externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)
+			return externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)
 		}
 	},
 	after: {
 		create: async (context) => {
 			try {
-				externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
+				return externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
 				//afterFind
 			} catch (err) {
 				throw new Error(err)
@@ -647,7 +647,7 @@ app.service("users").hooks({
 		},
 		create: async (context) => {
 			try {
-				externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
+				return externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
 				//afterCreate
 			} catch (err) {
 				throw new Error(err)
@@ -655,7 +655,7 @@ app.service("users").hooks({
 		},
 		patch: async (context) => {
 			try {
-				externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
+				return externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
 				//afterPatch
 			} catch (err) {
 				throw new Error(err)
@@ -663,7 +663,7 @@ app.service("users").hooks({
 		},
 		remove: async (context) => {
 			try {
-				externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
+				return externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
 				//afterDelete
 			} catch (err) {
 				throw new Error(err)
