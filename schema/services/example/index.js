@@ -7,9 +7,9 @@ const { NotFound } = require('@feathersjs/errors');
 const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 const appRoot = require('app-root-path');
 let externalHook = null
-try{
-    externalHook = require(appRoot+'/hooks/example')
-}catch(e){
+try {
+    externalHook = require(appRoot + '/hooks/example')
+} catch (e) {
 
 }
 
@@ -66,7 +66,7 @@ exampleService.on("store", async (req, cb) => {
 exampleService.on("update", async (req, cb) => {
     try {
         let data = await app.service("examples").patch(req.id, req.body, {
-            ...req.params||{},
+            ...req.params || {},
             headers: req.headers,
             file: req.file
         })
@@ -100,7 +100,7 @@ exampleService.on("show", async (req, cb) => {
         }
         cb(null, data)
     } catch (error) {
-        cb(null, null)
+        cb(error.message, null)
     }
 })
 
@@ -125,7 +125,7 @@ app.service('examples').hooks({
                 if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
-                externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
+                return externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
             } catch (err) {
                 throw new Error(err)
             }
@@ -143,7 +143,7 @@ app.service('examples').hooks({
                 if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
-                externalHook && externalHook(app).before && externalHook(app).before.get && externalHook(app).before.get(context)
+                return externalHook && externalHook(app).before && externalHook(app).before.get && externalHook(app).before.get(context)
             } catch (err) {
                 throw new Error(err)
             }
@@ -162,7 +162,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
                 //beforeCreate
-                externalHook && externalHook(app).before && externalHook(app).before.create && externalHook(app).before.create(context)
+                return externalHook && externalHook(app).before && externalHook(app).before.create && externalHook(app).before.create(context)
             } catch (err) {
                 throw new Error(err)
             }
@@ -181,7 +181,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
                 //beforeUpdate
-                externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
+                return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
             } catch (err) {
                 throw new Error(err)
             }
@@ -200,7 +200,7 @@ app.service('examples').hooks({
                     throw Error("UnAuthorized")
                 }
                 //beforePatch
-                externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
+                return externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
             } catch (err) {
                 throw new Error(err)
             }
@@ -218,45 +218,45 @@ app.service('examples').hooks({
                 if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
-                
+
                 //beforeDelete
                 //onDelete
-                externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)
+                return externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)
             } catch (err) {
                 throw new Error(err)
             }
         }
     },
-    after:{
-        create: async (context)=>{
-            try{
-                externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
+    after: {
+        find: async (context) => {
+            try {
+                return externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
                 //afterFind
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        create: async (context)=>{
-            try{
-                externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
+        create: async (context) => {
+            try {
+                return externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
                 //afterCreate
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        patch: async (context)=>{
-            try{
-                externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
+        patch: async (context) => {
+            try {
+                return externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
                 //afterPatch
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         },
-        remove: async (context)=>{
-            try{
-                externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
+        remove: async (context) => {
+            try {
+                return externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
                 //afterDelete
-            }catch(err){
+            } catch (err) {
                 throw new Error(err)
             }
         }
