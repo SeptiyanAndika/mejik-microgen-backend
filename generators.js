@@ -403,9 +403,6 @@ const generateGraphqlSchema = (schema) => {
 
         //single
         resolverQueries += `${camelize(pluralize.singular(typeName))}: async(_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
-        resolverQueries += `    if (query && query.id) {\n`
-        resolverQueries += `        query._id = query.id\n`
-        resolverQueries += `        delete query.id }\n`
         resolverQueries += `    return await ${requester}.send({ type: 'show', id, headers })\n`
         resolverQueries += "}, \n"
 
