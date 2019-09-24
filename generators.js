@@ -356,6 +356,7 @@ const generateGraphqlSchema = (schema) => {
         })
         input += "    }\n\n"
         queriesPrepend += `\n        ${camelize(pluralize(typeName))} (query: JSON): [${typeName}]`
+        queriesPrepend += `\n        ${camelize(pluralize.singular(typeName))} (id: String!): ${typeName}`
         queriesPrepend += `\n        ${camelize(pluralize(typeName))}Connection (query: JSON): ${typeName}Connection`
 
         subscriptionPrepend += `\n       ${camelize(typeName)}Added: ${typeName}`
@@ -398,6 +399,14 @@ const generateGraphqlSchema = (schema) => {
         resolverQueries += `        query._id = query.id\n`
         resolverQueries += `        delete query.id }\n`
         resolverQueries += `    return await ${requester}.send({ type: 'index', query, headers})\n`
+        resolverQueries += "}, \n"
+
+        //single
+        resolverQueries += `${camelize(pluralize.singular(typeName))}: async(_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
+        resolverQueries += `    if (query && query.id) {\n`
+        resolverQueries += `        query._id = query.id\n`
+        resolverQueries += `        delete query.id }\n`
+        resolverQueries += `    return await ${requester}.send({ type: 'show', id, headers })\n`
         resolverQueries += "}, \n"
 
         //connections
