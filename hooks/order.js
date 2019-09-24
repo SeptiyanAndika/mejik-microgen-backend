@@ -19,6 +19,15 @@ module.exports = (app) => ({
     after: {
         find: async (context) => {
             //do something after find request
+            let token = context.params.headers.authorization
+            let auth = await app.get('userRequester').send({ type: 'verifyToken', token })
+            let order = context.result.data.filter(data => data.userId.toString() === auth.user.id.toString())
+
+            context.result.total = order.length
+            context.result.data = order
+
+            return context
+
         },
         get: async (context) => {
             //do something after get request

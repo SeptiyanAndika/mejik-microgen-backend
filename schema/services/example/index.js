@@ -228,7 +228,7 @@ app.service('examples').hooks({
         }
     },
     after: {
-        create: async (context) => {
+        find: async (context) => {
             try {
                 externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
                 //afterFind
