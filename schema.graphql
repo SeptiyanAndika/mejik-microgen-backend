@@ -32,7 +32,7 @@
 # =======================================
 
 # ADMIN
-type Type{
+type Type {
     name: String!
     events: [Event] @relation(onDelete: RESTRICT)
     tickets: [Ticket] @relation(onDelete: RESTRICT)
@@ -57,18 +57,23 @@ type CategoryImage {
     category: Category
 }
 
-# type Bank {
-#     name: String!
-#     adminBanks: [AdminBank] @relation(onDelete: RESTRICT)
-#     userBanks: [UserBank] @relation(onDelete: RESTRICT)
-# }
+type Bank {
+    name: String!
+    bankPayments: [BankPayment] @relation(onDelete: RESTRICT)
+    # userBanks: [UserBank] @relation(onDelete: RESTRICT)
+}
 
-# type AdminBank {
-#     name: String!
-#     number: String!
-#     bank: Bank!
-#     type: String @default(value: "transfer")
-# }
+type BankPayment {
+    name: String!
+    number: String!
+    bank: Bank!
+    paymentMethod: PaymentMethod!
+}
+
+type PaymentMethod {
+    name: String!
+    bankPayments: [BankPayment]
+}
 
 # type UserBank {
 #     name: String!
@@ -157,16 +162,19 @@ type Transaction {
     takerID: String
     total: Int
     status: Boolean @default(value: false)
-    # payment: Payment
+    bankPayment: BankPayment
     # userAddInformation: UserAddInformation
 }
 
-# # USER
-# type User {
-#     # phoneNumber: String
-#     # image: String
-#     userBanks: [UserBank]
-# }
+# USER
+type User {
+    Title: String
+    phoneNumber: String
+    image: String
+    address: String
+    city: String
+    postalCode: String
+}
 
 # # type Tag {
 # #     id: String

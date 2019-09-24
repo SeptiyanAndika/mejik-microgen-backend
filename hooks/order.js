@@ -8,6 +8,16 @@ module.exports = (app) => ({
         },
         create: async (context) => {
             //do something before create request
+            let ticket = await app.get('ticketRequester').send({
+                type: 'show',
+                id: context.data.ticketId,
+                headers: context.params.headers
+            })
+
+            context.data.price = ticket.price
+            context.data.subTotal = ticket.price * context.data.qty + context.data.fee
+
+            return context
         },
         patch: async (context) => {
             //do something before patch request
@@ -27,7 +37,6 @@ module.exports = (app) => ({
             context.result.data = order
 
             return context
-
         },
         get: async (context) => {
             //do something after get request
@@ -36,21 +45,14 @@ module.exports = (app) => ({
             //do something after create request
             let ticket = await app.get('ticketRequester').send({
                 type: 'show',
-                id: context.data.ticketId,
+                id: context.result.ticketId,
                 headers: context.params.headers
-            })
-
-            app.service("orders").patch(context.result.id, {
-                price: ticket.price,
-                subTotal: ticket.price * context.data.qty + context.data.fee,
-            }, {
-                headers: context.params.headers,
             })
 
             app.get('ticketRequester').send({
                 type: 'update',
-                body: { qty: ticket.qty - context.data.qty },
-                id: context.data.ticketId,
+                body: { qty: ticket.qty - context.result.qty },
+                id: context.result.ticketId,
                 headers: context.params.headers
             })
         },

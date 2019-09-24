@@ -11,6 +11,20 @@ module.exports = (app) => ({
         },
         patch: async (context) => {
             //do something before patch request
+            let orders = await app.get('orderRequester').send({
+                type: 'index',
+                query: {
+                    transactionId: context.id
+                },
+                headers: context.params.headers
+            })
+
+            context.data.total = 0
+            await orders.map(order => {
+                context.data.total += order.subTotal
+            })
+
+            return context
         },
         delete: async (context) => {
             //do something before delete request
@@ -36,24 +50,6 @@ module.exports = (app) => ({
         },
         patch: async (context) => {
             //do something after patch request
-            let orders = await app.get('orderRequester').send({
-                type: 'index',
-                query: {
-                    transactionId: context.id
-                },
-                headers: context.params.headers
-            })
-
-            let total = 0
-            orders.map(order => {
-                total += order.subTotal
-            })
-
-            app.service("transactions").patch(context.id, {
-                total
-            }, {
-                headers: context.params.headers,
-            })
         },
         delete: async (context) => {
             //do something after delete request
