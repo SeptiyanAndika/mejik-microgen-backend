@@ -6,4 +6,5 @@ module.exports = {
     SECRET_KEY: process.env.SECRET_KEY,
     REDIS_HOST: process.env.REDIS_HOST,
     REDIS_PORT: process.env.REDIS_PORT,
+    STORAGE_COTE: process.env.STORAGE_COTE
 }

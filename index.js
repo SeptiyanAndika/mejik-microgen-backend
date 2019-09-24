@@ -2,7 +2,7 @@ global.__basedir = __dirname;
 const fs = require("fs")
 const { parse, print } = require("graphql")
 const path = require("path")
-const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes } = require("./generators")
+const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes, generateEcosystemConfig } = require("./generators")
 const ncp = require('ncp').ncp;
 const pluralize = require('pluralize')
 const yaml = require('js-yaml');
@@ -22,7 +22,7 @@ let rawSchema = scalars + directives + type
 let schema = parse(rawSchema);
 const getPort = require('get-port');
 
-let dockerCompose = yaml.safeLoad(fs.readFileSync('./docker-compose.yml', 'utf8'));
+let dockerCompose = yaml.safeLoad(fs.readFileSync('./schema/docker-compose.yml', 'utf8'));
 
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
@@ -33,6 +33,7 @@ const authGraphql = "./schema/graphql/user.js"
 const emailGraphql = "./schema/graphql/email.js"
 const pushNotificationServices = './schema/services/push-notification'
 const pushNotificationGraphql = './schema/graphql/pushNotification.js'
+
 const hooksDirectory = './hooks/'
 const baseTypeUser = `
     type User {
@@ -49,6 +50,9 @@ let defaultConfigService = {
         port: 6379
     }
 }
+
+const PROJECT_NAME = process.env.PROJECT_NAME || 'mejik-microgen'
+
 const writeFile = (dir, fileName, file) => {
     //create folder if not exists
     if (!fs.existsSync(dir)) {
@@ -338,14 +342,15 @@ async function main() {
     }
 
     // generate docker compose
-    dockerCompose.mongo.ports = [MONGODB_PORT + ':27017']
-    dockerCompose.redis.ports = [REDIS_PORT + ':6379']
     fs.writeFile('./outputs/docker-compose.yml', yaml.safeDump(dockerCompose), (err) => {
         if (err) {
             console.log(err);
         }
     });
 
+
+    // generate ecosystem config PM2
+    generateEcosystemConfig(PROJECT_NAME)
 
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
@@ -409,24 +414,34 @@ async function main() {
 
     fs.readFile('./schema/.env', async (err, content) => {
         content = content.toString()
+        content += 'COMPOSE_PROJECT_NAME=' + PROJECT_NAME + "\n"
         content += 'MONGODB_PORT=' + MONGODB_PORT + "\n"
         content += 'REDIS_HOST=localhost' + "\n"
         content += 'REDIS_PORT=' + REDIS_PORT + "\n"
+
         content += '\nAPP_NAME=' + APP_NAME + "\n"
         content += 'BUCKET=' + bucketName + "\n"
         content += 'GRAPHQL_PORT=' + await getPort() + "\n"
-        content += 'USER_HOST=' + defaultConfigService.host + "\n"
+        content += 'EMAIL_COTE=' + await getPort() + "\n"
+        content += 'STORAGE_COTE=' + await getPort() + "\n"
+
+        content += '\nUSER_HOST=' + defaultConfigService.host + "\n"
         content += 'USER_PORT=' + await getPort() + "\n"
+        content += 'USER_COTE=' + await getPort() + "\n"
         content += 'USER_MONGODB=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + 'user' + "_service\n"
-        content += 'NOTIFICATION_HOST=' + defaultConfigService.host + "\n"
+
+        content += '\nNOTIFICATION_HOST=' + defaultConfigService.host + "\n"
         content += 'NOTIFICATION_PORT=' + await getPort() + "\n"
+        content += 'NOTIFICATION_COTE=' + await getPort() + "\n"
         content += 'NOTIFICATION_MONGODB=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + 'pushNotification' + "_service\n"
 
         for (const type of types) {
             let port = await getPort()
+            let cote = await getPort()
 
             content += type.name.toUpperCase() + '_HOST' + '=' + defaultConfigService.host + "\n"
             content += type.name.toUpperCase() + '_PORT' + '=' + port + "\n"
+            content += type.name.toUpperCase() + '_COTE' + '=' + cote + "\n"
             content += type.name.toUpperCase() + '_MONGODB' + '=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + camelize(type.name) + "_service\n"
         }
 
@@ -492,6 +507,7 @@ async function main() {
 
                 newContent += "\nconst HOST = process.env." + e.name.toUpperCase() + "_HOST\n"
                 newContent += "const PORT = process.env." + e.name.toUpperCase() + "_PORT\n"
+                newContent += "const COTE = process.env." + e.name.toUpperCase() + "_COTE\n"
                 newContent += "const MONGODB = process.env." + e.name.toUpperCase() + "_MONGODB\n"
 
                 content = content.toString()

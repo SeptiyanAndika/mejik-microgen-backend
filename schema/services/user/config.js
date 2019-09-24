@@ -7,7 +7,7 @@ module.exports = {
 	HOST: process.env.USER_HOST,
 	PORT: process.env.USER_PORT,
 	MONGODB: process.env.USER_MONGODB,
-
+	USER_COTE: process.env.USER_COTE,
 	forgetPasswordExpired: 1,
 	application: {
 		name: process.env.APP_NAME.slice(0, 1).toUpperCase() + process.env.APP_NAME.slice(1)

@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT } = require("./config")
+const { REDIS_HOST, REDIS_PORT, COTE } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
@@ -15,7 +15,8 @@ try{
 
 const exampleService = new cote.Responder({
     name: 'Example Service',
-    key: 'example'
+    key: 'example',
+    port: COTE
 })
 
 const userRequester = new cote.Requester({

@@ -61,7 +61,7 @@ const generatePackageJSON = (types) => {
 
 const generateGraphqlServer = (types) => {
     let content = ""
-    content += `import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET } from './config'\n`
+    content += `import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET, GRAPHQL_PORT } from './config'\n`
     content += `import { merge } from 'lodash'\n`
     content += `import { ApolloServer, makeExecutableSchema, gql, GraphQLUpload } from 'apollo-server'\n`
     content += `import { GraphQLScalarType } from 'graphql'\n`
@@ -189,7 +189,7 @@ const generateGraphqlServer = (types) => {
             context
         })
 
-        server.listen({ port: process.env.GRAPHQL_PORT }).then(({url})=>{
+        server.listen({ port: GRAPHQL_PORT }).then(({url})=>{
             console.log("Server ready at"+url)
         })
     `
@@ -664,11 +664,28 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
     }
 }
 
+
+const generateEcosystemConfig = (projectName) => {
+    content = ''
+    content += 'module.exports = {\n'
+    content += '    apps: [\n'
+    content += '        {\n'
+    content += `            name: '${projectName}',\n`
+    content += `            script: 'npm',\n`
+    content += `            args: 'run dev',\n`
+    content += `         }\n`
+    content += `    ]\n`
+    content += `}\n`
+
+    fs.writeFileSync('./outputs/ecosystem.config.js', content)
+}
+
 module.exports = {
     generateGraphqlSchema,
     generateGraphqlServer,
     generatePackageJSON,
     whitelistTypes,
     reservedTypes,
-    onDeleteRelations
+    onDeleteRelations,
+    generateEcosystemConfig
 }

@@ -73,6 +73,6 @@ const server = new ApolloServer({
     context
 })
 
-server.listen({ port: process.env.GRAPHQL_PORT }).then(({url})=>{
+server.listen({ port: GRAPHQL_PORT }).then(({url})=>{
     console.log(`🚀  Server ready at ${url}`)
 })
