@@ -20,24 +20,44 @@ export const typeDef = `
 export const resolvers = {
     Mutation: {
         subscribePushNotificatiton: async (_, { input = {} }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
-            let data = await pushNotificationRequester.send({ type: 'store', body: input, headers })
-            return data
+            try{
+                let data = await pushNotificationRequester.send({ type: 'store', body: input, headers })
+                return data
+            }catch(e){
+                throw new Error(e)
+            }
         },
         unsubscribePushNotification: async (_, { input = {} }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
-            let data = await pushNotificationRequester.send({ type: 'destroy', body: input, headers })
-            return data
+            try{
+                let data = await pushNotificationRequester.send({ type: 'destroy', body: input, headers })
+                return data
+            }catch(e){
+                throw new Error(e)
+            }
         },
         sendPushNotificationById: async (_, { input = {}, userId }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
-            let data = await pushNotificationRequester.send({ type: 'sendById', body: input, userId, headers })
-            return data
+            try{
+                let data = await pushNotificationRequester.send({ type: 'sendById', body: input, userId, headers })
+                return data
+            }catch(e){
+                throw new Error(e)
+            }
         },
         sendPushNotificationBySegment: async (_, { input = {}, segment }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
-            let data = await pushNotificationRequester.send({ type: 'sendBySegment', body: input, segment, headers })
-            return data
+            try{
+                let data = await pushNotificationRequester.send({ type: 'sendBySegment', body: input, segment, headers })
+                return data
+            }catch(e){
+                throw new Error(e)
+            }
         },
         sendPushNotification: async (_, { input = {},  }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
-            let data = await pushNotificationRequester.send({ type: 'sendAll', body: input, headers })
-            return data
+            try{
+                let data = await pushNotificationRequester.send({ type: 'sendAll', body: input, headers })
+                return data
+            }catch(e){
+                throw new Error(e)
+            }
         },
         // joinSegment: async (_, { input = {} }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
         //     let data = await pushNotificationRequester.send({ type: 'joinSegment', body: input, headers })

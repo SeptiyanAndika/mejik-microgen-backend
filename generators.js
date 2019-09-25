@@ -398,12 +398,20 @@ const generateGraphqlSchema = (schema) => {
         resolverQueries += `    if (query && query.id) {\n`
         resolverQueries += `        query._id = query.id\n`
         resolverQueries += `        delete query.id }\n`
-        resolverQueries += `    return await ${requester}.send({ type: 'index', query, headers})\n`
+        resolverQueries += `        try{ \n`
+        resolverQueries += `            return await ${requester}.send({ type: 'index', query, headers})\n`
+        resolverQueries += `        }catch(e){ \n`
+        resolverQueries += `            throw new Error(e)`
+        resolverQueries += `        }\n`
         resolverQueries += "}, \n"
 
         //single
         resolverQueries += `${camelize(pluralize.singular(typeName))}: async(_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
-        resolverQueries += `    return await ${requester}.send({ type: 'show', id, headers })\n`
+        resolverQueries += `        try{ \n`
+        resolverQueries += `            return await ${requester}.send({ type: 'show', id, headers })\n`
+        resolverQueries += `        }catch(e){ \n`
+        resolverQueries += `            throw new Error(e)`
+        resolverQueries += `        }\n`
         resolverQueries += "}, \n"
 
         //connections
@@ -411,7 +419,11 @@ const generateGraphqlSchema = (schema) => {
         resolverQueries += `    if (query && query.id) {\n`
         resolverQueries += `        query._id = query.id\n`
         resolverQueries += `        delete query.id }\n`
-        resolverQueries += `    return await ${requester}.send({ type: 'indexConnection', query, headers})\n`
+        resolverQueries += `        try{ \n`
+        resolverQueries += `            return await ${requester}.send({ type: 'indexConnection', query, headers})\n`
+        resolverQueries += `        }catch(e){ \n`
+        resolverQueries += `            throw new Error(e)`
+        resolverQueries += `        }\n`
         resolverQueries += "}, \n"
 
         if (relationTypes.length > 0) {
@@ -420,11 +432,20 @@ const generateGraphqlSchema = (schema) => {
             relationTypes.map((e) => {
                 if (e.type == "ListType") {
                     resolverRelations += `${pluralize(e.name)}: async ({ id }, { query }, { headers, ${pluralize.singular(e.relatedTo)}Requester })=>{\n`
-                    resolverRelations += `  return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: id }, query), headers })\n`
-                    resolverRelations += `},\n`
+                    resolverRelations += `        try{ \n`
+                    resolverRelations += `          return await ${pluralize.singular(e.relatedTo)}Requester.send({ type: 'index', query: Object.assign({ ${camelize(typeName)}Id: id }, query), headers })\n`
+                    resolverRelations += `        }catch(e){ \n`
+                    resolverRelations += `            throw new Error(e)`
+                    resolverRelations += `        }\n`
+                    resolverRelations += `  },\n`
                 } else {
                     resolverRelations += `${e.name}: async ({ ${e.name}Id }, args, { headers, ${e.relatedTo}Requester })=>{\n`
-                    resolverRelations += `  return await ${e.relatedTo}Requester.send({ type: 'show', id: ${e.name}Id, headers })\n`
+                    resolverRelations += `        try{ \n`
+                    resolverRelations += `            return await ${e.relatedTo}Requester.send({ type: 'show', id: ${e.name}Id, headers })\n`
+                    resolverRelations += `        }catch(e){ \n`
+                    resolverRelations += `            throw new Error(e)`
+                    resolverRelations += `        }\n`
+                    
                     resolverRelations += `},\n`
                 }
 
@@ -453,46 +474,54 @@ const generateGraphqlSchema = (schema) => {
             let file = files[0].name.value
             resolverMutations += `
                 create${typeName}: async(_, { input = {} }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester })=>{
-                    if(input.${file}){
-                        let image${typeName} = await input.${file}
-                        const key = "${camelize(typeName)}/"+uuid()+"."+image${typeName}.mimetype.split("/")[1]
-                        const url = storageUrl+key
-                        input.${file} = url
-                        const rs = image${typeName}.createReadStream()
-                        let buffers = []
-                        return new Promise((resolve, reject)=>{
-                            rs.on('data', async (data) => {
-                                buffers.push(data)
-                            })
-                            rs.on('end', async (data)=>{
-                                let buffer = Buffer.concat(buffers)
-                                const ${camelize(typeName)} = ${camelize(typeName)}Requester.send({ 
-                                    type: 'store', 
-                                    body: input,
-                                    headers, 
-                                    file: {
-                                        buffer,
-                                        key,
-                                        mimeType: image${typeName}.mimetype,
-                                        bucket
-                                    }
+                    try{
+                        if(input.${file}){
+                            let image${typeName} = await input.${file}
+                            const key = "${camelize(typeName)}/"+uuid()+"."+image${typeName}.mimetype.split("/")[1]
+                            const url = storageUrl+key
+                            input.${file} = url
+                            const rs = image${typeName}.createReadStream()
+                            let buffers = []
+                            return new Promise((resolve, reject)=>{
+                                rs.on('data', async (data) => {
+                                    buffers.push(data)
                                 })
-                                pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: ${camelize(typeName)} })
-                                resolve(${camelize(typeName)})
+                                rs.on('end', async (data)=>{
+                                    let buffer = Buffer.concat(buffers)
+                                    const ${camelize(typeName)} = ${camelize(typeName)}Requester.send({ 
+                                        type: 'store', 
+                                        body: input,
+                                        headers, 
+                                        file: {
+                                            buffer,
+                                            key,
+                                            mimeType: image${typeName}.mimetype,
+                                            bucket
+                                        }
+                                    })
+                                    pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: ${camelize(typeName)} })
+                                    resolve(${camelize(typeName)})
+                                })
                             })
-                        })
-                    }else{
-                        let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'store', body: input, headers })
-                        pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: ${camelize(typeName)} })
-                        return ${camelize(typeName)}
+                        }else{
+                            let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'store', body: input, headers })
+                            pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: ${camelize(typeName)} })
+                            return ${camelize(typeName)}
+                        }
+                    }catch(e){
+                        throw new Error(e)
                     }
                 },
             `
         } else {
             resolverMutations += `create${typeName}: async(_, { input = {} }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                let data = await ${requester}.send({ type: 'store', body: input, headers})
-                pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: data })
-                return data
+                try{
+                    let data = await ${requester}.send({ type: 'store', body: input, headers})
+                    pubSub.publish("${camelize(typeName)}Added", { ${camelize(typeName)}Added: data })
+                    return data
+                }catch(e){
+                    throw new Error(e)
+                }
             },`
         }
 
@@ -501,72 +530,88 @@ const generateGraphqlSchema = (schema) => {
             let file = files[0].name.value
             resolverMutations += ` 
                 update${typeName}: async (_, { input = {}, id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
-                    if (input.${file}) {
-                        let image${typeName} = await input.${file}
-                        delete input.${file}
+                    try{
+                        if (input.${file}) {
+                            let image${typeName} = await input.${file}
+                            delete input.${file}
   
-                        const rs = image${typeName}.createReadStream()
-                        let buffers = []
-                        return new Promise((resolve, reject)=>{
-                            rs.on('data', async (data) => {
-                                buffers.push(data)
-                            })
-                            rs.on('end', async (data)=>{
-                                let buffer = Buffer.concat(buffers)
-                                const ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ 
-                                    type: 'update', 
-                                    body: input, 
-                                    id, 
-                                    headers,
-                                    file: {
-                                        buffer,
-                                        mimeType: image${typeName}.mimetype,
-                                        bucket
-                                    }
+                            const rs = image${typeName}.createReadStream()
+                            let buffers = []
+                            return new Promise((resolve, reject)=>{
+                                rs.on('data', async (data) => {
+                                    buffers.push(data)
                                 })
-                                pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: ${camelize(typeName)} })
-                                resolve(${camelize(typeName)})
-                            })
+                                rs.on('end', async (data)=>{
+                                    let buffer = Buffer.concat(buffers)
+                                    const ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ 
+                                        type: 'update', 
+                                        body: input, 
+                                        id, 
+                                        headers,
+                                        file: {
+                                            buffer,
+                                            mimeType: image${typeName}.mimetype,
+                                            bucket
+                                        }
+                                    })
+                                    pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: ${camelize(typeName)} })
+                                    resolve(${camelize(typeName)})
+                                })
                             
-                        })
-                    }else{
-                        let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'update', body: input, id, headers })
-                        pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: ${camelize(typeName)} })
-                        return ${camelize(typeName)}
+                            })
+                        }else{
+                            let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'update', body: input, id, headers })
+                            pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: ${camelize(typeName)} })
+                            return ${camelize(typeName)}
+                        }
+                    }catch(e){
+                        throw new Error(e)
                     }
 
                 },`
         } else {
             resolverMutations += `update${typeName}: async(_, { input = {} , id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                let data = await ${requester}.send({ type: 'update', body: input, id, headers})
-                pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: data })
-                return data
+                try{
+                    let data = await ${requester}.send({ type: 'update', body: input, id, headers})
+                    pubSub.publish("${camelize(typeName)}Updated", { ${camelize(typeName)}Updated: data })
+                    return data
+                }catch(e){
+                    throw new Error(e)
+                }
             },`
         }
 
         if (files.length > 0) {
             resolverMutations += `
                 delete${typeName}: async (_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers, bucket, uuid, storageUrl, storageRequester }) => {
-                    let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'destroy', id, headers })
-                    if(${camelize(typeName)}.url){
-                        const key = ${camelize(typeName)}.url.split(storageUrl).join("")
-                        storageRequester.send({
-                            type:"deleteFile",
-                            body:{
-                                bucket,
-                                key
-                            }
-                        })
+                    try{
+                        let ${camelize(typeName)} = await ${camelize(typeName)}Requester.send({ type: 'destroy', id, headers })
+                        if(${camelize(typeName)}.url){
+                            const key = ${camelize(typeName)}.url.split(storageUrl).join("")
+                            storageRequester.send({
+                                type:"deleteFile",
+                                body:{
+                                    bucket,
+                                    key
+                                }
+                            })
+                        }
+                        pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: ${camelize(typeName)} })
+                        return ${camelize(typeName)}
+                    }catch(e){
+                        throw new Error(e)
                     }
-                    pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: ${camelize(typeName)} })
-                    return ${camelize(typeName)}
                 },
             `
         } else {
             resolverMutations += `delete${typeName}: async(_, { id }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{
-                let data = await ${requester}.send({ type: 'destroy', id,  headers})
-                pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: data })
-                return data
+                try{
+                    let data = await ${requester}.send({ type: 'destroy', id,  headers})
+                    pubSub.publish("${camelize(typeName)}Deleted", { ${camelize(typeName)}Deleted: data })
+                    return data
+                }catch(e){
+                    throw new Error(e)
+                }
             },`
         }
 
