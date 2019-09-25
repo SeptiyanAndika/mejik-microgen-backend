@@ -394,7 +394,7 @@ userService.on("register", async (req, cb) => {
 			}
 		});
 
-		externalHook && externalHook(app).after && externalHook(app).after.register && externalHook(app).before.register({
+		externalHook && externalHook(app).after && externalHook(app).after.register && externalHook(app).after.register({
 			result: auth,
 			data: req.body
 		})
@@ -567,7 +567,7 @@ app.service("users").hooks({
 					throw Error("UnAuthorized");
 				}
 			}
-			return externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
+			return externalHook && externalHook(app).before && externalHook(app).before.create && externalHook(app).before.create(context)
 		},
 		update: async context => {
 			if (!context.params.token) {
@@ -670,7 +670,7 @@ app.service("users").hooks({
 		}
 	},
 	after: {
-		create: async (context) => {
+		find: async (context) => {
 			try {
 				return externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
 				//afterFind
