@@ -1,4 +1,5 @@
 global.__basedir = __dirname;
+require('dotenv').config()
 const fs = require("fs")
 const { parse, print } = require("graphql")
 const path = require("path")
@@ -12,6 +13,7 @@ const { createBucket } = require('./schema/services/storage/storage')
 const { camelize, beautify } = require('./utils')
 let type = fs.readFileSync('./schema.graphql').toString()
 const { APP_NAME } = require('./config')
+
 // let buildSchema = makeExecutableSchema({
 //     typeDefs: [scalars, type ],
 //     schemaDirectives: {
@@ -51,7 +53,7 @@ let defaultConfigService = {
     }
 }
 
-const PROJECT_NAME = process.env.PROJECT_NAME || 'mejik-microgen'
+const PROJECT_ID = process.env.PROJECT_ID || 'mejik-microgen'
 
 const writeFile = (dir, fileName, file) => {
     //create folder if not exists
@@ -350,7 +352,7 @@ async function main() {
 
 
     // generate ecosystem config PM2
-    generateEcosystemConfig(PROJECT_NAME)
+    generateEcosystemConfig(PROJECT_ID)
 
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
@@ -414,7 +416,7 @@ async function main() {
 
     fs.readFile('./schema/.env', async (err, content) => {
         content = content.toString()
-        content += 'COMPOSE_PROJECT_NAME=' + PROJECT_NAME + "\n"
+        content += 'COMPOSE_PROJECT_NAME=' + PROJECT_ID + "\n"
         content += 'MONGODB_PORT=' + MONGODB_PORT + "\n"
         content += 'REDIS_HOST=localhost' + "\n"
         content += 'REDIS_PORT=' + REDIS_PORT + "\n"
