@@ -2,7 +2,7 @@ global.__basedir = __dirname;
 const fs = require("fs")
 const { parse, print } = require("graphql")
 const path = require("path")
-const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes } = require("./generators")
+const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes, fieldType } = require("./generators")
 const ncp = require('ncp').ncp;
 const pluralize = require('pluralize')
 const directives = require('./directives')
@@ -50,7 +50,7 @@ const writeFile = (dir, fileName, file) => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir)
     }
-    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}.js`), file, (err) => {
+    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}.js`), beautify(file), (err) => {
         if (err) {
             console.log(err)
         }
@@ -80,40 +80,110 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
         return
     }
 
+    let relationTypes = []
+    let localTypes =  types.map((t)=> camelize(t.name)) 
     setTimeout(() => {
         fs.readFile(graphqlFile, (err, content) => {
             content = content.toString()
             let schemaType = require(graphqlFile)
             let typeDef = parse(schemaType.typeDef)
+
+            // for (let i = 0; i < typeDef.definitions.length; i++) {
+            //     if (reservedTypes.includes(typeDef.definitions[i].name.value)) {
+            //         continue
+            //     }
+            //     if (whitelistTypes.includes(typeDef.definitions[i].kind)) {
+            //         continue
+            //     }
+            //     let typeName = pluralize.singular(typeDef.definitions[i].name.value)
+            //     types.push(camelize(typeName))
+            // }
+
             typeDef.definitions.map((d) => {
+               
                 if (d.kind == "ObjectTypeDefinition") {
                     if (d.name.value == "User") {
+
                         schema.definitions.map((base) => {
                             if (base.name.value == "User") {
+                          
                                 d.fields.map((dFields, i) => {
                                     base.fields.map((baseField) => {
                                         if (dFields.name.value !== baseField.name.value) {
                                             if (!d.fields.map((e) => e.name.value).includes(baseField.name.value)) {
+                                                if(baseField.type.name){
+                                                    if(localTypes.includes(camelize(baseField.type.name.value))){
+                                                        relationTypes.push(baseField)
+                                                    }
+                                                }
+                                                if(baseField.type.type){
+
+                                                    if(localTypes.includes(camelize(baseField.type.type.name.value))){
+                                                        relationTypes.push(baseField)
+                                                    }
+                                                }
                                                 d.fields.push(baseField)
+                                                
                                             }
                                         } else {
                                             d.fields[i] = baseField
                                         }
+    
                                         return baseField
                                     })
                                     return dFields
                                 })
                                 return base
                             }
+                            
                         })
+
+                        // schema.definitions.map((base) => {
+                        //     if (base.name.value == "User") {
+                        //         console.log(base.fields)
+                        //     }
+                        // })
                     }
                 }
+                
                 if (d.kind == "InputObjectTypeDefinition") {
-                    if (d.name.value == "RegisterInput" || d.name.value == "UpdateUserInput" || d.name.value == "ChangeProfileInput" || d.name.value == "CreateUserInput") {
+                    if (d.name.value == "RegisterInput" || d.name.value == "CreateUserInput") {
+                            schema.definitions.map((base) => {
+                                if (base.name.value == "User") { 
+                        
+                                    base.fields.map((baseField) => {
+                                        baseField = JSON.parse(JSON.stringify(baseField))
+                
+                                        if(baseField.type.name){
+                                            if(localTypes.includes(camelize(baseField.type.name.value))){
+                                                if(baseField.type.kind == "NamedType"){
+                                                    baseField.name.value = baseField.name.value+"Id"
+                                                    baseField.type.name.value = "String"
+                                                    d.fields.push(baseField)
+                                                }
+                                                
+                                            }else{
+                                                d.fields.push(baseField)
+                                            }
+                                        }
+                                        
+                                    })
+                                }
+                            })
+                    }
+                    if (d.name.value == "UpdateUserInput" || d.name.value == "ChangeProfileInput") {
                         schema.definitions.map((base) => {
-                            if (base.name.value == "User") {
+                            if (base.name.value == "User") { 
                                 base.fields.map((baseField) => {
-                                    d.fields.push(baseField)
+                                    if(baseField.type.name){
+        
+                                        if(localTypes.includes(camelize(baseField.type.name.value))){
+
+                                        }else{
+                                            d.fields.push(baseField)
+                                        }
+                                    }
+
                                 })
                             }
                         })
@@ -121,10 +191,53 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                 }
             })
 
+            // typeDef.definitions.map((d) => {
+               
+            //     if (d.kind == "ObjectTypeDefinition") {
+            //         if (d.name.value == "User") {
+            //             console.log("d", d.fields)
+
+            //             // schema.definitions.map((base) => {
+            //             //     if (base.name.value == "User") {
+            //             //         console.log(base.fields)
+            //             //     }
+            //             // })
+            //         }
+            //     }
+        
+            // })
             schemaType.typeDef = print(typeDef)
+            let resolverRelations = content.split("const resolvers = {")[1].split("//relations")[0]
+            if(relationTypes.length > 0){
+                resolverRelations += `    User: {\n`
+
+                relationTypes.map((e) => {
+                    if (e.type.kind == "ListType") {
+                        resolverRelations += `${e.name.value}: async ({ id }, { query }, { headers, ${camelize(pluralize.singular(e.type.type.name.value))}Requester })=>{\n`
+                        resolverRelations += `        try{ \n`
+                        resolverRelations += `          return await ${camelize(pluralize.singular(e.type.type.name.value))}Requester.send({ type: 'index', query: Object.assign({ userId: id }, query), headers })\n`
+                        resolverRelations += `        }catch(e){ \n`
+                        resolverRelations += `            throw new Error(e)`
+                        resolverRelations += `        }\n`
+                        resolverRelations += `  },\n`
+                    } else {
+                        resolverRelations += `${e.name.value}: async ({ ${e.name.value}Id }, args, { headers, ${camelize(e.type.name.value)}Requester })=>{\n`
+                        resolverRelations += `        try{ \n`
+                        resolverRelations += `            return await ${e.name.value}Requester.send({ type: 'show', id: ${e.name.value}Id, headers })\n`
+                        resolverRelations += `        }catch(e){ \n`
+                        resolverRelations += `            throw new Error(e)`
+                        resolverRelations += `        }\n`
+                    
+                        resolverRelations += `},\n`
+                    }
+
+                })
+                resolverRelations += `    },\n`
+            }
+            resolverRelations += content.split("const resolvers = {")[1].split("//relations")[1]
             writeFile(graphqlDirectiory, "user",
                 "const typeDef = `\n" + schemaType.typeDef + "`\n" +
-                "const resolvers = {" + content.split("const resolvers = {")[1]
+                "const resolvers = {" + resolverRelations
             )
 
             fs.readFile(userDirectory + "/src/models/user.js", (err, x) => {

@@ -721,5 +721,6 @@ module.exports = {
     generatePackageJSON,
     whitelistTypes,
     reservedTypes,
-    onDeleteRelations
+    onDeleteRelations,
+    fieldType
 }

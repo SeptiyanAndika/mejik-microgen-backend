@@ -128,6 +128,7 @@ const resolvers = {
 			}
 		},
 	},
+	//relations
 	Mutation: {
 		resetPassword: async (_, { input = {} }, { userRequester, headers }) => {
 			try{

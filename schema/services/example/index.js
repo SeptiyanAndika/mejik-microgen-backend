@@ -24,7 +24,19 @@ const userRequester = new cote.Requester({
 })
 
 app.set('userRequester', userRequester)
-
+const getRequester = (name) =>{
+    const requesterName = `${name.charAt(0).toUpperCase() + name.slice(1)} Requester`
+    if(app.get(requesterName)){
+        return app.get(requesterName)
+    }
+    const requester = new cote.Requester({
+        name: requesterName,
+        key: `${name.toLowerCase()}`,
+    })
+    app.set(requesterName, requester)
+    return requester
+}
+app.set('getRequester', getRequester)
 exampleService.on("index", async (req, cb) => {
     try {
         let data = await app.service("examples").find({
@@ -114,7 +126,7 @@ app.service('examples').hooks({
     before: {
         find: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers.authorization)
+                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
 
@@ -132,7 +144,7 @@ app.service('examples').hooks({
         },
         get: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers.authorization)
+                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
 
@@ -150,7 +162,7 @@ app.service('examples').hooks({
         },
         create: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers.authorization)
+                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
 
@@ -169,7 +181,7 @@ app.service('examples').hooks({
         },
         update: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers.authorization)
+                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
 
@@ -188,7 +200,7 @@ app.service('examples').hooks({
         },
         patch: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers.authorization)
+                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
 
@@ -207,7 +219,7 @@ app.service('examples').hooks({
         },
         remove: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers.authorization)
+                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
 

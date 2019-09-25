@@ -7,6 +7,7 @@ const { permissions } = require("./permissions");
 const cote = require("cote")({ redis: { host: REDIS_HOST, port: REDIS_PORT } });
 const bcrypt = require("bcryptjs");
 const ObjectId = require('mongodb').ObjectID;
+const appRoot = require('app-root-path');
 let externalHook = null
 try {
 	externalHook = require(appRoot + '/hooks/user')
@@ -24,6 +25,20 @@ const emailRequester = new cote.Requester({
 	key: "email"
 });
 
+
+const getRequester = (name) =>{
+	const requesterName = `${name.charAt(0).toUpperCase() + name.slice(1)} Requester`
+	if(app.get(requesterName)){
+		return app.get(requesterName)
+	}
+	const requester = new cote.Requester({
+		name: requesterName,
+		key: `${name.toLowerCase()}`,
+	})
+	app.set(requesterName, requester)
+	return requester
+}
+app.getRequester = getRequester
 userService.on("index", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
@@ -375,7 +390,7 @@ userService.on("register", async (req, cb) => {
 
 		externalHook && externalHook(app).after && externalHook(app).after.register && externalHook(app).before.register({
 			result: auth,
-			...app
+			data: req.body
 		})
 		cb(null, {
 			user,

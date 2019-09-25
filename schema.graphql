@@ -32,139 +32,139 @@
 # =======================================
 
 # ADMIN
-type Type {
-    name: String!
-    events: [Event] @relation(onDelete: RESTRICT)
-    tickets: [Ticket] @relation(onDelete: RESTRICT)
-}
+# type Type {
+#     name: String!
+#     events: [Event] @relation(onDelete: RESTRICT)
+#     tickets: [Ticket] @relation(onDelete: RESTRICT)
+# }
 
-type Category {
-    name: String!
-    subCategories: [SubCategory] @relation(onDelete: CASCADE)
-    events: [Event]
-    CategoryImages: [CategoryImage] @relation(onDelete: CASCADE)
-}
+# type Category {
+#     name: String!
+#     subCategories: [SubCategory] @relation(onDelete: CASCADE)
+#     events: [Event]
+#     CategoryImages: [CategoryImage] @relation(onDelete: CASCADE)
+# }
 
-type SubCategory {
-    category: Category!
-    name: String!
-    events: [Event]
-}
+# type SubCategory {
+#     category: Category!
+#     name: String!
+#     events: [Event]
+# }
 
-type CategoryImage {
-    name: String
-    url: String! @File
-    category: Category
-}
+# type CategoryImage {
+#     name: String
+#     url: String! @File
+#     category: Category
+# }
 
-type Bank {
-    name: String!
-    bankPayments: [BankPayment] @relation(onDelete: RESTRICT)
-    # userBanks: [UserBank] @relation(onDelete: RESTRICT)
-}
+# type Bank {
+#     name: String!
+#     bankPayments: [BankPayment] @relation(onDelete: RESTRICT)
+#     # userBanks: [UserBank] @relation(onDelete: RESTRICT)
+# }
 
-type BankPayment {
-    name: String!
-    number: String!
-    bank: Bank!
-    paymentMethod: PaymentMethod!
-}
-
-type PaymentMethod {
-    name: String!
-    bankPayments: [BankPayment]
-}
-
-# type UserBank {
+# type BankPayment {
 #     name: String!
 #     number: String!
 #     bank: Bank!
-#     user: User! @role(onCreate: "own", onDelete: "own")
+#     paymentMethod: PaymentMethod!
 # }
 
-type Event {
-    owner: User! @role(onCreate: "own", onDelete: "own")
-    name: String!
-    locationType: String @default(value: "tbd")
-    locationName: String
-    latitude: String
-    longitude: String
-    address: String
-    state: String
-    postalCode: String
-    city: String
-    country: String
-    type: Type!
-    category: Category!
-    subCategory: SubCategory!
-    startDate: String!
-    endDate: String!
-    startTime: String!
-    endTime: String!
-    tickets: [Ticket] @relation(onDelete: CASCADE)
-    showRemainingTicket: Boolean @default(value: false)
-    eventImages: [EventImage] @relation(onDelete: CASCADE)
-    description: String!
-    organizer: String!
-    organizerDescription: String!
-    termsAndCondition: String
-    refundPolicy: String
-    link: String
-    private: Boolean @default(value: false)
-}
+# type PaymentMethod {
+#     name: String!
+#     bankPayments: [BankPayment]
+# }
 
-type EventImage {
-    name: String
-    url: String! @File
-    event: Event
-}
+# # type UserBank {
+# #     name: String!
+# #     number: String!
+# #     bank: Bank!
+# #     user: User! @role(onCreate: "own", onDelete: "own")
+# # }
 
-type Ticket {
-    event: Event!
-    name: String
-    qty: Int
-    price: Int
-    includeFees: Boolean
-    startDate: String
-    endDate: String
-    startTime: String
-    endTime: String
-    description: String
-    visibility: Boolean
-    orderMinQty: Int
-    orderMaxQty: Int
-    salesChannel: String
-    sold: Boolean
-}
+# type Event {
+#     owner: User! @role(onCreate: "own", onDelete: "own")
+#     name: String!
+#     locationType: String @default(value: "tbd")
+#     locationName: String
+#     latitude: String
+#     longitude: String
+#     address: String
+#     state: String
+#     postalCode: String
+#     city: String
+#     country: String
+#     type: Type!
+#     category: Category!
+#     subCategory: SubCategory!
+#     startDate: String!
+#     endDate: String!
+#     startTime: String!
+#     endTime: String!
+#     tickets: [Ticket] @relation(onDelete: CASCADE)
+#     showRemainingTicket: Boolean @default(value: false)
+#     eventImages: [EventImage] @relation(onDelete: CASCADE)
+#     description: String!
+#     organizer: String!
+#     organizerDescription: String!
+#     termsAndCondition: String
+#     refundPolicy: String
+#     link: String
+#     private: Boolean @default(value: false)
+# }
 
-type Order {
-    user: User @role(onCreate: "own")
-    event: Event!
-    ticket: Ticket!
-    price: Int
-    fee: Int
-    qty: Int
-    subTotal: Int
-    transaction: Transaction
-}
+# type EventImage {
+#     name: String
+#     url: String! @File
+#     event: Event
+# }
 
-type Transaction {
-    user: User @role(onCreate: "own")
-    orders: [Order] @role(onCreate: "own")
-    customerFirstName: String
-    customerLastName: String
-    customerPhoneNumber: String
-    customerEmail: String
-    takerFirstName: String
-    takerLastName: String
-    takerPhoneNumber: String
-    takerEmail: String
-    takerID: String
-    total: Int
-    status: Boolean @default(value: false)
-    bankPayment: BankPayment
-    # userAddInformation: UserAddInformation
-}
+# type Ticket {
+#     event: Event!
+#     name: String
+#     qty: Int
+#     price: Int
+#     includeFees: Boolean
+#     startDate: String
+#     endDate: String
+#     startTime: String
+#     endTime: String
+#     description: String
+#     visibility: Boolean
+#     orderMinQty: Int
+#     orderMaxQty: Int
+#     salesChannel: String
+#     sold: Boolean
+# }
+
+# type Order {
+#     user: User @role(onCreate: "own")
+#     event: Event!
+#     ticket: Ticket!
+#     price: Int
+#     fee: Int
+#     qty: Int
+#     subTotal: Int
+#     transaction: Transaction
+# }
+
+# type Transaction {
+#     user: User @role(onCreate: "own")
+#     orders: [Order] @role(onCreate: "own")
+#     customerFirstName: String
+#     customerLastName: String
+#     customerPhoneNumber: String
+#     customerEmail: String
+#     takerFirstName: String
+#     takerLastName: String
+#     takerPhoneNumber: String
+#     takerEmail: String
+#     takerID: String
+#     total: Int
+#     status: Boolean @default(value: false)
+#     bankPayment: BankPayment
+#     # userAddInformation: UserAddInformation
+# }
 
 # USER
 type User {
@@ -174,8 +174,13 @@ type User {
     address: String
     city: String
     postalCode: String
+    organization: Organization
+    test: [Organization]
 }
 
+type Organization {
+    name: String
+}
 # # type Tag {
 # #     id: String
 # #     name: String
