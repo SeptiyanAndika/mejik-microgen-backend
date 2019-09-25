@@ -25,6 +25,12 @@ const emailRequester = new cote.Requester({
 	key: "email"
 });
 
+function camelize(text) {
+	return text.replace(/^([A-Z])|[\s-_]+(\w)/g, function(match, p1, p2, offset) {
+		if (p2) return p2.toUpperCase();
+		return p1.toLowerCase();        
+	});
+}
 
 const getRequester = (name) =>{
 	const requesterName = `${name.charAt(0).toUpperCase() + name.slice(1)} Requester`
@@ -33,7 +39,7 @@ const getRequester = (name) =>{
 	}
 	const requester = new cote.Requester({
 		name: requesterName,
-		key: `${name.toLowerCase()}`,
+		key: `${camelize(name)}`,
 	})
 	app.set(requesterName, requester)
 	return requester
