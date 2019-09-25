@@ -549,7 +549,8 @@ async function main() {
             fs.writeFileSync(path + ".env",
                 "HOST=" + defaultConfigService.host + "\n" +
                 "PORT=" + port + "\n" +
-                "MONGODB=" + defaultConfigService.mongodb + camelize(e.name) + "_service\n" +
+                // "MONGODB=" + defaultConfigService.mongodb + camelize(e.name) + "_service\n" +
+                "MONGODB=" + defaultConfigService.mongodb + "rajakarcis\n" +
                 "REDIS_HOST=" + defaultConfigService.redis.host + "\n" +
                 "REDIS_PORT=" + defaultConfigService.redis.port + "\n"
             )

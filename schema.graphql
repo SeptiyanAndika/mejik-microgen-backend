@@ -32,11 +32,23 @@
 # =======================================
 
 # ADMIN
-# type Type {
-#     name: String!
-#     events: [Event] @relation(onDelete: RESTRICT)
-#     tickets: [Ticket] @relation(onDelete: RESTRICT)
-# }
+type Type {
+    name: String!
+    tickets: [Ticket] @relation(onDelete: RESTRICT)
+}
+
+type Category {
+    name: String!
+    subCategories: [SubCategory] @relation(onDelete: CASCADE)
+    events: [Event]
+    categoryImage: CategoryImage @relation(onDelete: CASCADE)
+}
+
+type SubCategory {
+    category: Category!
+    name: String!
+    events: [Event]
+}
 
 # type Category {
 #     name: String!
@@ -70,10 +82,35 @@
 #     paymentMethod: PaymentMethod!
 # }
 
-# type PaymentMethod {
-#     name: String!
-#     bankPayments: [BankPayment]
-# }
+type Event {
+    owner: User! @role(onCreate: "own", onDelete: "own")
+    name: String!
+    locationType: String @default(value: "tbd")
+    locationName: String
+    latitude: String
+    longitude: String
+    address: String
+    state: String
+    postalCode: String
+    city: String
+    country: String
+    category: Category!
+    subCategory: SubCategory!
+    startDate: String!
+    endDate: String!
+    startTime: String!
+    endTime: String!
+    tickets: [Ticket] @relation(onDelete: CASCADE)
+    isShowRemainingTicket: Boolean @default(value: false)
+    eventImages: [EventImage] @relation(onDelete: CASCADE)
+    description: String!
+    organizer: String!
+    organizerDescription: String!
+    termsAndCondition: String
+    refundPolicy: String
+    link: String
+    isPrivate: Boolean @default(value: false)
+}
 
 # # type UserBank {
 # #     name: String!
@@ -82,93 +119,59 @@
 # #     user: User! @role(onCreate: "own", onDelete: "own")
 # # }
 
-# type Event {
-#     owner: User! @role(onCreate: "own", onDelete: "own")
-#     name: String!
-#     locationType: String @default(value: "tbd")
-#     locationName: String
-#     latitude: String
-#     longitude: String
-#     address: String
-#     state: String
-#     postalCode: String
-#     city: String
-#     country: String
-#     type: Type!
-#     category: Category!
-#     subCategory: SubCategory!
-#     startDate: String!
-#     endDate: String!
-#     startTime: String!
-#     endTime: String!
-#     tickets: [Ticket] @relation(onDelete: CASCADE)
-#     showRemainingTicket: Boolean @default(value: false)
-#     eventImages: [EventImage] @relation(onDelete: CASCADE)
-#     description: String!
-#     organizer: String!
-#     organizerDescription: String!
-#     termsAndCondition: String
-#     refundPolicy: String
-#     link: String
-#     private: Boolean @default(value: false)
-# }
+type Ticket {
+    event: Event!
+    type: Type!
+    name: String
+    qty: Int
+    stock: Int
+    price: Float
+    isIncludeFees: Boolean
+    startDate: String
+    endDate: String
+    startTime: String
+    endTime: String
+    description: String
+    isVisible: Boolean
+    orderMinQty: Int
+    orderMaxQty: Int
+    salesChannel: String
+    isSold: Boolean
+}
 
-# type EventImage {
-#     name: String
-#     url: String! @File
-#     event: Event
-# }
+type Order {
+    user: User @role(onCreate: "own")
+    event: Event!
+    ticket: Ticket!
+    price: Float
+    fee: Float
+    qty: Int
+    subTotal: Float
+    transaction: Transaction
+}
 
-# type Ticket {
-#     event: Event!
-#     name: String
-#     qty: Int
-#     price: Int
-#     includeFees: Boolean
-#     startDate: String
-#     endDate: String
-#     startTime: String
-#     endTime: String
-#     description: String
-#     visibility: Boolean
-#     orderMinQty: Int
-#     orderMaxQty: Int
-#     salesChannel: String
-#     sold: Boolean
-# }
-
-# type Order {
-#     user: User @role(onCreate: "own")
-#     event: Event!
-#     ticket: Ticket!
-#     price: Int
-#     fee: Int
-#     qty: Int
-#     subTotal: Int
-#     transaction: Transaction
-# }
-
-# type Transaction {
-#     user: User @role(onCreate: "own")
-#     orders: [Order] @role(onCreate: "own")
-#     customerFirstName: String
-#     customerLastName: String
-#     customerPhoneNumber: String
-#     customerEmail: String
-#     takerFirstName: String
-#     takerLastName: String
-#     takerPhoneNumber: String
-#     takerEmail: String
-#     takerID: String
-#     total: Int
-#     status: Boolean @default(value: false)
-#     bankPayment: BankPayment
-#     # userAddInformation: UserAddInformation
-# }
+type Transaction {
+    transactionId: String
+    user: User @role(onCreate: "own")
+    orders: [Order] @role(onCreate: "own")
+    customerFirstName: String
+    customerLastName: String
+    customerPhoneNumber: String
+    customerEmail: String
+    attendanceFirstName: String
+    attendanceLastName: String
+    attendancePhoneNumber: String
+    attendanceEmail: String
+    attendanceIdentity: String
+    total: Float
+    isPaid: String @default(value: "")
+    bankPayment: BankPayment
+    # userAddInformation: UserAddInformation
+}
 
 # USER
 type User {
-    Title: String
+    title: String
     phoneNumber: String
     image: String
     address: String
