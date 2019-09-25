@@ -34,7 +34,6 @@
 # ADMIN
 type Type {
     name: String!
-    events: [Event] @relation(onDelete: RESTRICT)
     tickets: [Ticket] @relation(onDelete: RESTRICT)
 }
 
@@ -42,7 +41,7 @@ type Category {
     name: String!
     subCategories: [SubCategory] @relation(onDelete: CASCADE)
     events: [Event]
-    CategoryImages: [CategoryImage] @relation(onDelete: CASCADE)
+    categoryImage: CategoryImage @relation(onDelete: CASCADE)
 }
 
 type SubCategory {
@@ -94,7 +93,6 @@ type Event {
     postalCode: String
     city: String
     country: String
-    type: Type!
     category: Category!
     subCategory: SubCategory!
     startDate: String!
@@ -102,7 +100,7 @@ type Event {
     startTime: String!
     endTime: String!
     tickets: [Ticket] @relation(onDelete: CASCADE)
-    showRemainingTicket: Boolean @default(value: false)
+    isShowRemainingTicket: Boolean @default(value: false)
     eventImages: [EventImage] @relation(onDelete: CASCADE)
     description: String!
     organizer: String!
@@ -110,7 +108,7 @@ type Event {
     termsAndCondition: String
     refundPolicy: String
     link: String
-    private: Boolean @default(value: false)
+    isPrivate: Boolean @default(value: false)
 }
 
 type EventImage {
@@ -121,54 +119,57 @@ type EventImage {
 
 type Ticket {
     event: Event!
+    type: Type!
     name: String
     qty: Int
-    price: Int
-    includeFees: Boolean
+    stock: Int
+    price: Float
+    isIncludeFees: Boolean
     startDate: String
     endDate: String
     startTime: String
     endTime: String
     description: String
-    visibility: Boolean
+    isVisible: Boolean
     orderMinQty: Int
     orderMaxQty: Int
     salesChannel: String
-    sold: Boolean
+    isSold: Boolean
 }
 
 type Order {
     user: User @role(onCreate: "own")
     event: Event!
     ticket: Ticket!
-    price: Int
-    fee: Int
+    price: Float
+    fee: Float
     qty: Int
-    subTotal: Int
+    subTotal: Float
     transaction: Transaction
 }
 
 type Transaction {
+    transactionId: String
     user: User @role(onCreate: "own")
     orders: [Order] @role(onCreate: "own")
     customerFirstName: String
     customerLastName: String
     customerPhoneNumber: String
     customerEmail: String
-    takerFirstName: String
-    takerLastName: String
-    takerPhoneNumber: String
-    takerEmail: String
-    takerID: String
-    total: Int
-    status: Boolean @default(value: false)
+    attendanceFirstName: String
+    attendanceLastName: String
+    attendancePhoneNumber: String
+    attendanceEmail: String
+    attendanceIdentity: String
+    total: Float
+    isPaid: String @default(value: "")
     bankPayment: BankPayment
     # userAddInformation: UserAddInformation
 }
 
 # USER
 type User {
-    Title: String
+    title: String
     phoneNumber: String
     image: String
     address: String

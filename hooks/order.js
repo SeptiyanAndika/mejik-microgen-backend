@@ -1,3 +1,5 @@
+const mongoose = require('mongoose')
+
 module.exports = (app) => ({
     before: {
         find: async (context) => {
@@ -8,12 +10,34 @@ module.exports = (app) => ({
         },
         create: async (context) => {
             //do something before create request
+            let checkTransaction = await app.get('transactionRequester').send({
+                type: 'index',
+                query: {
+                    isPaid: null
+                },
+                headers: context.params.headers
+            })
+
+            let transaction = null
+            if (checkTransaction.length === 0) {
+                transaction = await app.get('transactionRequester').send({
+                    type: 'store',
+                    body: {
+                        _id: mongoose.Types.ObjectId()
+                    },
+                    headers: context.params.headers
+                })
+            } else {
+                transaction = checkTransaction
+            }
+
             let ticket = await app.get('ticketRequester').send({
                 type: 'show',
                 id: context.data.ticketId,
                 headers: context.params.headers
             })
 
+            context.data.transactionId = transaction[0].id
             context.data.price = ticket.price
             context.data.subTotal = ticket.price * context.data.qty + context.data.fee
 
