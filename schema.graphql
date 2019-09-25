@@ -152,7 +152,7 @@ type Order {
 
 type Transaction {
     transactionId: String
-    user: User @role(onCreate: "own")
+    user: User @role(onCreate: "own", onFind: "own")
     orders: [Order] @role(onCreate: "own")
     customerFirstName: String
     customerLastName: String

@@ -595,13 +595,16 @@ async function main() {
                                     }
                                 }
 
-                                if (args.name.value == "onIndex") {
+                                if (args.name.value == "onFind") {
                                     if (args.value.value == "own") {
-                                        let contentSplit = content.split("//beforeIndex")
+                                        let contentSplit = content.split("//beforeFind")
                                         let beforeCreate =
                                             `
-                                        context.data.${f.name}Id = auth.user.id
-                                        //beforeCreate     
+                                        context.data.query = {
+                                            ...context.data.query || {},
+                                            ${f.name}Id: auth.user.id
+                                        }
+                                        //beforeFind     
                                         `
                                         beforeCreate += contentSplit[1]
                                         // console.log(contentSplit[0])
