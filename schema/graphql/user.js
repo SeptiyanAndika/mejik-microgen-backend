@@ -48,6 +48,11 @@ const typeDef = `
 		data: [User]
 	}
 
+	type ChangePasswordInput {
+		oldPassword: String!
+		newPassword: String!
+	}
+
     extend type Query {
         users (query: JSON): [User]
 		user (id: String): User
@@ -66,6 +71,7 @@ const typeDef = `
 		updateUser(input: UpdateUserInput, id: String!): User
 		deleteUser(id: String!): User
 		changeProfile(input: ChangeProfileInput): User
+		changePassword(input: ChangePasswordInput): Response
     }
 
     type User {
@@ -170,6 +176,13 @@ const resolvers = {
 		changeProfile: async (_, { input = {} }, { userRequester, headers }) => {
 			try{
 				return await userRequester.send({ type: "changeProfile", body: input, headers });				
+			}catch(e){
+				throw new Error(e)
+			}
+		},
+		changePassword: async (_, { input = {} }, { userRequester, headers }) => {
+			try{
+				return await userRequester.send({ type: "changePassword", body: input, headers });				
 			}catch(e){
 				throw new Error(e)
 			}
