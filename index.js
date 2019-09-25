@@ -354,7 +354,6 @@ function generateAuthentiations(types) {
                                         if(args.name.value == "onFind" && args.value.value == "own"){
                                             localActions.push("findOwn")
                                         }
-                                        console.log("args", args)
                                     })
                                 }
                             })
@@ -613,7 +612,7 @@ async function main() {
                                     if (args.value.value == "own") {
                                         let contentSplit = content.split("//beforeFindAuthorization")
                                         contentSplit[0] += `
-                                            if(auth.user.permissions.map((e)=>e.split(":")[1]).includes("findOwn")){
+                                            if(auth.user.permissions.includes("${camelize(e.name)}:findOwn")){
                                                 context.method = "findOwn"
                                                 context.params.query = {
                                                     ...context.params.query || {},
