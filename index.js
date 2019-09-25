@@ -471,7 +471,7 @@ async function main() {
                                         let contentSplit = content.split("//beforeCreate")
                                         let beforeCreate =
                                             `
-                                        context.data.userId = auth.user.id
+                                        context.data.${f.name}Id = auth.user.id
                                         //beforeCreate     
                                         `
                                         beforeCreate += contentSplit[1]
@@ -489,7 +489,7 @@ async function main() {
                                             `
                                         if(context.id){
                                             let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id, { headers: context.params.headers })
-                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.${f.name}Id !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }
@@ -502,7 +502,7 @@ async function main() {
                                             `
                                         if(context.id){
                                             let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id, { headers: context.params.headers })
-                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.${f.name}Id !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }

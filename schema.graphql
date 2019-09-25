@@ -82,7 +82,7 @@ type PaymentMethod {
 # }
 
 type Event {
-    user: User! @role(onCreate: "own", onDelete: "own")
+    owner: User! @role(onCreate: "own", onDelete: "own")
     name: String!
     locationType: String @default(value: "tbd")
     locationName: String
