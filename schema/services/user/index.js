@@ -372,6 +372,11 @@ userService.on("register", async (req, cb) => {
 				emailLink: HOST + "/user/verify?token=" + emailToken
 			}
 		});
+
+		externalHook && externalHook(app).after && externalHook(app).after.register && externalHook(app).before.register({
+			result: auth,
+			...app
+		})
 		cb(null, {
 			user,
 			token: auth.accessToken
@@ -501,6 +506,13 @@ userService.on("verifyToken", async (req, cb) => {
 	}
 });
 
+app.service("authentication").hooks({
+	after:{
+		create: async (context)=>{
+			externalHook && externalHook(app).after && externalHook(app).after.login && externalHook(app).after.login(context)
+		}
+	}
+})
 app.service("users").hooks({
 	before: {
 		find: async (context) => {
