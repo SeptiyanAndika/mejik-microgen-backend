@@ -137,6 +137,7 @@ app.service('examples').hooks({
                 if (!context.params.permitted) {
                     throw Error("UnAuthorized")
                 }
+                //beforeFind
                 return externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
             } catch (err) {
                 throw new Error(err)
@@ -147,7 +148,6 @@ app.service('examples').hooks({
                 let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
-
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)

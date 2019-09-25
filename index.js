@@ -570,7 +570,7 @@ async function main() {
                 content = content.toString()
                 content = content.replace(/examples/g, pluralize(camelize(e.name)))
                     .replace(/example/g, camelize(e.name))
-                    .replace(/Example/g, camelize(e.name))
+                    .replace(/Example/g,  e.name.charAt(0).toUpperCase() + e.name.slice(1))
 
 
                 e.fields.map((f) => {
@@ -582,6 +582,22 @@ async function main() {
                                 if (args.name.value == "onCreate") {
                                     if (args.value.value == "own") {
                                         let contentSplit = content.split("//beforeCreate")
+                                        let beforeCreate =
+                                            `
+                                        context.data.${f.name}Id = auth.user.id
+                                        //beforeCreate     
+                                        `
+                                        beforeCreate += contentSplit[1]
+                                        // console.log(contentSplit[0])
+                                        content = contentSplit[0] + beforeCreate
+                                        // console.log(content)
+                                        // content = addNewRequester(content, e.name, f.name, requesters)
+                                    }
+                                }
+
+                                if (args.name.value == "onIndex") {
+                                    if (args.value.value == "own") {
+                                        let contentSplit = content.split("//beforeIndex")
                                         let beforeCreate =
                                             `
                                         context.data.${f.name}Id = auth.user.id
@@ -735,7 +751,7 @@ async function main() {
                     fs.readFile(srcPath + fileName, (err, content) => {
                         content = content.toString().replace(/examples/g, pluralize(camelize(e.name)))
                             .replace(/example/g, camelize(e.name))
-                            .replace(/Example/g, camelize(e.name))
+                            .replace(/Example/g, e.name.charAt(0).toUpperCase() + e.name.slice(1))
 
                         if (fileName == "model.js") {
                             content = "module.exports = function (app) {\n"
