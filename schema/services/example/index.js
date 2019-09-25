@@ -136,7 +136,7 @@ app.service('examples').hooks({
                 let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                 context.params.user = auth.user
-
+                //beforeFindAuthorization
                 await checkPermissions({
                     roles: ['admin', 'example']
                 })(context)

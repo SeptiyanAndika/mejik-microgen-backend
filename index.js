@@ -346,15 +346,28 @@ function generateAuthentiations(types) {
                 return `'${t}'`
             }).join(", ")},
                     ${types.map((t, typeIndex) => {
+                        let localActions = actions
+                        t.fields.map((f)=>{
+                            f.directives.map((d)=>{
+                                if(d.name.value == "role"){
+                                    d.arguments.map((args)=>{
+                                        if(args.name.value == "onFind" && args.value.value == "own"){
+                                            localActions.push("findOwn")
+                                        }
+                                        console.log("args", args)
+                                    })
+                                }
+                            })
+                        })
                 if (typeIndex == 0) {
-                    return actions.map((a, actionIndex) => {
+                    return localActions.map((a, actionIndex) => {
                         // if(typeIndex ==0 && actionIndex == 0){
                         //     return `'${camelize(t.name)}:${a}'\n`
                         // }
                         return `'${camelize(t.name)}:${a}'`
                     }).join(", ")
                 }
-                return `\n` + actions.map((a, actionIndex) => {
+                return `\n` + localActions.map((a, actionIndex) => {
                     // if(typeIndex ==0 && actionIndex == 0){
                     //     return `'${camelize(t.name)}:${a}'\n`
                     // }
@@ -581,6 +594,7 @@ async function main() {
                             directive.arguments.map((args) => {
                                 if (args.name.value == "onCreate") {
                                     if (args.value.value == "own") {
+                                        
                                         let contentSplit = content.split("//beforeCreate")
                                         let beforeCreate =
                                             `
@@ -597,18 +611,30 @@ async function main() {
 
                                 if (args.name.value == "onFind") {
                                     if (args.value.value == "own") {
-                                        let contentSplit = content.split("//beforeFind")
-                                        let beforeCreate =
-                                            `
-                                        context.params.query = {
-                                            ...context.params.query || {},
-                                            ${f.name}Id: auth.user.id
-                                        }
-                                        //beforeFind     
+                                        let contentSplit = content.split("//beforeFindAuthorization")
+                                        contentSplit[0] += `
+                                            if(auth.user.permissions.map((e)=>e.split(":")[1]).includes("findOwn")){
+                                                context.method = "findOwn"
+                                                context.params.query = {
+                                                    ...context.params.query || {},
+                                                    ${f.name}Id: auth.user.id
+                                                }
+                                            }
+                                            
                                         `
-                                        beforeCreate += contentSplit[1]
-                                        // console.log(contentSplit[0])
-                                        content = contentSplit[0] + beforeCreate
+                                        content = contentSplit[0] += contentSplit[1]
+                                        contentSplit = content.split("//beforeFind")
+                                        // let beforeFind  =
+                                        //     `
+                                        // context.params.query = {
+                                        //     ...context.params.query || {},
+                                        //     ${f.name}Id: auth.user.id
+                                        // }
+                                        // //beforeFind     
+                                        // `
+                                        // beforeFind += contentSplit[1]
+                                        // // console.log(contentSplit[0])
+                                        // content = contentSplit[0] + beforeFind
                                         // console.log(content)
                                         // content = addNewRequester(content, e.name, f.name, requesters)
                                     }
