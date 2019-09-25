@@ -36,7 +36,7 @@ const getRequester = (name) =>{
     app.set(requesterName, requester)
     return requester
 }
-app.set('getRequester', getRequester)
+app.getRequester = getRequester
 exampleService.on("index", async (req, cb) => {
     try {
         let data = await app.service("examples").find({
