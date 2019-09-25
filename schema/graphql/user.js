@@ -48,7 +48,7 @@ const typeDef = `
 		data: [User]
 	}
 
-	type ChangePasswordInput {
+	input ChangePasswordInput {
 		oldPassword: String!
 		newPassword: String!
 	}
