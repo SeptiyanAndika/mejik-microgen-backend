@@ -34,8 +34,6 @@ module.exports = (app) => ({
         },
         login: async (context) => {
             let organization = await app.getRequester('organization').send({type: 'index'})
-            console.log("organization", organization)
-            //do something after delete request
         },
         register: async (context) => {
             console.log("after register", context)

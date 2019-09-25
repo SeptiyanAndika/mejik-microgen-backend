@@ -600,8 +600,8 @@ async function main() {
                                         let contentSplit = content.split("//beforeFind")
                                         let beforeCreate =
                                             `
-                                        context.data.query = {
-                                            ...context.data.query || {},
+                                        context.params.query = {
+                                            ...context.params.query || {},
                                             ${f.name}Id: auth.user.id
                                         }
                                         //beforeFind     
