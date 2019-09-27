@@ -2,6 +2,7 @@ mongo:
   image: 'mongo:3.0'
   volumes:
     - /data/db/mongo
+  command: mongod --smallfiles
   ports:
     - '${MONGODB_PORT}:27017'
 redis:
