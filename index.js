@@ -319,6 +319,9 @@ function generateAuthentiations(types) {
     if (!fs.existsSync(hooksDirectory)) {
         fs.mkdirSync(hooksDirectory)
     }
+    if (!fs.existsSync(hooksDirectory)) {
+        fs.mkdirSync(hooksDirectory)
+    }
     if (!fs.existsSync(hooksDirectory + 'user.js')) {
         ncp('./schema/hooks/user.js', hooksDirectory + 'user.js', (err) => {
         })
