@@ -74,6 +74,34 @@ exampleService.on("indexConnection", async (req, cb) => {
     }
 })
 
+exampleService.on("findOwn", async (req, cb) => {
+    try {
+        let data = await app.service("examples").find({
+            query: req.query,
+            headers: req.headers,
+            isSystem: req.isSystem
+        })
+
+        cb(null, data.data)
+    } catch (error) {
+        cb(error.message, null)
+    }
+})
+
+exampleService.on("findConnectionOwn", async (req, cb) => {
+    try {
+        let data = await app.service("examples").find({
+            query: req.query,
+            headers: req.headers,
+            isSystem: req.isSystem
+        })
+
+        cb(null, data)
+    } catch (error) {
+        cb(error.message, null)
+    }
+})
+
 exampleService.on("store", async (req, cb) => {
     try {
         let data = await app.service("examples").create(req.body, {

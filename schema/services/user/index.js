@@ -325,7 +325,8 @@ userService.on("verifyEmail", async (req, cb) => {
 			{
 				query: {
 					email: data.email
-				}
+				},
+				isSystem: true
 			}
 		);
 		await app.service("emailVerifications").remove(null, {
@@ -606,9 +607,6 @@ app.service("users").hooks({
 		},
 		update: async context => {
 			if (!context.params.token) {
-				cb(null, {
-					user: { permissions: permissions["public"] }
-				});
 				return;
 			}
 
