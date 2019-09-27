@@ -1,13 +1,11 @@
-require('dotenv').config()
 
 module.exports = {
-    HOST:process.env.HOST,
-    PORT:process.env.PORT,
-    MONGODB:process.env.MONGODB,
+    HOST: HOST,
+    PORT: PORT,
+    MONGODB: MONGODB,
+    COTE: COTE,
     REDIS_HOST: process.env.REDIS_HOST,
     REDIS_PORT: process.env.REDIS_PORT,
-
-
     feathers:{
         paginate:{
             default: 20,

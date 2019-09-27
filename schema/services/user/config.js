@@ -1,12 +1,13 @@
-require("dotenv").config();
+const appRoot = require('app-root-path');
+require("dotenv").config({ path: appRoot.path + '/.env'  });
 
 module.exports = {
 	REDIS_PORT: process.env.REDIS_PORT,
 	REDIS_HOST: process.env.REDIS_HOST,
-	HOST: process.env.HOST,
-	PORT: process.env.PORT,
-	MONGODB: process.env.MONGODB,
-
+	HOST: process.env.USER_HOST,
+	PORT: process.env.USER_PORT,
+	MONGODB: process.env.USER_MONGODB,
+	USER_COTE: process.env.USER_COTE,
 	forgetPasswordExpired: 1,
 	application: {
 		name: process.env.APP_NAME.slice(0, 1).toUpperCase() + process.env.APP_NAME.slice(1)

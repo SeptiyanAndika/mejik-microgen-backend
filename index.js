@@ -1,10 +1,12 @@
 global.__basedir = __dirname;
+require('dotenv').config()
 const fs = require("fs")
 const { parse, print } = require("graphql")
 const path = require("path")
-const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes, fieldType } = require("./generators")
+const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes, fieldType , generateEcosystemConfig } = require("./generators")
 const ncp = require('ncp').ncp;
 const pluralize = require('pluralize')
+const yaml = require('js-yaml');
 const directives = require('./directives')
 const scalars = require('./scalars')
 const { createBucket } = require('./schema/services/storage/storage')
@@ -19,6 +21,9 @@ const { APP_NAME } = require('./config')
 // })
 let rawSchema = scalars + directives + type
 let schema = parse(rawSchema);
+const getPort = require('get-port');
+
+let dockerCompose = yaml.safeLoad(fs.readFileSync('./schema/docker-compose.yml', 'utf8'));
 
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
@@ -39,12 +44,15 @@ let defaultConfigService = {
     host: 'localhost',
     port: 3031,
     paginate: { default: 10, max: 50 },
-    mongodb: 'mongodb://localhost:27017/',
+    mongodb: 'mongodb://localhost:',
     redis: {
         host: "localhost",
         port: 6379
     }
 }
+
+const PROJECT_ID = process.env.PROJECT_ID || 'mejik-microgen'
+
 const writeFile = (dir, fileName, file) => {
     //create folder if not exists
     if (!fs.existsSync(dir)) {
@@ -450,9 +458,24 @@ async function main() {
         Bucket: APP_NAME
     })
 
+    const MONGODB_PORT = await getPort()
+    const REDIS_PORT = await getPort()
+
+
     if (!fs.existsSync("./outputs")) {
         fs.mkdirSync("./outputs")
     }
+
+    // generate docker compose
+    fs.writeFile('./outputs/docker-compose.yml', yaml.safeDump(dockerCompose), (err) => {
+        if (err) {
+            console.log(err);
+        }
+    });
+
+
+    // generate ecosystem config PM2
+    generateEcosystemConfig(PROJECT_ID)
 
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
@@ -514,6 +537,41 @@ async function main() {
 
     generatePackageJSON(types.map((t) => t.name))
 
+    fs.readFile('./schema/.env', async (err, content) => {
+        content = content.toString()
+        content += 'COMPOSE_PROJECT_NAME=' + PROJECT_ID + "\n"
+        content += 'MONGODB_PORT=' + MONGODB_PORT + "\n"
+        content += 'REDIS_HOST=localhost' + "\n"
+        content += 'REDIS_PORT=' + REDIS_PORT + "\n"
+
+        content += '\nAPP_NAME=' + APP_NAME + "\n"
+        content += 'BUCKET=' + bucketName + "\n"
+        content += 'GRAPHQL_PORT=' + await getPort() + "\n"
+        content += 'EMAIL_COTE=' + await getPort() + "\n"
+        content += 'STORAGE_COTE=' + await getPort() + "\n"
+
+        content += '\nUSER_HOST=' + defaultConfigService.host + "\n"
+        content += 'USER_PORT=' + await getPort() + "\n"
+        content += 'USER_COTE=' + await getPort() + "\n"
+        content += 'USER_MONGODB=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + 'user' + "_service\n"
+
+        content += '\nNOTIFICATION_HOST=' + defaultConfigService.host + "\n"
+        content += 'NOTIFICATION_PORT=' + await getPort() + "\n"
+        content += 'NOTIFICATION_COTE=' + await getPort() + "\n"
+        content += 'NOTIFICATION_MONGODB=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + 'pushNotification' + "_service\n"
+
+        for (const type of types) {
+            let port = await getPort()
+            let cote = await getPort()
+
+            content += type.name.toUpperCase() + '_HOST' + '=' + defaultConfigService.host + "\n"
+            content += type.name.toUpperCase() + '_PORT' + '=' + port + "\n"
+            content += type.name.toUpperCase() + '_COTE' + '=' + cote + "\n"
+            content += type.name.toUpperCase() + '_MONGODB' + '=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + camelize(type.name) + "_service\n"
+        }
+
+        fs.writeFileSync('./outputs/.env', content)
+    })
 
     //end of graphql
     types.map((e, index) => {
@@ -534,8 +592,10 @@ async function main() {
         if (!fs.existsSync(path)) {
             fs.mkdirSync(path)
         }
+
         const schemaExampleFeather = "./schema/services/example/"
         fs.readdir(schemaExampleFeather, function (err, fileName) {
+
             // const configPath = schemaExampleFeather+"config/"
             // fs.readdir(configPath, (err, file)=>{
             //     fs.readFile(configPath+"default.json", 'utf-8', (err,content)=>{
@@ -557,25 +617,31 @@ async function main() {
             //         )
             //     })
             // })
-            let port = defaultConfigService.port + index
-            fs.writeFileSync(path + ".env",
-                "HOST=" + defaultConfigService.host + "\n" +
-                "PORT=" + port + "\n" +
-                // "MONGODB=" + defaultConfigService.mongodb + camelize(e.name) + "_service\n" +
-                "MONGODB=" + defaultConfigService.mongodb + "rajakarcis\n" +
-                "REDIS_HOST=" + defaultConfigService.redis.host + "\n" +
-                "REDIS_PORT=" + defaultConfigService.redis.port + "\n"
-            )
+
             // ncp(configPath+"default.json", path+"/config/default.json")
-            ncp(schemaExampleFeather + "config.js", path + "config.js")
+            // ncp(schemaExampleFeather + "config.js", path + "config.js" )
             ncp('./schema/config.js', './outputs/config.js')
             // ncp('./schema/.env', './outputs/.env')
-            fs.readFile('./schema/.env', (err, content) => {
+
+            fs.readFile(schemaExampleFeather + "config.js", (err, content) => {
+
+                let newContent = ''
+                newContent += "const appRoot = require('app-root-path')\n"
+                newContent += `require("dotenv").config({ path: appRoot.path + '/.env'  })\n`
+
+                newContent += "\nconst HOST = process.env." + e.name.toUpperCase() + "_HOST\n"
+                newContent += "const PORT = process.env." + e.name.toUpperCase() + "_PORT\n"
+                newContent += "const COTE = process.env." + e.name.toUpperCase() + "_COTE\n"
+                newContent += "const MONGODB = process.env." + e.name.toUpperCase() + "_MONGODB\n"
+
                 content = content.toString()
-                content += '\nAPP_NAME=' + APP_NAME + "\n"
-                content += 'BUCKET=' + bucketName + "\n"
-                fs.writeFileSync('./outputs/.env', content)
+
+                newContent += content
+
+                fs.writeFileSync(path + "config.js", newContent)
             })
+
+
             // ncp(schemaExampleFeather+"config/custom-environment-variables.json", path+"config/custom-environment-variables.json")
             let requesters = ['user']
             fs.readFile(schemaExampleFeather + "index.js", (err, content) => {
@@ -830,16 +896,6 @@ async function main() {
                         }
                         // console.log(content)
                         fs.writeFileSync(path + "src/" + fileName, beautify(content))
-                        fs.readFile('./schema/services/email/.env', (err, content) => {
-                            content = content.toString()
-                            content += '\nAPP_NAME=' + APP_NAME + "\n"
-                            fs.writeFileSync('./outputs/services/email/.env', content)
-                        })
-                        fs.readFile('./schema/services/user/.env', (err, content) => {
-                            content = content.toString()
-                            content += '\nAPP_NAME=' + APP_NAME + "\n"
-                            fs.writeFileSync('./outputs/services/user/.env', content)
-                        })
                     })
                 })
             })
