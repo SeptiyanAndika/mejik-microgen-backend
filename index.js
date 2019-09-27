@@ -570,7 +570,11 @@ async function main() {
             content += type.name.toUpperCase() + '_MONGODB' + '=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + camelize(type.name) + "_service\n"
         }
 
-        fs.writeFileSync('./outputs/.env', content)
+        // check if .env file is exist
+        if(! fs.existsSync('./outputs/.env')) {
+            fs.writeFileSync('./outputs/.env', content)
+        }
+
     })
 
     //end of graphql
