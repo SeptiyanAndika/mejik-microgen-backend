@@ -41,9 +41,11 @@ const getRequester = (name) =>{
 		name: requesterName,
 		key: `${camelize(name)}`,
 	})
+	requester.send = (params) => requester.send(...params, isSystem: true)
 	app.set(requesterName, requester)
 	return requester
 }
+
 app.getRequester = getRequester
 userService.on("index", async (req, cb) => {
 	try {
@@ -352,7 +354,7 @@ userService.on("changePassword", async (req, cb) => {
 		if (isValid) {
 			const auth = await app
 				.service("users")
-				.patch(user.id, { password: req.body.newPassword });
+				.patch(user.id, { password: req.body.newPassword }, {isSystem: true});
 			cb(null, {
 				status: 1,
 				message: "Success"
@@ -636,35 +638,37 @@ app.service("users").hooks({
 			return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
 		},
 		patch: async context => {
-			if (!context.params.token) {
-				cb(null, {
-					user: { permissions: permissions["public"] }
-				});
-				return;
-			}
-
-			let verify = await app
-				.service("authentication")
-				.verifyAccessToken(context.params.token);
-			let user = await app.service("users").get(verify.sub, {
-				query: {
-					$select: ["_id", "email", "firstName", "lastName", "role"]
+			if(!context.params.isSystem){
+				if (!context.params.token) {
+					cb(null, {
+						user: { permissions: permissions["public"] }
+					});
+					return;
 				}
-			});
 
-			user.permissions = permissions[user.role];
-			if (!user.permissions) {
-				throw new Error("UnAuthorized");
-			}
+				let verify = await app
+					.service("authentication")
+					.verifyAccessToken(context.params.token);
+				let user = await app.service("users").get(verify.sub, {
+					query: {
+						$select: ["_id", "email", "firstName", "lastName", "role"]
+					}
+				});
 
-			context.params.user = user
+				user.permissions = permissions[user.role];
+				if (!user.permissions) {
+					throw new Error("UnAuthorized");
+				}
 
-			await checkPermissions({
-				roles: ["admin", 'user']
-			})(context);
+				context.params.user = user
 
-			if (!context.params.permitted) {
-				throw Error("UnAuthorized");
+				await checkPermissions({
+					roles: ["admin", 'user']
+				})(context);
+
+				if (!context.params.permitted) {
+					throw Error("UnAuthorized");
+				}
 			}
 			return externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
 		},

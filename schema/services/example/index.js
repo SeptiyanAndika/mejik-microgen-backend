@@ -40,15 +40,18 @@ const getRequester = (name) =>{
         name: requesterName,
         key: `${camelize(name)}`,
     })
+    requester.send = (params) => requester.send(...params, isSystem: true)
     app.set(requesterName, requester)
     return requester
 }
+
 app.getRequester = getRequester
 exampleService.on("index", async (req, cb) => {
     try {
         let data = await app.service("examples").find({
             query: req.query,
-            headers: req.headers
+            headers: req.headers,
+            isSystem: req.isSystem
         })
 
         cb(null, data.data)
@@ -61,7 +64,8 @@ exampleService.on("indexConnection", async (req, cb) => {
     try {
         let data = await app.service("examples").find({
             query: req.query,
-            headers: req.headers
+            headers: req.headers,
+            isSystem: req.isSystem
         })
 
         cb(null, data)
@@ -74,7 +78,8 @@ exampleService.on("store", async (req, cb) => {
     try {
         let data = await app.service("examples").create(req.body, {
             headers: req.headers,
-            file: req.file
+            file: req.file,
+            isSystem: req.isSystem
         })
         cb(null, data)
     } catch (error) {
@@ -87,7 +92,8 @@ exampleService.on("update", async (req, cb) => {
         let data = await app.service("examples").patch(req.id, req.body, {
             ...req.params || {},
             headers: req.headers,
-            file: req.file
+            file: req.file,
+            isSystem: req.isSystem
         })
         cb(null, data)
     } catch (error) {
@@ -100,7 +106,8 @@ exampleService.on("destroy", async (req, cb) => {
         let data = await app.service("examples").remove(req.id, {
             ...req.params || {},
             headers: req.headers,
-            file: req.file
+            file: req.file,
+            isSystem: req.isSystem
         })
         data.id = data._id
         cb(null, data)
@@ -114,7 +121,8 @@ exampleService.on("show", async (req, cb) => {
         let data = null
         if (req.id) {
             data = await app.service("examples").get(req.id, {
-                headers: req.headers
+                headers: req.headers,
+                isSystem: req.isSystem
             })
         }
         cb(null, data)
@@ -133,16 +141,18 @@ app.service('examples').hooks({
     before: {
         find: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
+                if(!context.params.isSystem){
+                    let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
-                context.params.user = auth.user
-                //beforeFindAuthorization
-                await checkPermissions({
-                    roles: ['admin', 'example']
-                })(context)
+                    context.params.user = auth.user
+                    //beforeFindAuthorization
+                    await checkPermissions({
+                        roles: ['admin', 'example']
+                    })(context)
 
-                if (!context.params.permitted) {
-                    throw Error("UnAuthorized")
+                    if (!context.params.permitted) {
+                        throw Error("UnAuthorized")
+                    }
                 }
                 //beforeFind
                 return externalHook && externalHook(app).before && externalHook(app).before.find && externalHook(app).before.find(context)
@@ -152,15 +162,17 @@ app.service('examples').hooks({
         },
         get: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
+                if(!context.params.isSystem){
+                    let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
-                context.params.user = auth.user
-                await checkPermissions({
-                    roles: ['admin', 'example']
-                })(context)
+                    context.params.user = auth.user
+                    await checkPermissions({
+                        roles: ['admin', 'example']
+                    })(context)
 
-                if (!context.params.permitted) {
-                    throw Error("UnAuthorized")
+                    if (!context.params.permitted) {
+                        throw Error("UnAuthorized")
+                    }
                 }
                 return externalHook && externalHook(app).before && externalHook(app).before.get && externalHook(app).before.get(context)
             } catch (err) {
@@ -169,16 +181,18 @@ app.service('examples').hooks({
         },
         create: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
+                if(!context.params.isSystem){
+                    let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
-                context.params.user = auth.user
+                    context.params.user = auth.user
 
-                await checkPermissions({
-                    roles: ['admin', 'example']
-                })(context)
+                    await checkPermissions({
+                        roles: ['admin', 'example']
+                    })(context)
 
-                if (!context.params.permitted) {
-                    throw Error("UnAuthorized")
+                    if (!context.params.permitted) {
+                        throw Error("UnAuthorized")
+                    }
                 }
                 //beforeCreate
                 return externalHook && externalHook(app).before && externalHook(app).before.create && externalHook(app).before.create(context)
@@ -188,16 +202,18 @@ app.service('examples').hooks({
         },
         update: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
+                if(!context.params.isSystem){
+                    let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
-                context.params.user = auth.user
+                    context.params.user = auth.user
 
-                await checkPermissions({
-                    roles: ['admin', 'example']
-                })(context)
+                    await checkPermissions({
+                        roles: ['admin', 'example']
+                    })(context)
 
-                if (!context.params.permitted) {
-                    throw Error("UnAuthorized")
+                    if (!context.params.permitted) {
+                        throw Error("UnAuthorized")
+                    }
                 }
                 //beforeUpdate
                 return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
@@ -207,16 +223,18 @@ app.service('examples').hooks({
         },
         patch: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
+                if(!context.params.isSystem){
+                    let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
-                context.params.user = auth.user
+                    context.params.user = auth.user
 
-                await checkPermissions({
-                    roles: ['admin', 'example']
-                })(context)
+                    await checkPermissions({
+                        roles: ['admin', 'example']
+                    })(context)
 
-                if (!context.params.permitted) {
-                    throw Error("UnAuthorized")
+                    if (!context.params.permitted) {
+                        throw Error("UnAuthorized")
+                    }
                 }
                 //beforePatch
                 return externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
@@ -226,17 +244,19 @@ app.service('examples').hooks({
         },
         remove: async (context) => {
             try {
-                let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
+               if(!context.params.isSystem){
+                    let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
-                context.params.user = auth.user
+                    context.params.user = auth.user
 
-                await checkPermissions({
-                    roles: ['admin', 'example']
-                })(context)
+                    await checkPermissions({
+                        roles: ['admin', 'example']
+                    })(context)
 
-                if (!context.params.permitted) {
-                    throw Error("UnAuthorized")
-                }
+                    if (!context.params.permitted) {
+                        throw Error("UnAuthorized")
+                    }
+               }
 
                 //beforeDelete
                 //onDelete
