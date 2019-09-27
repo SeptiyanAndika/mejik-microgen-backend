@@ -33,5 +33,4 @@ module.exports = (app) => ({
             //do something after delete request
         }        
     },
-    permissions: null
 })

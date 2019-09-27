@@ -28,12 +28,20 @@ export const typeDef = `
 export const resolvers = {
     Mutation: {
         sendEmail: async (_, { input = {} }, { postRequester, userFriendRequester, commentRequester, emailRequester, headers }) => {
-            let data = await emailRequester.send({ type: 'sendToUser', body: input, headers })
-            return data
+            try{
+                let data = await emailRequester.send({ type: 'sendToUser', body: input, headers })
+                return data
+            }catch(e){
+                throw new Error(e)
+            }
         },
         sendEmailToUsers: async (_, { input = {} }, { postRequester, userFriendRequester, commentRequester, emailRequester, headers }) => {
-            let data = await emailRequester.send({ type: 'sendToUsers', body: input, headers })
-            return data
+            try{
+                let data = await emailRequester.send({ type: 'sendToUsers', body: input, headers })
+                return data
+            }catch(e){
+                throw new Error(e)
+            }
         },
     }
 };

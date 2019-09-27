@@ -3,7 +3,7 @@ require('dotenv').config()
 const fs = require("fs")
 const { parse, print } = require("graphql")
 const path = require("path")
-const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes, generateEcosystemConfig } = require("./generators")
+const { generateGraphqlSchema, generateGraphqlServer, generatePackageJSON, whitelistTypes, onDeleteRelations, reservedTypes, fieldType , generateEcosystemConfig } = require("./generators")
 const ncp = require('ncp').ncp;
 const pluralize = require('pluralize')
 const yaml = require('js-yaml');
@@ -13,7 +13,6 @@ const { createBucket } = require('./schema/services/storage/storage')
 const { camelize, beautify } = require('./utils')
 let type = fs.readFileSync('./schema.graphql').toString()
 const { APP_NAME } = require('./config')
-
 // let buildSchema = makeExecutableSchema({
 //     typeDefs: [scalars, type ],
 //     schemaDirectives: {
@@ -35,7 +34,6 @@ const authGraphql = "./schema/graphql/user.js"
 const emailGraphql = "./schema/graphql/email.js"
 const pushNotificationServices = './schema/services/push-notification'
 const pushNotificationGraphql = './schema/graphql/pushNotification.js'
-
 const hooksDirectory = './hooks/'
 const baseTypeUser = `
     type User {
@@ -60,7 +58,7 @@ const writeFile = (dir, fileName, file) => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir)
     }
-    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}.js`), file, (err) => {
+    fs.writeFile(path.join(__dirname, `${dir}${camelize(fileName)}.js`), beautify(file), (err) => {
         if (err) {
             console.log(err)
         }
@@ -90,40 +88,110 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
         return
     }
 
+    let relationTypes = []
+    let localTypes =  types.map((t)=> camelize(t.name)) 
     setTimeout(() => {
         fs.readFile(graphqlFile, (err, content) => {
             content = content.toString()
             let schemaType = require(graphqlFile)
             let typeDef = parse(schemaType.typeDef)
+
+            // for (let i = 0; i < typeDef.definitions.length; i++) {
+            //     if (reservedTypes.includes(typeDef.definitions[i].name.value)) {
+            //         continue
+            //     }
+            //     if (whitelistTypes.includes(typeDef.definitions[i].kind)) {
+            //         continue
+            //     }
+            //     let typeName = pluralize.singular(typeDef.definitions[i].name.value)
+            //     types.push(camelize(typeName))
+            // }
+
             typeDef.definitions.map((d) => {
+               
                 if (d.kind == "ObjectTypeDefinition") {
                     if (d.name.value == "User") {
+
                         schema.definitions.map((base) => {
                             if (base.name.value == "User") {
+                          
                                 d.fields.map((dFields, i) => {
                                     base.fields.map((baseField) => {
                                         if (dFields.name.value !== baseField.name.value) {
                                             if (!d.fields.map((e) => e.name.value).includes(baseField.name.value)) {
+                                                if(baseField.type.name){
+                                                    if(localTypes.includes(camelize(baseField.type.name.value))){
+                                                        relationTypes.push(baseField)
+                                                    }
+                                                }
+                                                if(baseField.type.type){
+
+                                                    if(localTypes.includes(camelize(baseField.type.type.name.value))){
+                                                        relationTypes.push(baseField)
+                                                    }
+                                                }
                                                 d.fields.push(baseField)
+                                                
                                             }
                                         } else {
                                             d.fields[i] = baseField
                                         }
+    
                                         return baseField
                                     })
                                     return dFields
                                 })
                                 return base
                             }
+                            
                         })
+
+                        // schema.definitions.map((base) => {
+                        //     if (base.name.value == "User") {
+                        //         console.log(base.fields)
+                        //     }
+                        // })
                     }
                 }
+                
                 if (d.kind == "InputObjectTypeDefinition") {
-                    if (d.name.value == "RegisterInput" || d.name.value == "UpdateUserInput" || d.name.value == "ChangeProfileInput" || d.name.value == "CreateUserInput") {
+                    if (d.name.value == "RegisterInput" || d.name.value == "CreateUserInput") {
+                            schema.definitions.map((base) => {
+                                if (base.name.value == "User") { 
+                        
+                                    base.fields.map((baseField) => {
+                                        baseField = JSON.parse(JSON.stringify(baseField))
+                
+                                        if(baseField.type.name){
+                                            if(localTypes.includes(camelize(baseField.type.name.value))){
+                                                if(baseField.type.kind == "NamedType"){
+                                                    baseField.name.value = baseField.name.value+"Id"
+                                                    baseField.type.name.value = "String"
+                                                    d.fields.push(baseField)
+                                                }
+                                                
+                                            }else{
+                                                d.fields.push(baseField)
+                                            }
+                                        }
+                                        
+                                    })
+                                }
+                            })
+                    }
+                    if (d.name.value == "UpdateUserInput" || d.name.value == "ChangeProfileInput") {
                         schema.definitions.map((base) => {
-                            if (base.name.value == "User") {
+                            if (base.name.value == "User") { 
                                 base.fields.map((baseField) => {
-                                    d.fields.push(baseField)
+                                    if(baseField.type.name){
+        
+                                        if(localTypes.includes(camelize(baseField.type.name.value))){
+
+                                        }else{
+                                            d.fields.push(baseField)
+                                        }
+                                    }
+
                                 })
                             }
                         })
@@ -131,10 +199,53 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                 }
             })
 
+            // typeDef.definitions.map((d) => {
+               
+            //     if (d.kind == "ObjectTypeDefinition") {
+            //         if (d.name.value == "User") {
+            //             console.log("d", d.fields)
+
+            //             // schema.definitions.map((base) => {
+            //             //     if (base.name.value == "User") {
+            //             //         console.log(base.fields)
+            //             //     }
+            //             // })
+            //         }
+            //     }
+        
+            // })
             schemaType.typeDef = print(typeDef)
+            let resolverRelations = content.split("const resolvers = {")[1].split("//relations")[0]
+            if(relationTypes.length > 0){
+                resolverRelations += `    User: {\n`
+
+                relationTypes.map((e) => {
+                    if (e.type.kind == "ListType") {
+                        resolverRelations += `${e.name.value}: async ({ id }, { query }, { headers, ${camelize(pluralize.singular(e.type.type.name.value))}Requester })=>{\n`
+                        resolverRelations += `        try{ \n`
+                        resolverRelations += `          return await ${camelize(pluralize.singular(e.type.type.name.value))}Requester.send({ type: 'index', query: Object.assign({ userId: id }, query), headers })\n`
+                        resolverRelations += `        }catch(e){ \n`
+                        resolverRelations += `            throw new Error(e)`
+                        resolverRelations += `        }\n`
+                        resolverRelations += `  },\n`
+                    } else {
+                        resolverRelations += `${e.name.value}: async ({ ${e.name.value}Id }, args, { headers, ${camelize(e.type.name.value)}Requester })=>{\n`
+                        resolverRelations += `        try{ \n`
+                        resolverRelations += `            return await ${e.name.value}Requester.send({ type: 'show', id: ${e.name.value}Id, headers })\n`
+                        resolverRelations += `        }catch(e){ \n`
+                        resolverRelations += `            throw new Error(e)`
+                        resolverRelations += `        }\n`
+                    
+                        resolverRelations += `},\n`
+                    }
+
+                })
+                resolverRelations += `    },\n`
+            }
+            resolverRelations += content.split("const resolvers = {")[1].split("//relations")[1]
             writeFile(graphqlDirectiory, "user",
                 "const typeDef = `\n" + schemaType.typeDef + "`\n" +
-                "const resolvers = {" + content.split("const resolvers = {")[1]
+                "const resolvers = {" + resolverRelations
             )
 
             fs.readFile(userDirectory + "/src/models/user.js", (err, x) => {
@@ -243,15 +354,27 @@ function generateAuthentiations(types) {
                 return `'${t}'`
             }).join(", ")},
                     ${types.map((t, typeIndex) => {
+                        let localActions = actions
+                        t.fields.map((f)=>{
+                            f.directives.map((d)=>{
+                                if(d.name.value == "role"){
+                                    d.arguments.map((args)=>{
+                                        if(args.name.value == "onFind" && args.value.value == "own"){
+                                            localActions.push("findOwn")
+                                        }
+                                    })
+                                }
+                            })
+                        })
                 if (typeIndex == 0) {
-                    return actions.map((a, actionIndex) => {
+                    return localActions.map((a, actionIndex) => {
                         // if(typeIndex ==0 && actionIndex == 0){
                         //     return `'${camelize(t.name)}:${a}'\n`
                         // }
                         return `'${camelize(t.name)}:${a}'`
                     }).join(", ")
                 }
-                return `\n` + actions.map((a, actionIndex) => {
+                return `\n` + localActions.map((a, actionIndex) => {
                     // if(typeIndex ==0 && actionIndex == 0){
                     //     return `'${camelize(t.name)}:${a}'\n`
                     // }
@@ -330,7 +453,7 @@ function addNewRequester(content, type, requesterName, requesters) {
     return content
 }
 async function main() {
-    // create bucket
+    //create bucket
     let bucketName = await createBucket({
         Bucket: APP_NAME
     })
@@ -447,7 +570,11 @@ async function main() {
             content += type.name.toUpperCase() + '_MONGODB' + '=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + camelize(type.name) + "_service\n"
         }
 
-        fs.writeFileSync('./outputs/.env', content)
+        // check if .env file is exist
+        if(! fs.existsSync('./outputs/.env')) {
+            fs.writeFileSync('./outputs/.env', content)
+        }
+
     })
 
     //end of graphql
@@ -469,7 +596,6 @@ async function main() {
         if (!fs.existsSync(path)) {
             fs.mkdirSync(path)
         }
-
 
         const schemaExampleFeather = "./schema/services/example/"
         fs.readdir(schemaExampleFeather, function (err, fileName) {
@@ -526,7 +652,7 @@ async function main() {
                 content = content.toString()
                 content = content.replace(/examples/g, pluralize(camelize(e.name)))
                     .replace(/example/g, camelize(e.name))
-                    .replace(/Example/g, camelize(e.name))
+                    .replace(/Example/g,  e.name.charAt(0).toUpperCase() + e.name.slice(1))
 
 
                 e.fields.map((f) => {
@@ -537,15 +663,47 @@ async function main() {
                             directive.arguments.map((args) => {
                                 if (args.name.value == "onCreate") {
                                     if (args.value.value == "own") {
+                                        
                                         let contentSplit = content.split("//beforeCreate")
                                         let beforeCreate =
                                             `
-                                        context.data.userId = auth.user.id
+                                        context.data.${f.name}Id = auth.user.id
                                         //beforeCreate     
                                         `
                                         beforeCreate += contentSplit[1]
                                         // console.log(contentSplit[0])
                                         content = contentSplit[0] + beforeCreate
+                                        // console.log(content)
+                                        // content = addNewRequester(content, e.name, f.name, requesters)
+                                    }
+                                }
+
+                                if (args.name.value == "onFind") {
+                                    if (args.value.value == "own") {
+                                        let contentSplit = content.split("//beforeFindAuthorization")
+                                        contentSplit[0] += `
+                                            if(auth.user.permissions.includes("${camelize(e.name)}:findOwn")){
+                                                context.method = "findOwn"
+                                                context.params.query = {
+                                                    ...context.params.query || {},
+                                                    ${f.name}Id: auth.user.id
+                                                }
+                                            }
+                                            
+                                        `
+                                        content = contentSplit[0] += contentSplit[1]
+                                        contentSplit = content.split("//beforeFind")
+                                        // let beforeFind  =
+                                        //     `
+                                        // context.params.query = {
+                                        //     ...context.params.query || {},
+                                        //     ${f.name}Id: auth.user.id
+                                        // }
+                                        // //beforeFind     
+                                        // `
+                                        // beforeFind += contentSplit[1]
+                                        // // console.log(contentSplit[0])
+                                        // content = contentSplit[0] + beforeFind
                                         // console.log(content)
                                         // content = addNewRequester(content, e.name, f.name, requesters)
                                     }
@@ -557,8 +715,8 @@ async function main() {
                                         let beforeUpdate =
                                             `
                                         if(context.id){
-                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
-                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
+                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id, { headers: context.params.headers })
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.${f.name}Id !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }
@@ -570,8 +728,8 @@ async function main() {
                                         let beforeDelete =
                                             `
                                         if(context.id){
-                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id)
-                                            if(${camelize(e.name)} && ${camelize(e.name)}.userId !== auth.user.id){
+                                            let ${camelize(e.name)} = await app.service("${pluralize(camelize(e.name))}").get(context.id, { headers: context.params.headers })
+                                            if(${camelize(e.name)} && ${camelize(e.name)}.${f.name}Id !== auth.user.id){
                                                 throw new Error("UnAuthorized")
                                             }
                                         }
@@ -676,11 +834,9 @@ async function main() {
 
                 //remove unused comments
                 content = content.replace(/\/\/onDelete/g, "").replace(/\/\/beforeCreate/g, "")
-
+                // console.log("cc", content)
                 fs.writeFileSync(path + "index.js", beautify(content))
             })
-
-
 
             const srcPath = schemaExampleFeather + "src/"
             //read src
@@ -693,7 +849,7 @@ async function main() {
                     fs.readFile(srcPath + fileName, (err, content) => {
                         content = content.toString().replace(/examples/g, pluralize(camelize(e.name)))
                             .replace(/example/g, camelize(e.name))
-                            .replace(/Example/g, camelize(e.name))
+                            .replace(/Example/g, e.name.charAt(0).toUpperCase() + e.name.slice(1))
 
                         if (fileName == "model.js") {
                             content = "module.exports = function (app) {\n"
@@ -744,7 +900,6 @@ async function main() {
                         }
                         // console.log(content)
                         fs.writeFileSync(path + "src/" + fileName, beautify(content))
-
                     })
                 })
             })

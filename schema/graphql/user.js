@@ -48,6 +48,11 @@ const typeDef = `
 		data: [User]
 	}
 
+	input ChangePasswordInput {
+		oldPassword: String!
+		newPassword: String!
+	}
+
     extend type Query {
         users (query: JSON): [User]
 		user (id: String): User
@@ -66,6 +71,7 @@ const typeDef = `
 		updateUser(input: UpdateUserInput, id: String!): User
 		deleteUser(id: String!): User
 		changeProfile(input: ChangeProfileInput): User
+		changePassword(input: ChangePasswordInput): Response
     }
 
     type User {
@@ -103,54 +109,118 @@ const resolvers = {
 				query._id = query.id
 				delete query.id
 			}
-			return await userRequester.send({ type: "index", query, headers });
+			try{
+				return await userRequester.send({ type: "index", query, headers });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		user: async (_, { id }, { headers, userRequester }) => {
-			return await userRequester.send({ type: "show", id, headers });
+			try{
+				return await userRequester.send({ type: "show", id, headers });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		usersConnection: async (_, { query }, { headers, userRequester }) => {
 			if (query && query.id) {
 				query._id = query.id
 				delete query.id
 			}
-			return await userRequester.send({ type: "indexConnection", query, headers });
+			try{
+				return await userRequester.send({ type: "indexConnection", query, headers });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 	},
+	//relations
 	Mutation: {
 		resetPassword: async (_, { input = {} }, { userRequester, headers }) => {
-			let data = await userRequester.send({ type: "resetPassword", body: input, headers });
-			return data;
+			try{
+				let data = await userRequester.send({ type: "resetPassword", body: input, headers });
+				return data;
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		forgetPassword: async (_, { input = {} }, { userRequester, headers }) => {
-			let data = await userRequester.send({ type: "forgetPassword", body: input, headers });
-			return data;
+			try{
+				let data = await userRequester.send({ type: "forgetPassword", body: input, headers });
+				return data;
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		createUser: async (_, { input }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "createUser", body: input, headers });
+			try{
+				return await userRequester.send({ type: "createUser", body: input, headers });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		updateUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "updateUser", body: input, id, headers });
+			try{
+				return await userRequester.send({ type: "updateUser", body: input, id, headers });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		deleteUser: async (_, { input = {}, id }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "deleteUser", body: input, id, headers });
+			try{
+				return await userRequester.send({ type: "deleteUser", body: input, id, headers });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		changeProfile: async (_, { input = {} }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "changeProfile", body: input, headers });
+			try{
+				return await userRequester.send({ type: "changeProfile", body: input, headers });				
+			}catch(e){
+				throw new Error(e)
+			}
+		},
+		changePassword: async (_, { input = {} }, { userRequester, headers }) => {
+			try{
+				return await userRequester.send({ type: "changePassword", body: input, headers });				
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		verifyEmail: async (_, { input }, { userRequester, headers }) => {
-			return await userRequester.send({ type: "verifyEmail", body: input, headers });
+			try{
+				return await userRequester.send({ type: "verifyEmail", body: input, headers });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		login: async (_, { input }, { userRequester }) => {
-			return await userRequester.send({ type: "login", body: input });
+			try{
+				return await userRequester.send({ type: "login", body: input });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		loginWithGoogle: async (_, { input }, { userRequester }) => {
-			return await userRequester.send({ type: "loginWithGoogle", body: input });
+			try{
+				return await userRequester.send({ type: "loginWithGoogle", body: input });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		loginWithFacebook: async (_, { input }, { userRequester }) => {
-			return await userRequester.send({ type: "loginWithFacebook", body: input });
+			try{
+				return await userRequester.send({ type: "loginWithFacebook", body: input });
+			}catch(e){
+				throw new Error(e)
+			}
 		},
 		register: async (_, { input }, { userRequester }) => {
-			return await userRequester.send({ type: "register", body: input });
+			try{
+				return await userRequester.send({ type: "register", body: input });
+			}catch(e){
+				throw new Error(e)
+			}
 		}
 	}
 };

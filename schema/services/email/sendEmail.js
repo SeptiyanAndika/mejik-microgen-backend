@@ -12,6 +12,17 @@ const sendEmail = async ({
 	emailLink,
 	emailVerificationCode
 }) => {
+	let emailTitle = ``
+	if (title) {
+		emailTitle = `
+		<h1 
+			style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; color:#474a52;
+			font-weight: bold; letter-spacing: 0.5px; padding: 0px 20px 0px 20px; font-size: 25px; text-align: center"
+		>
+			${title}
+		</h1>`
+	}
+
 	let headerImage = ``
 	emailImageHeader = emailImageHeader || email.logo
 	if (emailImageHeader) {
@@ -55,30 +66,31 @@ const sendEmail = async ({
 		</div>`
 	}
 
-	sgMail.send({
-		to: to,
-		from: { email: from, name: application.name },
-		subject: subject,
-		html: `
-		<div style="background: #fdfdfd; padding: 100px 20px;">
-			<div
-				style="max-width: 550px; min-width: 250px; background: #fff; margin: 0 auto; padding: 10px 20px; border-radius: 5px; border: 1px solid #f0f0f0;">
-				${headerImage}
-				<h1 
-					style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; color:#474a52;
-					font-weight: bold; letter-spacing: 0.5px; padding: 0px 20px 0px 20px; font-size: 25px; text-align: center"
-				>
-					${title}
-				</h1>
+	try {
+		sgMail.send({
+			to: to,
+			from: { email: from, name: application.name },
+			subject: subject,
+			html: `
+			<div style="background: #fdfdfd; padding: 100px 20px;">
 				<div
-					style="font-size: 16px; font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif; color: #474a52; line-height: 24px; text-align: center; margin: 0 20px;"
-				>
-					${body}
+					style="max-width: 550px; min-width: 250px; background: #fff; margin: 0 auto; padding: 10px 20px; border-radius: 5px; border: 1px solid #f0f0f0;">
+					${headerImage}
+					${emailTitle}
+					<div
+						style="font-size: 16px; font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif; color: #474a52; line-height: 24px; text-align: center; margin: 0 20px;"
+					>
+						${body}
+					</div>
+					${buttonLink}
 				</div>
-				${buttonLink}
-			</div>
-		</div>`
-	});
+			</div>`
+		});
+		return "success"
+	} catch (error) {
+		console.log(error)
+		return error
+	}
 };
 
 module.exports = sendEmail;
