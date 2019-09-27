@@ -79,7 +79,7 @@ const generateGraphqlServer = (types) => {
     content += `const { injectConfigFromHook } = require('./utils/hookGraphql')\n`
     content +=
         `const pubSub = new PubSub()\n` +
-        `const Prometheus = require('./monitor')\n`
+        `const Prometheus = require('./monitor')\n` +
         `\nconst cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })\n` +
         "const typeDefs = gql`\n" +
         "   type Query { default: String }\n" +
@@ -115,7 +115,7 @@ const generateGraphqlServer = (types) => {
     content +=
         `
         const schema = makeExecutableSchema({
-            typeDefs: [ typeDefs, createRateLimitTypeDef(), injectConfigFromHook("user", User), injectConfigFromHook("email", User), injectConfigFromHook("pushNotification", PushNotification), ${types.map(t=> `injectConfigFromHook('${camelize(t)}', ${t})`).join(", ")}],
+            typeDefs: [ typeDefs, createRateLimitTypeDef(), injectConfigFromHook("user", User), injectConfigFromHook("email", Email), injectConfigFromHook("pushNotification", PushNotification), ${types.map(t=> `injectConfigFromHook('${camelize(t)}', ${t})`).join(", ")}],
             resolvers: merge(resolver,  userResolvers, emailResolvers,pushNotificationResolvers, ${types.map((t) => camelize(t) + "Resolvers({ pubSub })").join(", ")}),
             schemaDirectives: {
                 rateLimit: createRateLimitDirective({
@@ -169,14 +169,12 @@ const generateGraphqlServer = (types) => {
     }\n
 
     const keyGenerator = (directiveArgs, obj, args, context, info) => 
-    `+"${context.ip}:${defaultKeyGenerator("
-    + `directiveArgs,
-        obj,
-        args,
-        context,
-        info,
-    )}
-    `
+    `+"`${context.ip}:${defaultKeyGenerator("
+    + "         obj,\n"
+    + "         args,\n"
+    + "         context,\n"
+    + "         directiveArgs,\n"
+    +"      )}`"
 
     content += `
         const parseBearerToken = (headers)=>{
@@ -202,6 +200,12 @@ const generateGraphqlServer = (types) => {
         }\n`
 
     content += `
+        const server = new ApolloServer({
+            schema, 
+            context
+        })
+
+
         const app = express();
 
         app.use(Prometheus.requestCounters);  

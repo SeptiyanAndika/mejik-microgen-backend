@@ -3,15 +3,19 @@ const fs = require('fs')
 
 ///function for customize graphql
 const injectConfigFromHook = (hook, schema) =>{
-    hook = require('../../hooks/'+hook)
-    if(hook().config){
-        Object.keys(hook().config).map((method)=>{
-            if(hook().config[method].rateLimit){
-                let newSchema = addRateLimit(method, hook().config[method].rateLimit, schema)
-                schema = newSchema
-            }
-        })
+    let path = '../../hooks/'+hook
+    if(fs.existsSync(path)){
+        hook = require(path)
+        if(hook().config){
+            Object.keys(hook().config).map((method)=>{
+                if(hook().config[method].rateLimit){
+                    let newSchema = addRateLimit(method, hook().config[method].rateLimit, schema)
+                    schema = newSchema
+                }
+            })
+        }
     }
+
     return schema
 }
 

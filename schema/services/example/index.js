@@ -40,7 +40,7 @@ const getRequester = (name) =>{
         name: requesterName,
         key: `${camelize(name)}`,
     })
-    requester.send = (params) => requester.send(...params, isSystem: true)
+    requester.send = (params) => requester.send({...params, isSystem: true})
     app.set(requesterName, requester)
     return requester
 }

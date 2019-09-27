@@ -50,40 +50,39 @@ type SubCategory {
     events: [Event]
 }
 
-# type Category {
-#     name: String!
-#     subCategories: [SubCategory] @relation(onDelete: CASCADE)
-#     events: [Event]
-#     CategoryImages: [CategoryImage] @relation(onDelete: CASCADE)
-# }
+type CategoryImage {
+    name: String
+    url: String! @File
+    category: Category
+}
 
-# type SubCategory {
-#     category: Category!
-#     name: String!
-#     events: [Event]
-# }
+type Bank {
+    name: String!
+    bankPayments: [BankPayment] @relation(onDelete: RESTRICT)
+    # userBanks: [UserBank] @relation(onDelete: RESTRICT)
+}
 
-# type CategoryImage {
-#     name: String
-#     url: String! @File
-#     category: Category
-# }
+type BankPayment {
+    name: String!
+    number: String!
+    bank: Bank!
+    paymentMethod: PaymentMethod!
+}
 
-# type Bank {
-#     name: String!
-#     bankPayments: [BankPayment] @relation(onDelete: RESTRICT)
-#     # userBanks: [UserBank] @relation(onDelete: RESTRICT)
-# }
+type PaymentMethod {
+    name: String!
+    bankPayments: [BankPayment]
+}
 
-# type BankPayment {
+# type UserBank {
 #     name: String!
 #     number: String!
 #     bank: Bank!
-#     paymentMethod: PaymentMethod!
+#     user: User! @role(onCreate: "own", onDelete: "own")
 # }
 
 type Event {
-    owner: User! @role(onCreate: "own", onDelete: "own")
+    user: User! @role(onCreate: "own", onDelete: "own")
     name: String!
     locationType: String @default(value: "tbd")
     locationName: String
@@ -112,12 +111,11 @@ type Event {
     isPrivate: Boolean @default(value: false)
 }
 
-# # type UserBank {
-# #     name: String!
-# #     number: String!
-# #     bank: Bank!
-# #     user: User! @role(onCreate: "own", onDelete: "own")
-# # }
+type EventImage {
+    name: String
+    url: String! @File
+    event: Event
+}
 
 type Ticket {
     event: Event!
@@ -152,7 +150,7 @@ type Order {
 
 type Transaction {
     transactionId: String
-    user: User @role(onCreate: "own", onFind: "own")
+    user: User @role(onCreate: "own")
     orders: [Order] @role(onCreate: "own")
     customerFirstName: String
     customerLastName: String
@@ -177,13 +175,8 @@ type User {
     address: String
     city: String
     postalCode: String
-    organization: Organization
-    test: [Organization]
 }
 
-type Organization {
-    name: String
-}
 # # type Tag {
 # #     id: String
 # #     name: String

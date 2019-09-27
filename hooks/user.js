@@ -1,17 +1,11 @@
 module.exports = (app) => ({
     config:{
-        reSendEmail: {
+        reSendVerifyEmail: {
             //protecting for spam request
             rateLimit:{
                 limit: 1,
                 duration: 60
             },
-            errorMessage: (error)=>{
-                if(error == "UnAuthorized"){
-                    return "Authentikasi gagal."
-                }
-                return error
-            }
         },
     },
     before: {

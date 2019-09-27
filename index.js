@@ -22,6 +22,7 @@ let schema = parse(rawSchema);
 
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
+const utilsDirectory = './outputs/utils/';
 const emailServices = "./schema/services/email"
 const authServices = "./schema/services/user"
 const storageServices = "./schema/services/storage"
@@ -319,8 +320,9 @@ function generateAuthentiations(types) {
     if (!fs.existsSync(hooksDirectory)) {
         fs.mkdirSync(hooksDirectory)
     }
-    if (!fs.existsSync(hooksDirectory)) {
-        fs.mkdirSync(hooksDirectory)
+    if (!fs.existsSync(utilsDirectory)) {
+        fs.mkdirSync(utilsDirectory)
+        ncp('./schema/utils', utilsDirectory)
     }
     if (!fs.existsSync(hooksDirectory + 'user.js')) {
         ncp('./schema/hooks/user.js', hooksDirectory + 'user.js', (err) => {
@@ -528,6 +530,7 @@ async function main() {
             })
         }
 
+
         //feathers
         if (!fs.existsSync(featherDirectory)) {
             fs.mkdirSync(featherDirectory)
@@ -572,6 +575,7 @@ async function main() {
             // ncp(configPath+"default.json", path+"/config/default.json")
             ncp(schemaExampleFeather + "config.js", path + "config.js")
             ncp('./schema/config.js', './outputs/config.js')
+            ncp('./schema/monitor.js', './outputs/monitor.js')
             // ncp('./schema/.env', './outputs/.env')
             fs.readFile('./schema/.env', (err, content) => {
                 content = content.toString()
