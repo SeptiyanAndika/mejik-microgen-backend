@@ -89,7 +89,7 @@ const generateGraphqlServer = (types) => {
         "   scalar JSON\n" +
         "   scalar Upload\n" +
         "   scalar Date\n`" +
-
+        "   scalar Timestamp"+
         `
         const resolver = {
             JSON: GraphQLJSON,
@@ -110,6 +110,38 @@ const generateGraphqlServer = (types) => {
                     return null;
                 },
             }),
+            Timestamp: new GraphQLScalarType({
+                name: 'Timestamp',
+                serialize(date) {
+                    console.log("serialize", date)
+                return (date instanceof Date) ? date.getTime() : null
+                },
+                parseValue(value) {
+                try {
+              
+                    let valid = new Date(value).getTime() > 0;
+                    if(!valid){
+                        throw new UserInputError("Date is not valid")
+                    }
+                    return value
+                    }
+                catch (error) { 
+                    throw new UserInputError("Date is not valid")
+                }
+                },
+                parseLiteral(ast) {
+                    console.log("ast", ast)
+                if (ast.kind === Kind.INT) {
+                    return new Date(parseInt(ast.value, 10));
+                }
+                else if (ast.kind === Kind.STRING) {
+                    return this.parseValue(ast.value);
+                }
+                else {
+                    return null;
+                }
+                },
+            })
         }`
 
     content +=
