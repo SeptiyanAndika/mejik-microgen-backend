@@ -407,6 +407,39 @@ userService.on("register", async (req, cb) => {
 	}
 });
 
+userService.on("reSendVerifyEmail", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		if(user.status == 1){
+			throw new Error("User has been verified.")
+		}
+		const emailToken = bcrypt.genSaltSync();
+		await app.service("emailVerifications").create({
+			email: user.email,
+			token: emailToken
+		});
+		emailRequester.send({
+			type: "send",
+			body: {
+				to: user.email,
+				subject: `${application.name} Verification`,
+				title: "Verify Your Email Immediately",
+				body: `Thank you for joining! To verify your email click the button below:`,
+				emailLink: HOST + "/user/verify?token=" + emailToken
+			}
+		});
+		cb(null, {
+			message: 'Success.'
+		});
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
 userService.on("createUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;

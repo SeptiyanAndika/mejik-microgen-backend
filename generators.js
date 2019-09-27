@@ -63,11 +63,12 @@ const generateGraphqlServer = (types) => {
     let content = ""
     content += `import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET } from './config'\n`
     content += `import { merge } from 'lodash'\n`
-    content += `import { ApolloServer, makeExecutableSchema, gql, GraphQLUpload } from 'apollo-server'\n`
+    content += `import express from 'express'\n`
+    content += `import { ApolloServer, makeExecutableSchema, gql, GraphQLUpload } from 'apollo-server-express'\n`
+    content += `import { createRateLimitTypeDef, createRateLimitDirective, defaultKeyGenerator} from 'graphql-rate-limit-directive'\n`
     content += `import { GraphQLScalarType } from 'graphql'\n`
     content += `import GraphQLJSON from 'graphql-type-json'\n\n`
     content += `import { PubSub } from 'graphql-subscriptions'\n`
-
     content += `import { typeDef as User, resolvers as userResolvers } from './graphql/user'\n`
     content += `import { typeDef as Email, resolvers as emailResolvers } from './graphql/email'\n`
     content += `import { typeDef as PushNotification, resolvers as pushNotificationResolvers } from './graphql/pushNotification'\n`
@@ -75,9 +76,10 @@ const generateGraphqlServer = (types) => {
     types.map((type) => {
         content += `import { typeDef as ${type}, resolvers as ${camelize(type)}Resolvers } from './graphql/${camelize(type)}'\n`
     })
-
+    content += `const { injectConfigFromHook } = require('./utils/hookGraphql')\n`
     content +=
         `const pubSub = new PubSub()\n` +
+        `const Prometheus = require('./monitor')\n`
         `\nconst cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })\n` +
         "const typeDefs = gql`\n" +
         "   type Query { default: String }\n" +
@@ -113,8 +115,13 @@ const generateGraphqlServer = (types) => {
     content +=
         `
         const schema = makeExecutableSchema({
-            typeDefs: [ typeDefs, User, Email, PushNotification, ${types.join(", ")}],
+            typeDefs: [ typeDefs, createRateLimitTypeDef(), injectConfigFromHook("user", User), injectConfigFromHook("email", User), injectConfigFromHook("pushNotification", PushNotification), ${types.map(t=> `injectConfigFromHook('${camelize(t)}', ${t})`).join(", ")}],
             resolvers: merge(resolver,  userResolvers, emailResolvers,pushNotificationResolvers, ${types.map((t) => camelize(t) + "Resolvers({ pubSub })").join(", ")}),
+            schemaDirectives: {
+                rateLimit: createRateLimitDirective({
+                    keyGenerator
+                }),
+            },
         });
         `
 
@@ -159,7 +166,17 @@ const generateGraphqlServer = (types) => {
     content += `
     const uuid = ()=>{
         return Math.random().toString(36).substring(7)
-    }\n`
+    }\n
+
+    const keyGenerator = (directiveArgs, obj, args, context, info) => 
+    `+"${context.ip}:${defaultKeyGenerator("
+    + `directiveArgs,
+        obj,
+        args,
+        context,
+        info,
+    )}
+    `
 
     content += `
         const parseBearerToken = (headers)=>{
@@ -173,6 +190,7 @@ const generateGraphqlServer = (types) => {
             return {
                 bucket: BUCKET,
                 uuid,
+                ip: req.ip,
                 storageUrl: "https://"+BUCKET+".s3-ap-southeast-1.amazonaws.com/",
                 headers: !connection && parseBearerToken(req.headers),
                 userRequester,
@@ -184,14 +202,23 @@ const generateGraphqlServer = (types) => {
         }\n`
 
     content += `
-        const server = new ApolloServer({
-            schema, 
-            context
-        })
+        const app = express();
 
-        server.listen().then(({url})=>{
-            console.log("Server ready at"+url)
-        })
+        app.use(Prometheus.requestCounters);  
+        app.use(Prometheus.responseCounters);
+
+        /**
+        * Enable metrics endpoint
+        */
+        Prometheus.injectMetricsRoute(app);
+
+        /**
+        * Enable collection of default metrics
+        */
+        Prometheus.startCollection();
+        server.applyMiddleware({ app });
+
+        app.listen({port: 4000})
     `
     return beautify(content)
 }

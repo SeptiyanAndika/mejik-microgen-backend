@@ -72,6 +72,7 @@ const typeDef = `
 		deleteUser(id: String!): User
 		changeProfile(input: ChangeProfileInput): User
 		changePassword(input: ChangePasswordInput): Response
+		reSendVerifyEmail: Response
     }
 
     type User {
@@ -190,6 +191,13 @@ const resolvers = {
 		verifyEmail: async (_, { input }, { userRequester, headers }) => {
 			try{
 				return await userRequester.send({ type: "verifyEmail", body: input, headers });
+			}catch(e){
+				throw new Error(e)
+			}
+		},
+		reSendVerifyEmail: async (_, { input }, { userRequester, headers }) => {
+			try{
+				return await userRequester.send({ type: "reSendVerifyEmail", body: input, headers });
 			}catch(e){
 				throw new Error(e)
 			}

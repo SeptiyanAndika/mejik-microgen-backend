@@ -1,4 +1,4 @@
-module.exports = (app) => ({
+module.exports = (app) =>({
     config:{
         reSendEmail: {
             //protecting for spam request
@@ -12,7 +12,7 @@ module.exports = (app) => ({
                 }
                 return error
             }
-        },
+        }
     },
     before: {
         find: async (context) => {
@@ -31,28 +31,4 @@ module.exports = (app) => ({
             //do something before delete request
         },        
     },
-    after:{
-        find: async (context) => {
-            //do something after find request
-        },
-        get: async (context) => {
-            //do something after get request
-        },        
-        create: async (context) => {
-            //do something after create request
-        },
-        patch: async (context) => {
-            //do something after patch request
-        },         
-        delete: async (context) => {
-            //do something after delete request
-        },
-        login: async (context) => {
-            let organization = await app.getRequester('organization').send({type: 'index'})
-        },
-        register: async (context) => {
-            console.log("after register", context)
-        }
-    },
-    permissions: null
 })
