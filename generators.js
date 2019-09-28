@@ -380,6 +380,7 @@ const generateGraphqlSchema = (schema) => {
 
         //
         input += `    input ${typeName}Input {\n`
+        let isHasFindOwn = false
         schema.definitions[i].fields.map((e) => {
             let role = []
             let isFile = false
@@ -390,6 +391,11 @@ const generateGraphqlSchema = (schema) => {
                             if (args.value.value == "own") {
                                 role.push(args.value.value)
                                 return
+                            }
+                        }
+                        if (args.name.value == "onFind") {
+                            if (args.value.value == "own") {
+                                isHasFindOwn = true
                             }
                         }
                     })
@@ -421,8 +427,12 @@ const generateGraphqlSchema = (schema) => {
         queriesPrepend += `\n        ${camelize(pluralize(typeName))} (query: JSON): [${typeName}]`
         queriesPrepend += `\n        ${camelize(pluralize.singular(typeName))} (id: String!): ${typeName}`
         queriesPrepend += `\n        ${camelize(pluralize(typeName))}Connection (query: JSON): ${typeName}Connection`
-        queriesPrepend += `\n        ${camelize(pluralize(typeName))}Own (query: JSON): [${typeName}]`
-        queriesPrepend += `\n        ${camelize(pluralize(typeName))}ConnectionOwn (query: JSON): ${typeName}Connection`
+
+        //check findown
+        if(isHasFindOwn){
+            queriesPrepend += `\n        ${camelize(pluralize(typeName))}Own (query: JSON): [${typeName}]`
+            queriesPrepend += `\n        ${camelize(pluralize(typeName))}ConnectionOwn (query: JSON): ${typeName}Connection`
+        }
 
         subscriptionPrepend += `\n       ${camelize(typeName)}Added: ${typeName}`
         subscriptionPrepend += `\n       ${camelize(typeName)}Updated: ${typeName}`
@@ -491,29 +501,31 @@ const generateGraphqlSchema = (schema) => {
         resolverQueries += `        }\n`
         resolverQueries += "}, \n"
 
-        //findall
-        resolverQueries += `${camelize(pluralize(typeName))}Own: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
-        resolverQueries += `    if (query && query.id) {\n`
-        resolverQueries += `        query._id = query.id\n`
-        resolverQueries += `        delete query.id }\n`
-        resolverQueries += `        try{ \n`
-        resolverQueries += `            return await ${requester}.send({ type: 'findOwn', query, headers})\n`
-        resolverQueries += `        }catch(e){ \n`
-        resolverQueries += `            throw new Error(e)`
-        resolverQueries += `        }\n`
-        resolverQueries += "}, \n"
+        if(isHasFindOwn){
+            //findall
+            resolverQueries += `${camelize(pluralize(typeName))}Own: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
+            resolverQueries += `    if (query && query.id) {\n`
+            resolverQueries += `        query._id = query.id\n`
+            resolverQueries += `        delete query.id }\n`
+            resolverQueries += `        try{ \n`
+            resolverQueries += `            return await ${requester}.send({ type: 'findOwn', query, headers})\n`
+            resolverQueries += `        }catch(e){ \n`
+            resolverQueries += `            throw new Error(e)`
+            resolverQueries += `        }\n`
+            resolverQueries += "}, \n"
 
-        //connections
-        resolverQueries += `${camelize(pluralize(typeName))}ConnectionOwn: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
-        resolverQueries += `    if (query && query.id) {\n`
-        resolverQueries += `        query._id = query.id\n`
-        resolverQueries += `        delete query.id }\n`
-        resolverQueries += `        try{ \n`
-        resolverQueries += `            return await ${requester}.send({ type: 'findConnectionOwn', query, headers})\n`
-        resolverQueries += `        }catch(e){ \n`
-        resolverQueries += `            throw new Error(e)`
-        resolverQueries += `        }\n`
-        resolverQueries += "}, \n"
+            //connections
+            resolverQueries += `${camelize(pluralize(typeName))}ConnectionOwn: async(_, { query }, { ${typeNames.map((e) => camelize(e) + "Requester").join(", ")}, headers })=>{\n`
+            resolverQueries += `    if (query && query.id) {\n`
+            resolverQueries += `        query._id = query.id\n`
+            resolverQueries += `        delete query.id }\n`
+            resolverQueries += `        try{ \n`
+            resolverQueries += `            return await ${requester}.send({ type: 'findConnectionOwn', query, headers})\n`
+            resolverQueries += `        }catch(e){ \n`
+            resolverQueries += `            throw new Error(e)`
+            resolverQueries += `        }\n`
+            resolverQueries += "}, \n"
+        }
 
         if (relationTypes.length > 0) {
             resolverRelations += `    ${typeName}: {\n`
