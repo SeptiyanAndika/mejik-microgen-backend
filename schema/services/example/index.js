@@ -46,7 +46,7 @@ const getRequester = (name) =>{
 }
 
 app.getRequester = getRequester
-exampleService.on("index", async (req, cb) => {
+exampleService.on("find", async (req, cb) => {
     try {
         let data = await app.service("examples").find({
             query: req.query,
@@ -60,7 +60,7 @@ exampleService.on("index", async (req, cb) => {
     }
 })
 
-exampleService.on("indexConnection", async (req, cb) => {
+exampleService.on("findConnection", async (req, cb) => {
     try {
         let data = await app.service("examples").find({
             query: req.query,
@@ -104,7 +104,7 @@ exampleService.on("findConnectionOwn", async (req, cb) => {
     }
 })
 
-exampleService.on("store", async (req, cb) => {
+exampleService.on("create", async (req, cb) => {
     try {
         let data = await app.service("examples").create(req.body, {
             headers: req.headers,
@@ -117,7 +117,7 @@ exampleService.on("store", async (req, cb) => {
     }
 })
 
-exampleService.on("update", async (req, cb) => {
+exampleService.on("patch", async (req, cb) => {
     try {
         let data = await app.service("examples").patch(req.id, req.body, {
             ...req.params || {},
@@ -131,7 +131,7 @@ exampleService.on("update", async (req, cb) => {
     }
 })
 
-exampleService.on("destroy", async (req, cb) => {
+exampleService.on("delete", async (req, cb) => {
     try {
         let data = await app.service("examples").remove(req.id, {
             ...req.params || {},
@@ -146,7 +146,7 @@ exampleService.on("destroy", async (req, cb) => {
     }
 })
 
-exampleService.on("show", async (req, cb) => {
+exampleService.on("get", async (req, cb) => {
     try {
         let data = null
         if (req.id) {

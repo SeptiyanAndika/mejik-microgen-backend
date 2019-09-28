@@ -111,14 +111,14 @@ const resolvers = {
 				delete query.id
 			}
 			try{
-				return await userRequester.send({ type: "index", query, headers });
+				return await userRequester.send({ type: "find", query, headers });
 			}catch(e){
 				throw new Error(e)
 			}
 		},
 		user: async (_, { id }, { headers, userRequester }) => {
 			try{
-				return await userRequester.send({ type: "show", id, headers });
+				return await userRequester.send({ type: "get", id, headers });
 			}catch(e){
 				throw new Error(e)
 			}
@@ -129,7 +129,7 @@ const resolvers = {
 				delete query.id
 			}
 			try{
-				return await userRequester.send({ type: "indexConnection", query, headers });
+				return await userRequester.send({ type: "findConnection", query, headers });
 			}catch(e){
 				throw new Error(e)
 			}

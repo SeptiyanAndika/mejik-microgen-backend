@@ -216,7 +216,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                     if (e.type.kind == "ListType") {
                         resolverRelations += `${e.name.value}: async ({ id }, { query }, { headers, ${camelize(pluralize.singular(e.type.type.name.value))}Requester })=>{\n`
                         resolverRelations += `        try{ \n`
-                        resolverRelations += `          return await ${camelize(pluralize.singular(e.type.type.name.value))}Requester.send({ type: 'index', query: Object.assign({ userId: id }, query), headers })\n`
+                        resolverRelations += `          return await ${camelize(pluralize.singular(e.type.type.name.value))}Requester.send({ type: 'find', query: Object.assign({ userId: id }, query), headers })\n`
                         resolverRelations += `        }catch(e){ \n`
                         resolverRelations += `            throw new Error(e)`
                         resolverRelations += `        }\n`
@@ -224,7 +224,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                     } else {
                         resolverRelations += `${e.name.value}: async ({ ${e.name.value}Id }, args, { headers, ${camelize(e.type.name.value)}Requester })=>{\n`
                         resolverRelations += `        try{ \n`
-                        resolverRelations += `            return await ${e.name.value}Requester.send({ type: 'show', id: ${e.name.value}Id, headers })\n`
+                        resolverRelations += `            return await ${e.name.value}Requester.send({ type: 'get', id: ${e.name.value}Id, headers })\n`
                         resolverRelations += `        }catch(e){ \n`
                         resolverRelations += `            throw new Error(e)`
                         resolverRelations += `        }\n`
@@ -691,7 +691,7 @@ async function main() {
                             //beforeCreate
                             if(context.data && context.data.${pluralize.singular(camelize(t.name))}Id){
                                 let belongsTo = await ${pluralize.singular(camelize(t.name))}Requester.send({ 
-                                    type: "show", 
+                                    type: "get", 
                                     id: context.data.${pluralize.singular(camelize(t.name))}Id, 
                                     headers:{
                                         token: context.params.headers.authorization

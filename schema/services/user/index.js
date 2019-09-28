@@ -47,7 +47,7 @@ const getRequester = (name) =>{
 }
 
 app.getRequester = getRequester
-userService.on("index", async (req, cb) => {
+userService.on("find", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let verify = await app
@@ -68,7 +68,7 @@ userService.on("index", async (req, cb) => {
 	}
 });
 
-userService.on("indexConnection", async (req, cb) => {
+userService.on("findConnection", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let verify = await app
@@ -89,7 +89,7 @@ userService.on("indexConnection", async (req, cb) => {
 	}
 });
 
-userService.on("show", async (req, cb) => {
+userService.on("get", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let data = null;

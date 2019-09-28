@@ -56,7 +56,7 @@ emailService.on("sendToUsers", async (req, cb) => {
 		}
 
 		let to = []
-		const users = await userRequester.send({ type: "index", headers: req.headers })
+		const users = await userRequester.send({ type: "find", headers: req.headers })
 		users.map(user => {
 			to.push({ email: user.email })
 		})
