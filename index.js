@@ -352,32 +352,33 @@ function generateAuthentiations(types) {
             }).join(", ")},
                     ${types.map((t, typeIndex) => {
                         let localActions = actions
-                        t.fields.map((f)=>{
-                            f.directives.map((d)=>{
-                                if(d.name.value == "role"){
-                                    d.arguments.map((args)=>{
-                                        if(args.name.value == "onFind" && args.value.value == "own"){
-                                            localActions.push("findOwn")
-                                        }
-                                    })
-                                }
+                        if (typeIndex == 0) {
+
+                            t.fields.map((f)=>{
+                                f.directives.map((d)=>{
+                                    if(d.name.value == "role"){
+                                        d.arguments.map((args)=>{
+                                            if(args.name.value == "onFind" && args.value.value == "own"){
+                                                localActions.push("findOwn")
+                                            }
+                                        })
+                                    }
+                                })
                             })
-                        })
-                if (typeIndex == 0) {
-                    return localActions.map((a, actionIndex) => {
-                        // if(typeIndex ==0 && actionIndex == 0){
-                        //     return `'${camelize(t.name)}:${a}'\n`
-                        // }
-                        return `'${camelize(t.name)}:${a}'`
-                    }).join(", ")
-                }
-                return `\n` + localActions.map((a, actionIndex) => {
-                    // if(typeIndex ==0 && actionIndex == 0){
-                    //     return `'${camelize(t.name)}:${a}'\n`
-                    // }
-                    return `'${camelize(t.name)}:${a}'`
-                }).join(", ")
-            })}
+                            return localActions.map((a, actionIndex) => {
+                                // if(typeIndex ==0 && actionIndex == 0){
+                                //     return `'${camelize(t.name)}:${a}'\n`
+                                // }
+                                return `'${camelize(t.name)}:${a}'`
+                            }).join(", ")
+                        }
+                        return `\n` + localActions.map((a, actionIndex) => {
+                            // if(typeIndex ==0 && actionIndex == 0){
+                            //     return `'${camelize(t.name)}:${a}'\n`
+                            // }
+                            return `'${camelize(t.name)}:${a}'`
+                        }).join(", ")
+                    })}
                 ],
                 public: [
                     ${ defaultPermissions.permissions.public.map((t, typeIndex) => {
@@ -619,11 +620,13 @@ async function main() {
                                     if (args.value.value == "own") {
                                         let contentSplit = content.split("//beforeFindAuthorization")
                                         contentSplit[0] += `
-                                            if(auth.user.permissions.includes("${camelize(e.name)}:findOwn")){
-                                                context.method = "findOwn"
-                                                context.params.query = {
-                                                    ...context.params.query || {},
-                                                    ${f.name}Id: auth.user.id
+                                            if(context.params.type && context.params.type ==  "findOwn"){
+                                                if(auth.user.permissions.includes("${camelize(e.name)}:findOwn")){
+                                                    context.method = "findOwn"
+                                                    context.params.query = {
+                                                        ...context.params.query || {},
+                                                        ${f.name}Id: auth.user.id
+                                                    }
                                                 }
                                             }
                                             

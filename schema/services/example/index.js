@@ -79,7 +79,8 @@ exampleService.on("findOwn", async (req, cb) => {
         let data = await app.service("examples").find({
             query: req.query,
             headers: req.headers,
-            isSystem: req.isSystem
+            isSystem: req.isSystem,
+            type: 'findOwn'
         })
 
         cb(null, data.data)
@@ -93,7 +94,8 @@ exampleService.on("findConnectionOwn", async (req, cb) => {
         let data = await app.service("examples").find({
             query: req.query,
             headers: req.headers,
-            isSystem: req.isSystem
+            isSystem: req.isSystem,
+            type: 'findOwn'
         })
 
         cb(null, data)
@@ -221,8 +223,9 @@ app.service('examples').hooks({
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
+                    //beforeCreate
                 }
-                //beforeCreate
+                
                 return externalHook && externalHook(app).before && externalHook(app).before.create && externalHook(app).before.create(context)
             } catch (err) {
                 throw new Error(err)
@@ -242,8 +245,9 @@ app.service('examples').hooks({
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
+                    //beforeUpdate
                 }
-                //beforeUpdate
+                
                 return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
             } catch (err) {
                 throw new Error(err)
@@ -263,8 +267,9 @@ app.service('examples').hooks({
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
+                    //beforePatch
                 }
-                //beforePatch
+                
                 return externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
             } catch (err) {
                 throw new Error(err)
@@ -283,11 +288,10 @@ app.service('examples').hooks({
 
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
-                    }
+                    } 
+                    //beforeDelete
+                    //onDelete
                }
-
-                //beforeDelete
-                //onDelete
                 return externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)
             } catch (err) {
                 throw new Error(err)
@@ -297,32 +301,36 @@ app.service('examples').hooks({
     after: {
         find: async (context) => {
             try {
-                return externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
+                
                 //afterFind
+                return externalHook && externalHook(app).after && externalHook(app).after.find && externalHook(app).after.find(context)
             } catch (err) {
                 throw new Error(err)
             }
         },
         create: async (context) => {
             try {
-                return externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
+                
                 //afterCreate
+                return externalHook && externalHook(app).after && externalHook(app).after.create && externalHook(app).after.create(context)
             } catch (err) {
                 throw new Error(err)
             }
         },
         patch: async (context) => {
             try {
-                return externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
+                
                 //afterPatch
+                return externalHook && externalHook(app).after && externalHook(app).after.patch && externalHook(app).after.patch(context)
             } catch (err) {
                 throw new Error(err)
             }
         },
         remove: async (context) => {
             try {
-                return externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
+                
                 //afterDelete
+                return externalHook && externalHook(app).after && externalHook(app).after.remove && externalHook(app).after.remove(context)
             } catch (err) {
                 throw new Error(err)
             }
