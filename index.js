@@ -66,6 +66,26 @@ const writeFile = (dir, fileName, file) => {
     });
 }
 
+const parseEnv = (src) => {
+    // Try parse JSON
+    try {
+        return JSON.parse(src.toString())
+    } catch (err) {
+        // Try parse envfile string
+        const result = {}
+        const lines = src.toString().split('\n')
+        for (const line of lines) {
+            const match = line.match(/^([^=:#]+?)[=:](.*)/)
+            if (match) {
+                const key = match[1].trim()
+                const value = match[2].trim()
+                result[key] = value
+            }
+        }
+        return result
+    }
+}
+
 const primitiveTypes = ["String", "Number", "Float", "Double", "Int", "Boolean"]
 const convertToFeatherTypes = (type) => {
     if (type == "Float") {
@@ -454,9 +474,10 @@ function addNewRequester(content, type, requesterName, requesters) {
 }
 async function main() {
     //create bucket
-    let bucketName = await createBucket({
-        Bucket: APP_NAME
-    })
+    // let bucketName = await createBucket({
+    //     Bucket: APP_NAME
+    // })
+    let bucketName = 'super'
 
     const MONGODB_PORT = await getPort()
     const REDIS_PORT = await getPort()
@@ -559,8 +580,12 @@ async function main() {
         content += 'NOTIFICATION_PORT=' + await getPort() + "\n"
         content += 'NOTIFICATION_COTE=' + await getPort() + "\n"
         content += 'NOTIFICATION_MONGODB=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + 'pushNotification' + "_service\n"
+        
+
+        let TYPES = []
 
         for (const type of types) {
+            TYPES.push(type.name.toUpperCase())
             let port = await getPort()
             let cote = await getPort()
 
@@ -570,8 +595,35 @@ async function main() {
             content += type.name.toUpperCase() + '_MONGODB' + '=' + defaultConfigService.mongodb + MONGODB_PORT + '/' + camelize(type.name) + "_service\n"
         }
 
+        content += 'TYPES=' + TYPES.join(',')
+
         // check if .env file is exist
-        if(! fs.existsSync('./outputs/.env')) {
+        if(fs.existsSync('./outputs/.env')) {
+            fs.readFile('./outputs/.env', async (err, content) => {
+                const parse = parseEnv(content)
+                const oldTypes = parse.TYPES.split(',')
+                const arrayEnv = content.toString().split('\n')
+                arrayEnv.pop()
+                let stringEnv = arrayEnv.join('\n')
+
+                for ( const type of types ) {
+                    const name = type.name.toUpperCase()
+                    if(!oldTypes.includes(name)) {
+                        let port = await getPort()
+                        let cote = await getPort()
+                        stringEnv += "\n"
+                        stringEnv += type.name.toUpperCase() + '_HOST' + '=' + defaultConfigService.host + "\n"
+                        stringEnv += type.name.toUpperCase() + '_PORT' + '=' + port + "\n"
+                        stringEnv += type.name.toUpperCase() + '_COTE' + '=' + cote + "\n"
+                        stringEnv += type.name.toUpperCase() + '_MONGODB' + '=' + defaultConfigService.mongodb + parse.MONGODB_PORT + '/' + camelize(type.name) + "_service\n"
+                    }
+                }
+
+                stringEnv += 'TYPES=' + TYPES.join(',')
+                fs.writeFileSync('./outputs/.env', stringEnv)
+            })
+
+        } else {
             fs.writeFileSync('./outputs/.env', content)
         }
 
