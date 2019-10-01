@@ -42,6 +42,33 @@ const fieldType = (field) => {
     return field.name.value
 }
 
+const generatePM2Script = (types) =>{
+    let script = {
+        apps: [{
+            name: "Graphql Service",
+            script: "npm run graphql"
+        },{
+            name: "User Service",
+            script: "npm run user-services"
+        },{
+            name: "Email Service",
+            script: "npm run email-services"
+        },{
+            name: "Storage Service",
+            script: "npm run storage-services"
+        },{
+            name: "Push Notification Servic",
+            script: "npm run pushNotification-services"
+        }]
+    }
+    types.map((type)=>{
+        script.apps.push({
+            "name": `type Service`,
+            "script": `npm run ${camelize(type)}-services`
+        })
+    })
+    fs.writeFileSync("./outputs/pm2.json", JSON.stringify(script, null, 4))
+}
 const generatePackageJSON = (types) => {
     let packageJSON = fs.readFileSync("./schema/package.json")
     packageJSON = JSON.parse(packageJSON.toString())
@@ -57,6 +84,7 @@ const generatePackageJSON = (types) => {
     packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type) => `${camelize(type)}-services`).join(" ")}`
 
     fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON, null, 4))
+    generatePM2Script(types)
 }
 
 const generateGraphqlServer = (types) => {
