@@ -72,13 +72,13 @@ const generatePM2Script = (types) =>{
 const generatePackageJSON = (types) => {
     let packageJSON = fs.readFileSync("./schema/package.json")
     packageJSON = JSON.parse(packageJSON.toString())
-    packageJSON["scripts"]["graphql"] = "nodemon --exec babel-node graphql --presets env"
-    packageJSON["scripts"]["user-services"] = "cd ./services/user && nodemon index.js"
-    packageJSON["scripts"]["email-services"] = "cd ./services/email && nodemon index.js"
-    packageJSON["scripts"]["storage-services"] = "cd ./services/storage && nodemon index.js"
-    packageJSON["scripts"]["pushNotification-services"] = "cd ./services/push-notification && nodemon index.js"
+    packageJSON["scripts"]["graphql"] = "babel-node graphql --presets env"
+    packageJSON["scripts"]["user-services"] = "cd ./services/user && node index.js"
+    packageJSON["scripts"]["email-services"] = "cd ./services/email && node index.js"
+    packageJSON["scripts"]["storage-services"] = "cd ./services/storage && node index.js"
+    packageJSON["scripts"]["pushNotification-services"] = "cd ./services/push-notification && node index.js"
     types.map((type) => {
-        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/" + camelize(type) + " && nodemon index.js"
+        packageJSON["scripts"][`${camelize(type)}-services`] = "cd ./services/" + camelize(type) + " && node index.js"
     })
 
     packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type) => `${camelize(type)}-services`).join(" ")}`
@@ -89,7 +89,7 @@ const generatePackageJSON = (types) => {
 
 const generateGraphqlServer = (types) => {
     let content = ""
-    content += `import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET } from './config'\n`
+    content += `import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET, GRAPHQL_PORT } from './config'\n`
     content += `import { merge } from 'lodash'\n`
     content += `import express from 'express'\n`
     content += `import { ApolloServer, makeExecutableSchema, gql, GraphQLUpload } from 'apollo-server-express'\n`
@@ -844,6 +844,22 @@ onDeleteRelations = (type, relatedTable, foreignId) => {
     }
 }
 
+
+const generateEcosystemConfig = (projectName) => {
+    content = ''
+    content += 'module.exports = {\n'
+    content += '    apps: [\n'
+    content += '        {\n'
+    content += `            name: '${projectName}',\n`
+    content += `            script: 'npm',\n`
+    content += `            args: 'run dev',\n`
+    content += `         }\n`
+    content += `    ]\n`
+    content += `}\n`
+
+    fs.writeFileSync('./outputs/ecosystem.config.js', content)
+}
+
 module.exports = {
     generateGraphqlSchema,
     generateGraphqlServer,
@@ -851,5 +867,5 @@ module.exports = {
     whitelistTypes,
     reservedTypes,
     onDeleteRelations,
-    fieldType
+    generateEcosystemConfig
 }

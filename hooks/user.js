@@ -1,13 +1,4 @@
 module.exports = (app) => ({
-    config:{
-        reSendVerifyEmail: {
-            //protecting for spam request
-            rateLimit:{
-                limit: 1,
-                duration: 60
-            },
-        },
-    },
     before: {
         find: async (context) => {
             //do something before find request

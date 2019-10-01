@@ -1,4 +1,4 @@
-const { HOST, REDIS_HOST, REDIS_PORT, forgetPasswordExpired, email, application } = require("./config");
+const { HOST, REDIS_HOST, REDIS_PORT, USER_COTE, forgetPasswordExpired, email, application } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -17,7 +17,8 @@ try {
 
 const userService = new cote.Responder({
 	name: "User Service",
-	key: "user"
+	key: "user",
+	port: USER_COTE
 });
 
 const emailRequester = new cote.Requester({
@@ -374,7 +375,7 @@ userService.on("register", async (req, cb) => {
 	try {
 		const user = await app.service("users").create({
 			...req.body,
-			role: "authenticated"
+			role: "admin"
 		});
 
 		const auth = await app.service("authentication").create({
