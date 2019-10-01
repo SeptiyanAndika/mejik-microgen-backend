@@ -63,7 +63,7 @@ const generatePM2Script = (types) =>{
     }
     types.map((type)=>{
         script.apps.push({
-            "name": `type Service`,
+            "name": `${type} Service`,
             "script": `npm run ${camelize(type)}-services`
         })
     })

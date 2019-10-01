@@ -59,13 +59,16 @@ const writeFile = (dir, fileName, file) => {
     });
 }
 
-const primitiveTypes = ["String", "Number", "Float", "Double", "Int", "Boolean"]
+const primitiveTypes = ["String", "Number", "Float", "Double", "Int", "Boolean", "Timestamp"]
 const convertToFeatherTypes = (type) => {
     if (type == "Float") {
         return "String"
     }
     if (type == "Int") {
         return "Number"
+    }
+    if (type == "Timestamp"){
+        return "String"
     }
     return type
 }
