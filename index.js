@@ -68,7 +68,7 @@ const convertToFeatherTypes = (type) => {
         return "Number"
     }
     if (type == "Timestamp"){
-        return "String"
+        return "Number"
     }
     return type
 }
