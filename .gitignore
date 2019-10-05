@@ -4,7 +4,6 @@ yarn.lock
 package-lock.json
 schema
 index.js
-config.js
 directives.js
 generators.js
 utils.js
