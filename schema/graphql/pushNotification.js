@@ -21,7 +21,7 @@ export const resolvers = {
     Mutation: {
         subscribePushNotificatiton: async (_, { input = {} }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
             try{
-                let data = await pushNotificationRequester.send({ type: 'store', body: input, headers })
+                let data = await pushNotificationRequester.send({ type: 'create', body: input, headers })
                 return data
             }catch(e){
                 throw new Error(e)
@@ -29,7 +29,7 @@ export const resolvers = {
         },
         unsubscribePushNotification: async (_, { input = {} }, { postRequester, userFriendRequester, commentRequester, pushNotificationRequester, headers }) => {
             try{
-                let data = await pushNotificationRequester.send({ type: 'destroy', body: input, headers })
+                let data = await pushNotificationRequester.send({ type: 'delete', body: input, headers })
                 return data
             }catch(e){
                 throw new Error(e)

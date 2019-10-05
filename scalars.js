@@ -1,7 +1,7 @@
 const scalars = `
     scalar JSON
     scalar Date
-
+    scalar Timestamp
 
     enum Relation{
         CASCADE

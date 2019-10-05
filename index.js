@@ -27,6 +27,7 @@ let dockerCompose = yaml.safeLoad(fs.readFileSync('./schema/docker-compose.yml',
 
 const graphqlDirectiory = './outputs/graphql/';
 const featherDirectory = './outputs/services/';
+const utilsDirectory = './outputs/utils/';
 const emailServices = "./schema/services/email"
 const authServices = "./schema/services/user"
 const storageServices = "./schema/services/storage"
@@ -86,12 +87,15 @@ const parseEnv = (src) => {
     }
 }
 
-const primitiveTypes = ["String", "Number", "Float", "Double", "Int", "Boolean"]
+const primitiveTypes = ["String", "Number", "Float", "Double", "Int", "Boolean", "Timestamp"]
 const convertToFeatherTypes = (type) => {
     if (type == "Float") {
         return "String"
     }
     if (type == "Int") {
+        return "Number"
+    }
+    if (type == "Timestamp"){
         return "Number"
     }
     return type
@@ -243,7 +247,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                     if (e.type.kind == "ListType") {
                         resolverRelations += `${e.name.value}: async ({ id }, { query }, { headers, ${camelize(pluralize.singular(e.type.type.name.value))}Requester })=>{\n`
                         resolverRelations += `        try{ \n`
-                        resolverRelations += `          return await ${camelize(pluralize.singular(e.type.type.name.value))}Requester.send({ type: 'index', query: Object.assign({ userId: id }, query), headers })\n`
+                        resolverRelations += `          return await ${camelize(pluralize.singular(e.type.type.name.value))}Requester.send({ type: 'find', query: Object.assign({ userId: id }, query), headers })\n`
                         resolverRelations += `        }catch(e){ \n`
                         resolverRelations += `            throw new Error(e)`
                         resolverRelations += `        }\n`
@@ -251,7 +255,7 @@ function hookUser(schema, types, userDirectory, graphqlFile) {
                     } else {
                         resolverRelations += `${e.name.value}: async ({ ${e.name.value}Id }, args, { headers, ${camelize(e.type.name.value)}Requester })=>{\n`
                         resolverRelations += `        try{ \n`
-                        resolverRelations += `            return await ${e.name.value}Requester.send({ type: 'show', id: ${e.name.value}Id, headers })\n`
+                        resolverRelations += `            return await ${e.name.value}Requester.send({ type: 'get', id: ${e.name.value}Id, headers })\n`
                         resolverRelations += `        }catch(e){ \n`
                         resolverRelations += `            throw new Error(e)`
                         resolverRelations += `        }\n`
@@ -347,6 +351,10 @@ function generateAuthentiations(types) {
     if (!fs.existsSync(hooksDirectory)) {
         fs.mkdirSync(hooksDirectory)
     }
+    if (!fs.existsSync(utilsDirectory)) {
+        fs.mkdirSync(utilsDirectory)
+        ncp('./schema/utils', utilsDirectory)
+    }
     if (!fs.existsSync(hooksDirectory + 'user.js')) {
         ncp('./schema/hooks/user.js', hooksDirectory + 'user.js', (err) => {
         })
@@ -375,32 +383,33 @@ function generateAuthentiations(types) {
             }).join(", ")},
                     ${types.map((t, typeIndex) => {
                         let localActions = actions
-                        t.fields.map((f)=>{
-                            f.directives.map((d)=>{
-                                if(d.name.value == "role"){
-                                    d.arguments.map((args)=>{
-                                        if(args.name.value == "onFind" && args.value.value == "own"){
-                                            localActions.push("findOwn")
-                                        }
-                                    })
-                                }
+                        if (typeIndex == 0) {
+
+                            t.fields.map((f)=>{
+                                f.directives.map((d)=>{
+                                    if(d.name.value == "role"){
+                                        d.arguments.map((args)=>{
+                                            if(args.name.value == "onFind" && args.value.value == "own"){
+                                                localActions.push("findOwn")
+                                            }
+                                        })
+                                    }
+                                })
                             })
-                        })
-                if (typeIndex == 0) {
-                    return localActions.map((a, actionIndex) => {
-                        // if(typeIndex ==0 && actionIndex == 0){
-                        //     return `'${camelize(t.name)}:${a}'\n`
-                        // }
-                        return `'${camelize(t.name)}:${a}'`
-                    }).join(", ")
-                }
-                return `\n` + localActions.map((a, actionIndex) => {
-                    // if(typeIndex ==0 && actionIndex == 0){
-                    //     return `'${camelize(t.name)}:${a}'\n`
-                    // }
-                    return `'${camelize(t.name)}:${a}'`
-                }).join(", ")
-            })}
+                            return localActions.map((a, actionIndex) => {
+                                // if(typeIndex ==0 && actionIndex == 0){
+                                //     return `'${camelize(t.name)}:${a}'\n`
+                                // }
+                                return `'${camelize(t.name)}:${a}'`
+                            }).join(", ")
+                        }
+                        return `\n` + localActions.map((a, actionIndex) => {
+                            // if(typeIndex ==0 && actionIndex == 0){
+                            //     return `'${camelize(t.name)}:${a}'\n`
+                            // }
+                            return `'${camelize(t.name)}:${a}'`
+                        }).join(", ")
+                    })}
                 ],
                 public: [
                     ${ defaultPermissions.permissions.public.map((t, typeIndex) => {
@@ -619,7 +628,7 @@ async function main() {
                     }
                 }
 
-                stringEnv += 'TYPES=' + TYPES.join(',')
+                stringEnv += '\nTYPES=' + TYPES.join(',')
                 fs.writeFileSync('./outputs/.env', stringEnv)
             })
 
@@ -638,6 +647,7 @@ async function main() {
             ncp('./schema/hooks/example.js', hooksDirectory + camelize(e.name) + '.js', (err) => {
             })
         }
+
 
         //feathers
         if (!fs.existsSync(featherDirectory)) {
@@ -677,6 +687,7 @@ async function main() {
             // ncp(configPath+"default.json", path+"/config/default.json")
             // ncp(schemaExampleFeather + "config.js", path + "config.js" )
             ncp('./schema/config.js', './outputs/config.js')
+            ncp('./schema/monitor.js', './outputs/monitor.js')
             // ncp('./schema/.env', './outputs/.env')
 
             fs.readFile(schemaExampleFeather + "config.js", (err, content) => {
@@ -734,11 +745,13 @@ async function main() {
                                     if (args.value.value == "own") {
                                         let contentSplit = content.split("//beforeFindAuthorization")
                                         contentSplit[0] += `
-                                            if(auth.user.permissions.includes("${camelize(e.name)}:findOwn")){
-                                                context.method = "findOwn"
-                                                context.params.query = {
-                                                    ...context.params.query || {},
-                                                    ${f.name}Id: auth.user.id
+                                            if(context.params.type && context.params.type ==  "findOwn"){
+                                                if(auth.user.permissions.includes("${camelize(e.name)}:findOwn")){
+                                                    context.method = "findOwn"
+                                                    context.params.query = {
+                                                        ...context.params.query || {},
+                                                        ${f.name}Id: auth.user.id
+                                                    }
                                                 }
                                             }
                                             
@@ -803,7 +816,7 @@ async function main() {
                             //beforeCreate
                             if(context.data && context.data.${pluralize.singular(camelize(t.name))}Id){
                                 let belongsTo = await ${pluralize.singular(camelize(t.name))}Requester.send({ 
-                                    type: "show", 
+                                    type: "get", 
                                     id: context.data.${pluralize.singular(camelize(t.name))}Id, 
                                     headers:{
                                         token: context.params.headers.authorization

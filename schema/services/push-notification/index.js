@@ -77,7 +77,7 @@ pushNotificationService.on("sendBySegment", async (req, cb) => {
 })
 
 
-pushNotificationService.on("index", async (req, cb) => {
+pushNotificationService.on("find", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let data = await app.service("pushNotifications").find({
@@ -91,7 +91,7 @@ pushNotificationService.on("index", async (req, cb) => {
     }
 })
 
-pushNotificationService.on("indexConnection", async (req, cb) => {
+pushNotificationService.on("findConnection", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let data = await app.service("pushNotifications").find({
@@ -105,7 +105,7 @@ pushNotificationService.on("indexConnection", async (req, cb) => {
     }
 })
 
-pushNotificationService.on("store", async (req, cb) => {
+pushNotificationService.on("create", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let auth = await checkAuthentication(token)
@@ -182,7 +182,7 @@ pushNotificationService.on("update", async (req, cb) => {
     }
 })
 
-pushNotificationService.on("destroy", async (req, cb) => {
+pushNotificationService.on("delete", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let auth = await checkAuthentication(token)
@@ -202,7 +202,7 @@ pushNotificationService.on("destroy", async (req, cb) => {
     }
 })
 
-pushNotificationService.on("show", async (req, cb) => {
+pushNotificationService.on("get", async (req, cb) => {
     try {
         let token = req.headers.authorizations
         let data = null

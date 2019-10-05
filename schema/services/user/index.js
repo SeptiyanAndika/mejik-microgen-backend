@@ -42,11 +42,15 @@ const getRequester = (name) =>{
 		name: requesterName,
 		key: `${camelize(name)}`,
 	})
-	app.set(requesterName, requester)
-	return requester
+	let newRequester = {
+		send: params =>  requester.send({...params, isSystem: true})
+	}
+	app.set(requesterName, newRequester)
+	return newRequester
 }
+
 app.getRequester = getRequester
-userService.on("index", async (req, cb) => {
+userService.on("find", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let verify = await app
@@ -67,7 +71,7 @@ userService.on("index", async (req, cb) => {
 	}
 });
 
-userService.on("indexConnection", async (req, cb) => {
+userService.on("findConnection", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let verify = await app
@@ -88,7 +92,7 @@ userService.on("indexConnection", async (req, cb) => {
 	}
 });
 
-userService.on("show", async (req, cb) => {
+userService.on("get", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
 		let data = null;
@@ -324,7 +328,8 @@ userService.on("verifyEmail", async (req, cb) => {
 			{
 				query: {
 					email: data.email
-				}
+				},
+				isSystem: true
 			}
 		);
 		await app.service("emailVerifications").remove(null, {
@@ -353,7 +358,7 @@ userService.on("changePassword", async (req, cb) => {
 		if (isValid) {
 			const auth = await app
 				.service("users")
-				.patch(user.id, { password: req.body.newPassword });
+				.patch(user.id, { password: req.body.newPassword }, {isSystem: true});
 			cb(null, {
 				status: 1,
 				message: "Success"
@@ -402,6 +407,39 @@ userService.on("register", async (req, cb) => {
 		cb(null, {
 			user,
 			token: auth.accessToken
+		});
+	} catch (error) {
+		cb(error.message, null);
+	}
+});
+
+userService.on("reSendVerifyEmail", async (req, cb) => {
+	try {
+		let token = req.headers.authorization;
+		let verify = await app
+			.service("authentication")
+			.verifyAccessToken(token);
+		let user = await app.service("users").get(verify.sub);
+		if(user.status == 1){
+			throw new Error("User has been verified.")
+		}
+		const emailToken = bcrypt.genSaltSync();
+		await app.service("emailVerifications").create({
+			email: user.email,
+			token: emailToken
+		});
+		emailRequester.send({
+			type: "send",
+			body: {
+				to: user.email,
+				subject: `${application.name} Verification`,
+				title: "Verify Your Email Immediately",
+				body: `Thank you for joining! To verify your email click the button below:`,
+				emailLink: HOST + "/user/verify?token=" + emailToken
+			}
+		});
+		cb(null, {
+			message: 'Success.'
 		});
 	} catch (error) {
 		cb(error.message, null);
@@ -572,9 +610,6 @@ app.service("users").hooks({
 		},
 		update: async context => {
 			if (!context.params.token) {
-				cb(null, {
-					user: { permissions: permissions["public"] }
-				});
 				return;
 			}
 
@@ -604,35 +639,37 @@ app.service("users").hooks({
 			return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
 		},
 		patch: async context => {
-			if (!context.params.token) {
-				cb(null, {
-					user: { permissions: permissions["public"] }
-				});
-				return;
-			}
-
-			let verify = await app
-				.service("authentication")
-				.verifyAccessToken(context.params.token);
-			let user = await app.service("users").get(verify.sub, {
-				query: {
-					$select: ["_id", "email", "firstName", "lastName", "role"]
+			if(!context.params.isSystem){
+				if (!context.params.token) {
+					cb(null, {
+						user: { permissions: permissions["public"] }
+					});
+					return;
 				}
-			});
 
-			user.permissions = permissions[user.role];
-			if (!user.permissions) {
-				throw new Error("UnAuthorized");
-			}
+				let verify = await app
+					.service("authentication")
+					.verifyAccessToken(context.params.token);
+				let user = await app.service("users").get(verify.sub, {
+					query: {
+						$select: ["_id", "email", "firstName", "lastName", "role"]
+					}
+				});
 
-			context.params.user = user
+				user.permissions = permissions[user.role];
+				if (!user.permissions) {
+					throw new Error("UnAuthorized");
+				}
 
-			await checkPermissions({
-				roles: ["admin", 'user']
-			})(context);
+				context.params.user = user
 
-			if (!context.params.permitted) {
-				throw Error("UnAuthorized");
+				await checkPermissions({
+					roles: ["admin", 'user']
+				})(context);
+
+				if (!context.params.permitted) {
+					throw Error("UnAuthorized");
+				}
 			}
 			return externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
 		},

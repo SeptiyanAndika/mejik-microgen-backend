@@ -72,6 +72,7 @@ const typeDef = `
 		deleteUser(id: String!): User
 		changeProfile(input: ChangeProfileInput): User
 		changePassword(input: ChangePasswordInput): Response
+		reSendVerifyEmail: Response
     }
 
     type User {
@@ -110,14 +111,14 @@ const resolvers = {
 				delete query.id
 			}
 			try{
-				return await userRequester.send({ type: "index", query, headers });
+				return await userRequester.send({ type: "find", query, headers });
 			}catch(e){
 				throw new Error(e)
 			}
 		},
 		user: async (_, { id }, { headers, userRequester }) => {
 			try{
-				return await userRequester.send({ type: "show", id, headers });
+				return await userRequester.send({ type: "get", id, headers });
 			}catch(e){
 				throw new Error(e)
 			}
@@ -128,7 +129,7 @@ const resolvers = {
 				delete query.id
 			}
 			try{
-				return await userRequester.send({ type: "indexConnection", query, headers });
+				return await userRequester.send({ type: "findConnection", query, headers });
 			}catch(e){
 				throw new Error(e)
 			}
@@ -190,6 +191,13 @@ const resolvers = {
 		verifyEmail: async (_, { input }, { userRequester, headers }) => {
 			try{
 				return await userRequester.send({ type: "verifyEmail", body: input, headers });
+			}catch(e){
+				throw new Error(e)
+			}
+		},
+		reSendVerifyEmail: async (_, { input }, { userRequester, headers }) => {
+			try{
+				return await userRequester.send({ type: "reSendVerifyEmail", body: input, headers });
 			}catch(e){
 				throw new Error(e)
 			}
