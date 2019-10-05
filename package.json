@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": "bin.js",
   "scripts": {
     "build": "NODE_ENV=production babel ./src -d dist --presets env",
     "dev": "nodemon --exec babel-node graphql --presets env",
