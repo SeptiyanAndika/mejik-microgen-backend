@@ -482,11 +482,10 @@ function addNewRequester(content, type, requesterName, requesters) {
     return content
 }
 async function main() {
-    //create bucket
-    // let bucketName = await createBucket({
-    //     Bucket: APP_NAME
-    // })
-    let bucketName = 'super'
+    // create bucket
+    let bucketName = await createBucket({
+        Bucket: APP_NAME
+    })
 
     const MONGODB_PORT = await getPort()
     const REDIS_PORT = await getPort()
@@ -509,6 +508,10 @@ async function main() {
 
     //copy readme.me
     ncp("./schema/README.md", "./outputs/README.md")
+
+    //copy .babelrc
+    ncp("./schema/.babelrc", "./outputs/.babelrc")
+
     let types = []
     schema.definitions.filter((def) => !reservedTypes.includes(def.name.value)).filter((def) => !whitelistTypes.includes(def.kind)).map((def) => {
         fields = []

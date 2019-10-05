@@ -5,5 +5,6 @@ module.exports = {
     REDIS_HOST: process.env.REDIS_HOST,
     APP_NAME: process.env.APP_NAME,
     BUCKET: process.env.BUCKET,
-    GRAPHQL_PORT: process.env.GRAPHQL_PORT
+    GRAPHQL_PORT: process.env.GRAPHQL_PORT,
+    MONITOR_PORT: process.env.MONITOR_PORT
 }

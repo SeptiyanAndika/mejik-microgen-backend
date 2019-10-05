@@ -78,7 +78,7 @@ const generatePackageJSON = (types) => {
     packageJSON["scripts"]["storage-services"] = "cd ./services/storage && node index.js"
     packageJSON["scripts"]["pushNotification-services"] = "cd ./services/push-notification && node index.js"
 
-    packageJSON["scripts"]["graphql-dev"] = "nodemon --exec babel-node graphq"
+    packageJSON["scripts"]["graphql-dev"] = "nodemon --exec babel-node graphql"
     packageJSON["scripts"]["user-services-dev"] = "cd ./services/user && nodemon index.js"
     packageJSON["scripts"]["email-services-dev"] = "cd ./services/email && nodemon index.js"
     packageJSON["scripts"]["storage-services-dev"] = "cd ./services/storage && nodemon index.js"
@@ -89,8 +89,8 @@ const generatePackageJSON = (types) => {
         packageJSON["scripts"][`${camelize(type)}-services-dev`] = "cd ./services/" + camelize(type) + " && nodemon index.js"
     })
 
-    packageJSON["scripts"]["dev"] = `build && npm-run-all --parallel graphql-dev email-services-dev pushNotification-services-dev storage-services-dev user-services-dev ${types.map((type) => `${camelize(type)}-services-dev`).join(" ")}`
-    packageJSON["scripts"]["start"] = `build && npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type) => `${camelize(type)}-services`).join(" ")}`
+    packageJSON["scripts"]["dev"] = `npm-run-all --parallel graphql-dev email-services-dev pushNotification-services-dev storage-services-dev user-services-dev ${types.map((type) => `${camelize(type)}-services-dev`).join(" ")}`
+    packageJSON["scripts"]["start"] = `npm run-script build && npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services ${types.map((type) => `${camelize(type)}-services`).join(" ")}`
 
     fs.writeFileSync("./outputs/package.json", JSON.stringify(packageJSON, null, 4))
     generatePM2Script(types)
@@ -274,7 +274,6 @@ const generateGraphqlServer = (types) => {
             context
         })
 
-
         const app = express();
 
         app.use(Prometheus.requestCounters);  
@@ -291,7 +290,9 @@ const generateGraphqlServer = (types) => {
         Prometheus.startCollection();
         server.applyMiddleware({ app });
 
-        app.listen({port: 4000})
+        app.listen({ port: GRAPHQL_PORT }, () =>
+            console.log('🚀 Server ready at http://localhost:' + GRAPHQL_PORT + server.graphqlPath)
+        )
     `
     return beautify(content)
 }
@@ -861,7 +862,7 @@ const generateEcosystemConfig = (projectName) => {
     content += '        {\n'
     content += `            name: '${projectName}',\n`
     content += `            script: 'npm',\n`
-    content += `            args: 'run dev',\n`
+    content += `            args: 'run start',\n`
     content += `         }\n`
     content += `    ]\n`
     content += `}\n`

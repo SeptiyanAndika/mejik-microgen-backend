@@ -1,26 +1,61 @@
 # =======================================
 # TESTING
 # =======================================
-type Post {
-    text: String!
-    comments: [Comment] @relation(onDelete: CASCADE)
-    user: User! @role(onCreate: "own", onUpdateDelete: "own")
-}
+# type Post {
+#     text: String!
+#     comments: [Comment] @relation(onDelete: CASCADE)
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
 
-type UserFriend {
-    user: User!
-    friend: User!
+# type UserFriend {
+#     user: User!
+#     friend: User!
+# }
+
+# type User {
+#     phoneNumbers: String
+#     image: String
+# }
+
+# type Comment {
+#     post: Post!
+#     text: String!
+#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+# }
+
+type Workspace {
+    name: String!
+    projects: [Project] @relation(onDelete: RESTRICT)
+    user: User! @role(onCreate: "own", onUpdateDelete: "own")
 }
 
 type User {
     phoneNumbers: String
     image: String
+    status: String
+    servers: [Server]
 }
 
-type Comment {
-    post: Post!
-    text: String!
+type Project {
+    server: Server!
+    workspace: Workspace!
+    name: String!
+    path: String!
+    status: String
+    lastOpened: String
+    countVisited: Int
     user: User! @role(onCreate: "own", onUpdateDelete: "own")
+}
+
+type Server {
+    name: String!
+    ip: String!
+    projects: [Project] @relation(onDelete: RESTRICT)
+    editor: String!
+    status: String
+    description: String
+    os: String
+    users: [User]
 }
 
 
