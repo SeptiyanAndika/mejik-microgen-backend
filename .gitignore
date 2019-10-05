@@ -3,8 +3,8 @@ outputs/node_modules
 yarn.lock
 package-lock.json
 schema
-index.js
+./index.js
 directives.js
 generators.js
-utils.js
+./utils.js
 scalars.js
