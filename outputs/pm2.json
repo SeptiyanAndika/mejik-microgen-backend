@@ -1,0 +1,36 @@
+{
+    "apps": [
+        {
+            "name": "Graphql Service",
+            "script": "npm run graphql"
+        },
+        {
+            "name": "User Service",
+            "script": "npm run user-services"
+        },
+        {
+            "name": "Email Service",
+            "script": "npm run email-services"
+        },
+        {
+            "name": "Storage Service",
+            "script": "npm run storage-services"
+        },
+        {
+            "name": "Push Notification Servic",
+            "script": "npm run pushNotification-services"
+        },
+        {
+            "name": "Workspace Service",
+            "script": "npm run workspace-services"
+        },
+        {
+            "name": "Project Service",
+            "script": "npm run project-services"
+        },
+        {
+            "name": "Server Service",
+            "script": "npm run server-services"
+        }
+    ]
+}

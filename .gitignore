@@ -1,4 +1,11 @@
 node_modules
-outputs
+outputs/node_modules
 yarn.lock
 package-lock.json
+schema
+index.js
+config.js
+directives.js
+generators.js
+utils.js
+scalars.js
