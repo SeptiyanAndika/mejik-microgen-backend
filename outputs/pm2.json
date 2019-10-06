@@ -17,7 +17,7 @@
             "script": "npm run storage-services"
         },
         {
-            "name": "Push Notification Servic",
+            "name": "Push Notification Service",
             "script": "npm run pushNotification-services"
         },
         {

@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "graphql": "node ./dist/graphql",
+        "graphql": "npm run-script build && node ./dist/graphql",
         "build": "NODE_ENV=production babel graphql.js config.js monitor.js -d dist && NODE_ENV=production babel graphql/ -d dist/graphql && NODE_ENV=production babel utils/ -d dist/utils",
         "dev": "npm-run-all --parallel graphql-dev email-services-dev pushNotification-services-dev storage-services-dev user-services-dev workspace-services-dev project-services-dev server-services-dev",
         "serve": "node graphql",
@@ -24,7 +24,7 @@
         "project-services-dev": "cd ./services/project && nodemon index.js",
         "server-services": "cd ./services/server && node index.js",
         "server-services-dev": "cd ./services/server && nodemon index.js",
-        "start": "npm run-script build && npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services workspace-services project-services server-services"
+        "start": "npm-run-all --parallel graphql email-services pushNotification-services storage-services user-services workspace-services project-services server-services"
     },
     "author": "",
     "license": "ISC",
