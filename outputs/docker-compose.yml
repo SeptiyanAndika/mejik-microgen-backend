@@ -6,7 +6,7 @@ mongo:
   ports:
     - '${MONGODB_PORT}:27017'
 redis:
-  image: redis
+  image: 'redis:alpine3.10'
   volumes:
     - /data/db/redis
   ports:
