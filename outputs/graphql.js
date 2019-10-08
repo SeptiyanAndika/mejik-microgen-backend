@@ -1,11 +1,11 @@
 import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET, GRAPHQL_PORT } from './config'
 import { merge } from 'lodash'
 import express from 'express'
+import http from 'http';
 import { ApolloServer, makeExecutableSchema, gql, GraphQLUpload } from 'apollo-server-express'
 import { createRateLimitTypeDef, createRateLimitDirective, defaultKeyGenerator } from 'graphql-rate-limit-directive'
 import { GraphQLScalarType } from 'graphql'
 import GraphQLJSON from 'graphql-type-json'
-
 import { PubSub } from 'graphql-subscriptions'
 import { typeDef as User, resolvers as userResolvers } from './graphql/user'
 import { typeDef as Email, resolvers as emailResolvers } from './graphql/email'
@@ -143,7 +143,7 @@ const context = ({ req, connection }) => {
     return {
         bucket: BUCKET,
         uuid,
-        ip: req.ip,
+        ip: req && req.ip,
         storageUrl: "https://" + BUCKET + ".s3-ap-southeast-1.amazonaws.com/",
         headers: !connection && parseBearerToken(req.headers),
         userRequester,
@@ -177,6 +177,14 @@ Prometheus.injectMetricsRoute(app);
 Prometheus.startCollection();
 server.applyMiddleware({ app });
 
-app.listen({ port: GRAPHQL_PORT }, () =>
-    console.log('🚀 Server ready at http://localhost:' + GRAPHQL_PORT + server.graphqlPath)
-)
+// app.listen({ port: GRAPHQL_PORT }, () =>
+//     console.log('🚀 Server ready at http://localhost:' + GRAPHQL_PORT + server.graphqlPath)
+// )
+
+const httpServer = http.createServer(app);
+server.installSubscriptionHandlers(httpServer);
+// ⚠️ Pay attention to the fact that we are calling `listen` on the http server variable, and not on `app`.
+httpServer.listen(GRAPHQL_PORT, () => {
+  console.log(`🚀 Server ready at http://localhost:${GRAPHQL_PORT}${server.graphqlPath}`)
+  console.log(`🚀 Subscriptions ready at ws://localhost:${GRAPHQL_PORT}${server.subscriptionsPath}`)
+})
