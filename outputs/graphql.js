@@ -1,4 +1,4 @@
-import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET, GRAPHQL_PORT } from './config'
+import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET, GRAPHQL_PORT, GRAPHQL_PLAYGROUND } from './config'
 import { merge } from 'lodash'
 import express from 'express'
 import http from 'http';
@@ -158,7 +158,8 @@ const context = ({ req, connection }) => {
 
 const server = new ApolloServer({
     schema,
-    context
+    context,
+    playground: GRAPHQL_PLAYGROUND === "true",
 })
 
 const app = express();
@@ -177,13 +178,10 @@ Prometheus.injectMetricsRoute(app);
 Prometheus.startCollection();
 server.applyMiddleware({ app });
 
-// app.listen({ port: GRAPHQL_PORT }, () =>
-//     console.log('🚀 Server ready at http://localhost:' + GRAPHQL_PORT + server.graphqlPath)
-// )
-
 const httpServer = http.createServer(app);
+
 server.installSubscriptionHandlers(httpServer);
-// ⚠️ Pay attention to the fact that we are calling `listen` on the http server variable, and not on `app`.
+
 httpServer.listen(GRAPHQL_PORT, () => {
   console.log(`🚀 Server ready at http://localhost:${GRAPHQL_PORT}${server.graphqlPath}`)
   console.log(`🚀 Subscriptions ready at ws://localhost:${GRAPHQL_PORT}${server.subscriptionsPath}`)
