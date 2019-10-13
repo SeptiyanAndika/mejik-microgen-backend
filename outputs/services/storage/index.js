@@ -1,14 +1,12 @@
 require('./utils')
-const { REDIS_HOST, REDIS_PORT, STORAGE_COTE } = require("./config")
+const { REDIS_HOST, REDIS_PORT, STORAGE_COTE_PORT } = require("./config")
 const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 const { uploadFile, deleteFile} = require('./storage')
 
 const storageService = new cote.Responder({
     name: 'Storage Service',
-    key: 'storage',
-    port: STORAGE_COTE
+    port: STORAGE_COTE_PORT
 })
-
 
 storageService.on("uploadFile", async (req, cb) => {
     try {

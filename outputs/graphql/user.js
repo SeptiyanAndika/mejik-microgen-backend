@@ -22,14 +22,11 @@ input RegisterInput {
   status: String
 }
 
-input UpdateUserInput {
-  email: String
+input UserUpdateInput {
   password: String
   firstName: String
   lastName: String
-  phoneNumbers: String
-  image: String
-  status: String
+  role: Role
 }
 
 input ChangeProfileInput {
@@ -40,15 +37,12 @@ input ChangeProfileInput {
   status: String
 }
 
-input CreateUserInput {
+input UserCreateInput {
   email: String!
   password: String!
   firstName: String!
   lastName: String
-  role: String!
-  phoneNumbers: String
-  image: String
-  status: String
+  role: Role!
 }
 
 input VerifyEmailInput {
@@ -78,11 +72,11 @@ extend type Mutation {
   register(input: RegisterInput): Login
   loginWithGoogle(input: LoginWithGoogleInput): Login
   loginWithFacebook(input: LoginWithFacebookInput): Login
-  createUser(input: CreateUserInput): Login
+  createUser(input: UserCreateInput): Login
   forgetPassword(input: ForgetPasswordInput): Response
   resetPassword(input: ResetPasswordInput): Response
   verifyEmail(input: VerifyEmailInput): Response
-  updateUser(input: UpdateUserInput, id: String!): User
+  updateUser(input: UserUpdateInput, id: String!): User
   deleteUser(id: String!): User
   changeProfile(input: ChangeProfileInput): User
   changePassword(input: ChangePasswordInput): Response
@@ -96,6 +90,10 @@ type User {
   email: String
   status: String
   role: String
+  createdBy: String
+  updatedBy: String
+  createdAt: DateTime
+  updatedAt: DateTime
   phoneNumbers: String
   image: String
   servers: [Server]

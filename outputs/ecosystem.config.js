@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: 'mejik-microgen-backend',
+            name: 'microgen_backend1570850516294',
             script: 'npm',
             args: 'run start',
          }

@@ -1,4 +1,4 @@
-const { HOST, REDIS_HOST, REDIS_PORT, USER_COTE, forgetPasswordExpired, email, application } = require("./config");
+const { HOST, REDIS_HOST, REDIS_PORT, USER_COTE_PORT, forgetPasswordExpired, email, application } = require("./config");
 const app = require("./src/app");
 const port = app.get("port");
 const server = app.listen(port);
@@ -10,7 +10,11 @@ const ObjectId = require('mongodb').ObjectID;
 const appRoot = require('app-root-path');
 let externalHook = null
 try {
-	externalHook = require(appRoot + '/hooks/user')
+	const root = appRoot.toString().split('/')
+    root.pop()
+    const path = root.join('/') + '/hooks/user'
+
+    externalHook = require(path)
 } catch (e) {
 
 }
@@ -18,7 +22,7 @@ try {
 const userService = new cote.Responder({
 	name: "User Service",
 	key: "user",
-	port: USER_COTE
+	port: USER_COTE_PORT
 });
 
 const emailRequester = new cote.Requester({
@@ -97,18 +101,27 @@ userService.on("get", async (req, cb) => {
 		let token = req.headers.authorization;
 		let data = null;
 
-		let verify = await app
-			.service("authentication")
-			.verifyAccessToken(token);
-		let user = await app.service("users").get(verify.sub);
+
 		if (req.id) {
-			data = await app.service("users").get(req.id, {
-				token
-			});
+			try{
+				data = await app.service("users").get(req.id, {
+					token
+				});
+			}catch(e){
+				data= null
+			}
 		} else {
-			data = await app.service("users").get(user.id, {
-				token
-			});
+			try{
+				let verify = await app
+					.service("authentication")
+					.verifyAccessToken(token);
+				let user = await app.service("users").get(verify.sub);
+				data = await app.service("users").get(user.id, {
+					token
+				});
+			}catch(e){
+				data= null
+			}
 		}
 		cb(null, data);
 	} catch (error) {
@@ -375,7 +388,7 @@ userService.on("register", async (req, cb) => {
 	try {
 		const user = await app.service("users").create({
 			...req.body,
-			role: "admin"
+			role: "authenticated"
 		});
 
 		const auth = await app.service("authentication").create({
@@ -449,6 +462,7 @@ userService.on("reSendVerifyEmail", async (req, cb) => {
 userService.on("createUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
+		req.body.role = req.body.role.toLowerCase()
 		let verify = await app
 			.service("authentication")
 			.verifyAccessToken(token);
@@ -499,6 +513,9 @@ userService.on("changeProfile", async (req, cb) => {
 userService.on("updateUser", async (req, cb) => {
 	try {
 		let token = req.headers.authorization;
+		if(req.body.role){
+			req.body.role = req.body.role.toLowerCase()
+		}
 		let verify = await app
 			.service("authentication")
 			.verifyAccessToken(token);
@@ -591,7 +608,7 @@ app.service("users").hooks({
 		},
 		create: async context => {
 			let users = await app.service("users").find();
-			if (users.length == 0) {
+			if (users.total == 0) {
 				context.data.role = "admin";
 				context.data.status = 1;
 			}

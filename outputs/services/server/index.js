@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT, COTE } = require("./config")
+const { REDIS_HOST, REDIS_PORT, COTE_PORT } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
@@ -6,9 +6,14 @@ const checkPermissions = require('feathers-permissions');
 const { NotFound } = require('@feathersjs/errors');
 const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 const appRoot = require('app-root-path');
+const pluralize = require("pluralize")
 let externalHook = null
 try {
-    externalHook = require(appRoot + '/hooks/server')
+    const root = appRoot.toString().split('/')
+    root.pop()
+    const path = root.join('/') + '/hooks/server'
+
+    externalHook = require(path)
 } catch (e) {
 
 }
@@ -23,7 +28,7 @@ function camelize(text) {
 const serverService = new cote.Responder({
     name: 'Server Service',
     key: 'server',
-    port: COTE
+    port: COTE_PORT
 })
 
 const userRequester = new cote.Requester({
@@ -184,6 +189,16 @@ app.service('servers').hooks({
                     let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                     context.params.user = auth.user
+
+
+                    if (auth.user.permissions.includes(`${camelize('server')}:findOwn`)) {
+                        context.method = "findOwn"
+                        context.params.query = {
+                            ...context.params.query || {},
+                            createdBy: auth.user.id
+                        }
+                    }
+
                     //beforeFindAuthorization
                     await checkPermissions({
                         roles: ['admin', 'server']
@@ -229,6 +244,8 @@ app.service('servers').hooks({
                         roles: ['admin', 'server']
                     })(context)
 
+                    context.data.createdBy = auth.user.id || ''
+
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
@@ -247,14 +264,30 @@ app.service('servers').hooks({
 
                     context.params.user = auth.user
 
+
+
+                    //beforeUpdate
+                    if (auth.user.permissions.includes(`${camelize('server')}:updateOwn`)) {
+                        context.method = "updateOwn"
+                        if (context.id) {
+                            let server = await app.service(`${pluralize(camelize("server"))}`).get(context.id, { headers: context.params.headers })
+                            if (server && server.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
+
+
                     await checkPermissions({
                         roles: ['admin', 'server']
                     })(context)
 
+
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
-                    //beforeUpdate
+
+
                 }
 
                 return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
@@ -269,14 +302,29 @@ app.service('servers').hooks({
 
                     context.params.user = auth.user
 
+
+
+                    //beforePatch
+                    if (auth.user.permissions.includes(`${camelize('server')}:patchOwn`)) {
+                        context.method = "patchOwn"
+                        if (context.id) {
+                            let server = await app.service(`${pluralize(camelize("servers"))}`).get(context.id, { headers: context.params.headers })
+                            if (server && server.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
+
                     await checkPermissions({
                         roles: ['admin', 'server']
                     })(context)
 
+
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
-                    //beforePatch
+
+
                 }
 
                 return externalHook && externalHook(app).before && externalHook(app).before.patch && externalHook(app).before.patch(context)
@@ -291,14 +339,23 @@ app.service('servers').hooks({
 
                     context.params.user = auth.user
 
+
+                    //beforeDelete
+                    if (auth.user.permissions.includes(`${camelize('server')}:removeOwn`)) {
+                        context.method = "removeOwn"
+                        if (context.id) {
+                            let server = await app.service(`${pluralize(camelize("servers"))}`).get(context.id, { headers: context.params.headers })
+                            if (server && server.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
                     await checkPermissions({
                         roles: ['admin', 'server']
                     })(context)
-
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
-                    //beforeDelete
 
 
                     //ON DELETE SET RESTRICT
@@ -314,6 +371,7 @@ app.service('servers').hooks({
                     if (projects.length > 0) {
                         throw Error("Failed delete", null)
                     }
+
 
                 }
                 return externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)

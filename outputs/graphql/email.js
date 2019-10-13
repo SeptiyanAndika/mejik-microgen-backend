@@ -8,6 +8,8 @@ export const typeDef = `
         emailImageHeader: String
         emailLink: String
         emailVerificationCode: String
+        createdAt: DateTime
+        updatedAt: DateTime
     }
 
     input SendEmailToUsersInput {

@@ -15,7 +15,7 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var typeDef = exports.typeDef = '\n    input SendEmailInput {\n        to: String!\n        from: String\n        subject: String!\n        title: String\n        body: String!\n        emailImageHeader: String\n        emailLink: String\n        emailVerificationCode: String\n    }\n\n    input SendEmailToUsersInput {\n        from: String\n        subject: String!\n        title: String!\n        body: String!\n        emailImageHeader: String\n        emailLink: String\n        emailVerificationCode: String\n    }\n\n    extend type Mutation {\n        sendEmail(input: SendEmailInput): Response\n        sendEmailToUsers(input: SendEmailToUsersInput): Response\n    }\n';
+var typeDef = exports.typeDef = '\n    input SendEmailInput {\n        to: String!\n        from: String\n        subject: String!\n        title: String\n        body: String!\n        emailImageHeader: String\n        emailLink: String\n        emailVerificationCode: String\n        createdAt: DateTime\n        updatedAt: DateTime\n    }\n\n    input SendEmailToUsersInput {\n        from: String\n        subject: String!\n        title: String!\n        body: String!\n        emailImageHeader: String\n        emailLink: String\n        emailVerificationCode: String\n    }\n\n    extend type Mutation {\n        sendEmail(input: SendEmailInput): Response\n        sendEmailToUsers(input: SendEmailToUsersInput): Response\n    }\n';
 var resolvers = exports.resolvers = {
     Mutation: {
         sendEmail: function () {

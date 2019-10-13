@@ -9,6 +9,10 @@ export const typeDef = `
        lastOpened: String 
        countVisited: Int 
        user (query: JSON): User 
+       createdBy: User
+       updatedBy: User
+       createdAt: DateTime
+       updatedAt: DateTime
     }
     type ProjectConnection {
        total: Int 
@@ -23,7 +27,17 @@ export const typeDef = `
         projectsConnection (query: JSON): ProjectConnection
     } 
 
-    input ProjectInput {
+    input ProjectCreateInput {
+       serverId : String!
+       workspaceId : String!
+       name : String!
+       path : String!
+       status : String
+       lastOpened : String
+       countVisited : Int
+    }
+
+    input ProjectUpdateInput {
        serverId : String!
        workspaceId : String!
        name : String!
@@ -39,8 +53,8 @@ export const typeDef = `
        projectDeleted: Project
     }
     extend type Mutation {
-       createProject(input: ProjectInput): Project
-       updateProject(input: ProjectInput, id: String): Project
+       createProject(input: ProjectCreateInput): Project
+       updateProject(input: ProjectUpdateInput, id: String): Project
        deleteProject(id: String): Project
     }
 `
@@ -77,6 +91,20 @@ export const resolvers = ({ pubSub }) => ({
         },
     },
     Project: {
+        createdBy: async ({ createdBy }, args, { headers, userRequester }) => {
+            try {
+                return await userRequester.send({ type: 'get', id: createdBy, headers })
+            } catch (e) {
+                throw new Error(e)
+            }
+        },
+        updatedBy: async ({ updatedBy }, args, { headers, userRequester }) => {
+            try {
+                return await userRequester.send({ type: 'get', id: updatedBy, headers })
+            } catch (e) {
+                throw new Error(e)
+            }
+        },
         server: async ({ serverId }, args, { headers, serverRequester }) => {
             try {
                 return await serverRequester.send({ type: 'get', id: serverId, headers })

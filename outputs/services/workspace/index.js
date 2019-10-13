@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT, COTE } = require("./config")
+const { REDIS_HOST, REDIS_PORT, COTE_PORT } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
@@ -6,9 +6,14 @@ const checkPermissions = require('feathers-permissions');
 const { NotFound } = require('@feathersjs/errors');
 const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 const appRoot = require('app-root-path');
+const pluralize = require("pluralize")
 let externalHook = null
 try {
-    externalHook = require(appRoot + '/hooks/workspace')
+    const root = appRoot.toString().split('/')
+    root.pop()
+    const path = root.join('/') + '/hooks/workspace'
+
+    externalHook = require(path)
 } catch (e) {
 
 }
@@ -23,7 +28,7 @@ function camelize(text) {
 const workspaceService = new cote.Responder({
     name: 'Workspace Service',
     key: 'workspace',
-    port: COTE
+    port: COTE_PORT
 })
 
 const userRequester = new cote.Requester({
@@ -184,6 +189,16 @@ app.service('workspaces').hooks({
                     let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                     context.params.user = auth.user
+
+
+                    if (auth.user.permissions.includes(`${camelize('workspace')}:findOwn`)) {
+                        context.method = "findOwn"
+                        context.params.query = {
+                            ...context.params.query || {},
+                            createdBy: auth.user.id
+                        }
+                    }
+
                     //beforeFindAuthorization
                     await checkPermissions({
                         roles: ['admin', 'workspace']
@@ -229,12 +244,11 @@ app.service('workspaces').hooks({
                         roles: ['admin', 'workspace']
                     })(context)
 
+                    context.data.createdBy = auth.user.id || ''
+
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
-
-                    context.data.userId = auth.user.id
-
 
                 }
 
@@ -250,14 +264,30 @@ app.service('workspaces').hooks({
 
                     context.params.user = auth.user
 
+
+
+                    //beforeUpdate
+                    if (auth.user.permissions.includes(`${camelize('workspace')}:updateOwn`)) {
+                        context.method = "updateOwn"
+                        if (context.id) {
+                            let workspace = await app.service(`${pluralize(camelize("workspace"))}`).get(context.id, { headers: context.params.headers })
+                            if (workspace && workspace.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
+
+
                     await checkPermissions({
                         roles: ['admin', 'workspace']
                     })(context)
 
+
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
-                    //beforeUpdate
+
+
                 }
 
                 return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
@@ -272,20 +302,28 @@ app.service('workspaces').hooks({
 
                     context.params.user = auth.user
 
+
+
+                    //beforePatch
+                    if (auth.user.permissions.includes(`${camelize('workspace')}:patchOwn`)) {
+                        context.method = "patchOwn"
+                        if (context.id) {
+                            let workspace = await app.service(`${pluralize(camelize("workspaces"))}`).get(context.id, { headers: context.params.headers })
+                            if (workspace && workspace.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
+
                     await checkPermissions({
                         roles: ['admin', 'workspace']
                     })(context)
+
 
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
 
-                    if (context.id) {
-                        let workspace = await app.service("workspaces").get(context.id, { headers: context.params.headers })
-                        if (workspace && workspace.userId !== auth.user.id) {
-                            throw new Error("UnAuthorized")
-                        }
-                    }
 
                 }
 
@@ -301,21 +339,23 @@ app.service('workspaces').hooks({
 
                     context.params.user = auth.user
 
+
+                    //beforeDelete
+                    if (auth.user.permissions.includes(`${camelize('workspace')}:removeOwn`)) {
+                        context.method = "removeOwn"
+                        if (context.id) {
+                            let workspace = await app.service(`${pluralize(camelize("workspaces"))}`).get(context.id, { headers: context.params.headers })
+                            if (workspace && workspace.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
                     await checkPermissions({
                         roles: ['admin', 'workspace']
                     })(context)
-
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
-
-                    if (context.id) {
-                        let workspace = await app.service("workspaces").get(context.id, { headers: context.params.headers })
-                        if (workspace && workspace.userId !== auth.user.id) {
-                            throw new Error("UnAuthorized")
-                        }
-                    }
-
 
 
                     //ON DELETE SET RESTRICT
@@ -331,6 +371,7 @@ app.service('workspaces').hooks({
                     if (projects.length > 0) {
                         throw Error("Failed delete", null)
                     }
+
 
                 }
                 return externalHook && externalHook(app).before && externalHook(app).before.remove && externalHook(app).before.remove(context)

@@ -1,28 +1,3 @@
-# =======================================
-# TESTING
-# =======================================
-# type Post {
-#     text: String!
-#     comments: [Comment] @relation(onDelete: CASCADE)
-#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
-# }
-
-# type UserFriend {
-#     user: User!
-#     friend: User!
-# }
-
-# type User {
-#     phoneNumbers: String
-#     image: String
-# }
-
-# type Comment {
-#     post: Post!
-#     text: String!
-#     user: User! @role(onCreate: "own", onUpdateDelete: "own")
-# }
-
 type Workspace {
     name: String!
     projects: [Project] @relation(onDelete: RESTRICT)

@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT, COTE } = require("./config")
+const { REDIS_HOST, REDIS_PORT, COTE_PORT } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
@@ -6,9 +6,14 @@ const checkPermissions = require('feathers-permissions');
 const { NotFound } = require('@feathersjs/errors');
 const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 const appRoot = require('app-root-path');
+const pluralize = require("pluralize")
 let externalHook = null
 try {
-    externalHook = require(appRoot + '/hooks/project')
+    const root = appRoot.toString().split('/')
+    root.pop()
+    const path = root.join('/') + '/hooks/project'
+
+    externalHook = require(path)
 } catch (e) {
 
 }
@@ -23,7 +28,7 @@ function camelize(text) {
 const projectService = new cote.Responder({
     name: 'Project Service',
     key: 'project',
-    port: COTE
+    port: COTE_PORT
 })
 
 const userRequester = new cote.Requester({
@@ -191,6 +196,16 @@ app.service('projects').hooks({
                     let auth = await checkAuthentication(context.params.headers && context.params.headers.authorization || '')
 
                     context.params.user = auth.user
+
+
+                    if (auth.user.permissions.includes(`${camelize('project')}:findOwn`)) {
+                        context.method = "findOwn"
+                        context.params.query = {
+                            ...context.params.query || {},
+                            createdBy: auth.user.id
+                        }
+                    }
+
                     //beforeFindAuthorization
                     await checkPermissions({
                         roles: ['admin', 'project']
@@ -236,13 +251,12 @@ app.service('projects').hooks({
                         roles: ['admin', 'project']
                     })(context)
 
+                    context.data.createdBy = auth.user.id || ''
+
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
 
-
-
-                    context.data.userId = auth.user.id
 
 
                     if (context.data && context.data.workspaceId) {
@@ -285,14 +299,30 @@ app.service('projects').hooks({
 
                     context.params.user = auth.user
 
+
+
+                    //beforeUpdate
+                    if (auth.user.permissions.includes(`${camelize('project')}:updateOwn`)) {
+                        context.method = "updateOwn"
+                        if (context.id) {
+                            let project = await app.service(`${pluralize(camelize("project"))}`).get(context.id, { headers: context.params.headers })
+                            if (project && project.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
+
+
                     await checkPermissions({
                         roles: ['admin', 'project']
                     })(context)
 
+
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
-                    //beforeUpdate
+
+
                 }
 
                 return externalHook && externalHook(app).before && externalHook(app).before.update && externalHook(app).before.update(context)
@@ -307,20 +337,28 @@ app.service('projects').hooks({
 
                     context.params.user = auth.user
 
+
+
+                    //beforePatch
+                    if (auth.user.permissions.includes(`${camelize('project')}:patchOwn`)) {
+                        context.method = "patchOwn"
+                        if (context.id) {
+                            let project = await app.service(`${pluralize(camelize("projects"))}`).get(context.id, { headers: context.params.headers })
+                            if (project && project.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
+
                     await checkPermissions({
                         roles: ['admin', 'project']
                     })(context)
+
 
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
                     }
 
-                    if (context.id) {
-                        let project = await app.service("projects").get(context.id, { headers: context.params.headers })
-                        if (project && project.userId !== auth.user.id) {
-                            throw new Error("UnAuthorized")
-                        }
-                    }
 
                 }
 
@@ -336,19 +374,22 @@ app.service('projects').hooks({
 
                     context.params.user = auth.user
 
+
+                    //beforeDelete
+                    if (auth.user.permissions.includes(`${camelize('project')}:removeOwn`)) {
+                        context.method = "removeOwn"
+                        if (context.id) {
+                            let project = await app.service(`${pluralize(camelize("projects"))}`).get(context.id, { headers: context.params.headers })
+                            if (project && project.createdBy !== auth.user.id) {
+                                throw new Error("UnAuthorized")
+                            }
+                        }
+                    }
                     await checkPermissions({
                         roles: ['admin', 'project']
                     })(context)
-
                     if (!context.params.permitted) {
                         throw Error("UnAuthorized")
-                    }
-
-                    if (context.id) {
-                        let project = await app.service("projects").get(context.id, { headers: context.params.headers })
-                        if (project && project.userId !== auth.user.id) {
-                            throw new Error("UnAuthorized")
-                        }
                     }
 
 

@@ -1,4 +1,4 @@
-const { REDIS_HOST, REDIS_PORT, NOTIFICATION_COTE } = require("./config")
+const { REDIS_HOST, REDIS_PORT, NOTIFICATION_COTE_PORT } = require("./config")
 const app = require('./src/app');
 const port = app.get('port');
 const server = app.listen(port);
@@ -10,7 +10,7 @@ const cote = require('cote')({ redis: { host: REDIS_HOST, port: REDIS_PORT } })
 const pushNotificationService = new cote.Responder({
     name: 'Push Notification Service',
     key: 'pushNotification',
-    port: NOTIFICATION_COTE
+    port: NOTIFICATION_COTE_PORT
 })
 
 const userRequester = new cote.Requester({
@@ -21,6 +21,10 @@ const userRequester = new cote.Requester({
 
 pushNotificationService.on("sendAll", async (req, cb) => {
     try {
+        let auth = await checkAuthentication(req.headers && req.headers.authorization || '')
+        if (!auth.user.permissions.includes(`${auth.user.role}`+":*") && !auth.user.permissions.includes("pushNotification:sendAll")) {
+            throw new Error("UnAuthorized")
+        }
         sendNotifications({
             contents: {"en": req.body.contents},
             included_segments: ["All"]
@@ -36,6 +40,10 @@ pushNotificationService.on("sendAll", async (req, cb) => {
 
 pushNotificationService.on("sendById", async (req, cb) => {
     try {
+        let auth = await checkAuthentication(req.headers && req.headers.authorization || '')
+        if (!auth.user.permissions.includes(`${auth.user.role}`+":*") && !auth.user.permissions.includes("pushNotification:sendById")) {
+            throw new Error("UnAuthorized")
+        }
         let users = await app.service("pushNotifications").find({
             query: {
                 userId: req.userId,
@@ -57,7 +65,12 @@ pushNotificationService.on("sendById", async (req, cb) => {
 })
 
 pushNotificationService.on("sendBySegment", async (req, cb) => {
+    
     try {
+        let auth = await checkAuthentication(req.headers && req.headers.authorization || '')
+        if (!auth.user.permissions.includes(`${auth.user.role}`+":*") && !auth.user.permissions.includes("pushNotification:sendBySegment")) {
+            throw new Error("UnAuthorized")
+        }
         let users = await app.service("pushNotifications").find({
             query: {
                 segment: req.segment
@@ -109,6 +122,9 @@ pushNotificationService.on("create", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let auth = await checkAuthentication(token)
+        if(!auth.sub){
+            throw new Error("UnAuthorized")
+        }
         let users = await app.service("pushNotifications").find({
             query: {
                 playerId: req.body.playerId,
@@ -186,6 +202,9 @@ pushNotificationService.on("delete", async (req, cb) => {
     try {
         let token = req.headers.authorization
         let auth = await checkAuthentication(token)
+        if(!auth.sub){
+            throw new Error("UnAuthorized")
+        }
         let data = await app.service("pushNotifications").remove(null, {
             query: {
                 playerId: req.body.playerId,

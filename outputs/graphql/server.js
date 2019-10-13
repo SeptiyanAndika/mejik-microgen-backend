@@ -9,6 +9,10 @@ export const typeDef = `
        description: String 
        os: String 
        users (query: JSON): [User] 
+       createdBy: User
+       updatedBy: User
+       createdAt: DateTime
+       updatedAt: DateTime
     }
     type ServerConnection {
        total: Int 
@@ -23,7 +27,16 @@ export const typeDef = `
         serversConnection (query: JSON): ServerConnection
     } 
 
-    input ServerInput {
+    input ServerCreateInput {
+       name : String!
+       ip : String!
+       editor : String!
+       status : String
+       description : String
+       os : String
+    }
+
+    input ServerUpdateInput {
        name : String!
        ip : String!
        editor : String!
@@ -38,8 +51,8 @@ export const typeDef = `
        serverDeleted: Server
     }
     extend type Mutation {
-       createServer(input: ServerInput): Server
-       updateServer(input: ServerInput, id: String): Server
+       createServer(input: ServerCreateInput): Server
+       updateServer(input: ServerUpdateInput, id: String): Server
        deleteServer(id: String): Server
     }
 `
@@ -76,6 +89,20 @@ export const resolvers = ({ pubSub }) => ({
         },
     },
     Server: {
+        createdBy: async ({ createdBy }, args, { headers, userRequester }) => {
+            try {
+                return await userRequester.send({ type: 'get', id: createdBy, headers })
+            } catch (e) {
+                throw new Error(e)
+            }
+        },
+        updatedBy: async ({ updatedBy }, args, { headers, userRequester }) => {
+            try {
+                return await userRequester.send({ type: 'get', id: updatedBy, headers })
+            } catch (e) {
+                throw new Error(e)
+            }
+        },
         projects: async ({ id }, { query }, { headers, projectRequester }) => {
             try {
                 return await projectRequester.send({ type: 'find', query: Object.assign({ serverId: id }, query), headers })

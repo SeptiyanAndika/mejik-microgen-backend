@@ -12,10 +12,14 @@ var _require = require("graphql"),
     GraphQLDirective = _require.GraphQLDirective;
 
 var fs = require('fs');
+var appRoot = require('app-root-path');
 
 ///function for customize graphql
 var injectConfigFromHook = function injectConfigFromHook(hook, schema) {
-    var path = '../../hooks/' + hook;
+    var root = appRoot.toString().split('/');
+    root.pop();
+    var path = root.join('/') + '/hooks/' + hook + '.js';
+
     if (fs.existsSync(path)) {
         hook = require(path);
         if (hook().config) {

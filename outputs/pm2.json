@@ -1,35 +1,35 @@
 {
     "apps": [
         {
-            "name": "Graphql Service",
+            "name": "microgen_backend1570850516294_graphql_service",
             "script": "npm run graphql"
         },
         {
-            "name": "User Service",
+            "name": "microgen_backend1570850516294_user_service",
             "script": "npm run user-services"
         },
         {
-            "name": "Email Service",
-            "script": "npm run email-services"
+            "name": "microgen_backend1570850516294_email_service",
+            "script": " npm run email-services"
         },
         {
-            "name": "Storage Service",
-            "script": "npm run storage-services"
+            "name": "microgen_backend1570850516294_storage_service",
+            "script": " npm run storage-services"
         },
         {
-            "name": "Push Notification Service",
+            "name": "microgen_backend1570850516294_push_notification_service",
             "script": "npm run pushNotification-services"
         },
         {
-            "name": "Workspace Service",
+            "name": "microgen_backend1570850516294_workspace_service",
             "script": "npm run workspace-services"
         },
         {
-            "name": "Project Service",
+            "name": "microgen_backend1570850516294_project_service",
             "script": "npm run project-services"
         },
         {
-            "name": "Server Service",
+            "name": "microgen_backend1570850516294_server_service",
             "script": "npm run server-services"
         }
     ]

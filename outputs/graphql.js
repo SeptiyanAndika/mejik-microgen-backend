@@ -1,15 +1,17 @@
-import { REDIS_HOST, REDIS_PORT, APP_NAME, BUCKET, GRAPHQL_PORT, GRAPHQL_PLAYGROUND } from './config'
+import { REDIS_HOST, REDIS_PORT, APP_NAME, S3_BUCKET_NAME, GRAPHQL_PORT, GRAPHQL_PLAYGROUND } from './config'
 import { merge } from 'lodash'
 import express from 'express'
-import http from 'http';
-import { ApolloServer, makeExecutableSchema, gql, GraphQLUpload } from 'apollo-server-express'
+import http from 'http'
+import { ApolloServer, makeExecutableSchema, gql, GraphQLUpload, UserInputError } from 'apollo-server-express'
 import { createRateLimitTypeDef, createRateLimitDirective, defaultKeyGenerator } from 'graphql-rate-limit-directive'
-import { GraphQLScalarType } from 'graphql'
+import { GraphQLScalarType, Kind } from 'graphql'
 import GraphQLJSON from 'graphql-type-json'
+
 import { PubSub } from 'graphql-subscriptions'
 import { typeDef as User, resolvers as userResolvers } from './graphql/user'
 import { typeDef as Email, resolvers as emailResolvers } from './graphql/email'
 import { typeDef as PushNotification, resolvers as pushNotificationResolvers } from './graphql/pushNotification'
+import moment from 'moment'
 import { typeDef as Workspace, resolvers as workspaceResolvers } from './graphql/workspace'
 import { typeDef as Project, resolvers as projectResolvers } from './graphql/project'
 import { typeDef as Server, resolvers as serverResolvers } from './graphql/server'
@@ -23,9 +25,19 @@ const typeDefs = gql `
    type Response { message: String }
    type Mutation { default: String }
    type Subscription { default: String }
+	enum Role{
+ADMIN
+AUTHENTICATED
+}
+enum Relation{
+CASCADE
+SET_NULL
+RESTRICT
+}
    scalar Timestamp
    scalar JSON
    scalar Upload
+   scalar DateTime
    scalar Date
 `
 const resolver = {
@@ -38,20 +50,43 @@ const resolver = {
             return new Date(value); // value from the client
         },
         serialize(value) {
-            return new Date(value).toString() // value sent to the client
+            let date = new Date(value)
+            return moment(date).format('DD-MM-YYYY')
         },
         parseLiteral(ast) {
             if (ast.kind === Kind.INT) {
                 return parseInt(ast.value, 10); // ast value is always in string format
+            }
+            if (ast.kind === Kind.STRING) {
+                let date = new Date(ast.value)
+                return date
+            }
+            return null;
+        },
+    }),
+    DateTime: new GraphQLScalarType({
+        name: 'DateTime',
+        description: 'DateTime custom scalar type',
+        parseValue(value) {
+            return new Date(value); // value from the client
+        },
+        serialize(value) {
+            return new Date(value) // value sent to the client
+        },
+        parseLiteral(ast) {
+            if (ast.kind === Kind.INT) {
+                return parseInt(ast.value, 10); // ast value is always in string format
+            }
+            if (ast.kind === Kind.STRING) {
+                return ast.value
             }
             return null;
         },
     }),
     Timestamp: new GraphQLScalarType({
         name: 'Timestamp',
-        serialize(date) {
-            console.log("serialize", date)
-            return (date instanceof Date) ? date.getTime() : null
+        serialize(value) {
+            return new Date(value).getTime() // value sent to the client
         },
         parseValue(value) {
             try {
@@ -62,17 +97,20 @@ const resolver = {
                 }
                 return value
             } catch (error) {
+                console.log("err", error)
                 throw new UserInputError("Date is not valid")
             }
         },
         parseLiteral(ast) {
-            console.log("ast", ast)
-            if (ast.kind === Kind.INT) {
-                return new Date(parseInt(ast.value, 10));
-            } else if (ast.kind === Kind.STRING) {
-                return this.parseValue(ast.value);
-            } else {
-                return null;
+            try {
+                let valid = new Date(Number(ast.value)).getTime() > 0;
+                if (!valid) {
+                    throw new UserInputError("Date is not valid")
+                }
+                return ast.value
+            } catch (error) {
+                console.log("err", error)
+                throw new UserInputError("Date is not valid")
             }
         },
     })
@@ -141,10 +179,10 @@ const parseBearerToken = (headers) => {
 
 const context = ({ req, connection }) => {
     return {
-        bucket: BUCKET,
+        bucket: S3_BUCKET_NAME,
         uuid,
-        ip: req && req.ip,
-        storageUrl: "https://" + BUCKET + ".s3-ap-southeast-1.amazonaws.com/",
+        ip: req ? req.ip : '',
+        storageUrl: "https://" + S3_BUCKET_NAME + ".s3-ap-southeast-1.amazonaws.com/",
         headers: !connection && parseBearerToken(req.headers),
         userRequester,
         storageRequester,
@@ -175,6 +213,7 @@ Prometheus.injectMetricsRoute(app);
 /**
  * Enable collection of default metrics
  */
+
 Prometheus.startCollection();
 server.applyMiddleware({ app });
 
@@ -183,6 +222,6 @@ const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
 httpServer.listen(GRAPHQL_PORT, () => {
-  console.log(`🚀 Server ready at http://localhost:${GRAPHQL_PORT}${server.graphqlPath}`)
-  console.log(`🚀 Subscriptions ready at ws://localhost:${GRAPHQL_PORT}${server.subscriptionsPath}`)
+    console.log('🚀 Server ready at http://localhost:' + GRAPHQL_PORT + server.graphqlPath)
+    console.log('🚀 Subscriptions ready at ws://localhost:' + GRAPHQL_PORT + server.subscriptionsPath)
 })

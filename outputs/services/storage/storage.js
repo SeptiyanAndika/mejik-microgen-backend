@@ -1,10 +1,10 @@
 require('./utils')
 const AWS = require('aws-sdk')
-const { ACCESS_KEY, SECRET_KEY } = require('./config')
+const { S3_ACCESS_KEY, S3_SECRET_KEY } = require('./config')
 
 let s3 = new AWS.S3({
-    accessKeyId: ACCESS_KEY,
-    secretAccessKey: SECRET_KEY,
+    accessKeyId: S3_ACCESS_KEY,
+    secretAccessKey: S3_SECRET_KEY,
     region: 'ap-southeast-1'
 })
 

@@ -8,6 +8,9 @@ module.exports = (app) => ({
         },        
         create: async (context) => {
             //do something before create request
+            const user = context.params.user
+            context.data.userId = user.id
+            return context
         },
         patch: async (context) => {
             //do something before patch request

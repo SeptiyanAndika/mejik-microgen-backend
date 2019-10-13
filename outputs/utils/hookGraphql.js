@@ -1,9 +1,13 @@
 const { parse, print, GraphQLDirective} = require("graphql")
 const fs = require('fs')
+const appRoot = require('app-root-path')
 
 ///function for customize graphql
 const injectConfigFromHook = (hook, schema) =>{
-    let path = '../../hooks/'+hook
+    const root = appRoot.toString().split('/')
+    root.pop()
+    const path = root.join('/') + '/hooks/' + hook + '.js'
+
     if(fs.existsSync(path)){
         hook = require(path)
         if(hook().config){

@@ -4,6 +4,10 @@ export const typeDef = `
        name: String 
        projects (query: JSON): [Project] 
        user (query: JSON): User 
+       createdBy: User
+       updatedBy: User
+       createdAt: DateTime
+       updatedAt: DateTime
     }
     type WorkspaceConnection {
        total: Int 
@@ -18,7 +22,11 @@ export const typeDef = `
         workspacesConnection (query: JSON): WorkspaceConnection
     } 
 
-    input WorkspaceInput {
+    input WorkspaceCreateInput {
+       name : String!
+    }
+
+    input WorkspaceUpdateInput {
        name : String!
     }
 
@@ -28,8 +36,8 @@ export const typeDef = `
        workspaceDeleted: Workspace
     }
     extend type Mutation {
-       createWorkspace(input: WorkspaceInput): Workspace
-       updateWorkspace(input: WorkspaceInput, id: String): Workspace
+       createWorkspace(input: WorkspaceCreateInput): Workspace
+       updateWorkspace(input: WorkspaceUpdateInput, id: String): Workspace
        deleteWorkspace(id: String): Workspace
     }
 `
@@ -66,6 +74,20 @@ export const resolvers = ({ pubSub }) => ({
         },
     },
     Workspace: {
+        createdBy: async ({ createdBy }, args, { headers, userRequester }) => {
+            try {
+                return await userRequester.send({ type: 'get', id: createdBy, headers })
+            } catch (e) {
+                throw new Error(e)
+            }
+        },
+        updatedBy: async ({ updatedBy }, args, { headers, userRequester }) => {
+            try {
+                return await userRequester.send({ type: 'get', id: updatedBy, headers })
+            } catch (e) {
+                throw new Error(e)
+            }
+        },
         projects: async ({ id }, { query }, { headers, projectRequester }) => {
             try {
                 return await projectRequester.send({ type: 'find', query: Object.assign({ workspaceId: id }, query), headers })

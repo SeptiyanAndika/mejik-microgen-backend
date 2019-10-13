@@ -8,7 +8,7 @@ var _taggedTemplateLiteral2 = require('babel-runtime/helpers/taggedTemplateLiter
 
 var _taggedTemplateLiteral3 = _interopRequireDefault(_taggedTemplateLiteral2);
 
-var _templateObject = (0, _taggedTemplateLiteral3.default)(['\n   type Query { default: String }\n   type Response { message: String }\n   type Mutation { default: String }\n   type Subscription { default: String }\n   scalar Timestamp\n   scalar JSON\n   scalar Upload\n   scalar Date\n'], ['\n   type Query { default: String }\n   type Response { message: String }\n   type Mutation { default: String }\n   type Subscription { default: String }\n   scalar Timestamp\n   scalar JSON\n   scalar Upload\n   scalar Date\n']);
+var _templateObject = (0, _taggedTemplateLiteral3.default)(['\n   type Query { default: String }\n   type Response { message: String }\n   type Mutation { default: String }\n   type Subscription { default: String }\n\tenum Role{\nADMIN\nAUTHENTICATED\n}\nenum Relation{\nCASCADE\nSET_NULL\nRESTRICT\n}\n   scalar Timestamp\n   scalar JSON\n   scalar Upload\n   scalar DateTime\n   scalar Date\n'], ['\n   type Query { default: String }\n   type Response { message: String }\n   type Mutation { default: String }\n   type Subscription { default: String }\n\tenum Role{\nADMIN\nAUTHENTICATED\n}\nenum Relation{\nCASCADE\nSET_NULL\nRESTRICT\n}\n   scalar Timestamp\n   scalar JSON\n   scalar Upload\n   scalar DateTime\n   scalar Date\n']);
 
 var _config = require('./config');
 
@@ -17,6 +17,10 @@ var _lodash = require('lodash');
 var _express = require('express');
 
 var _express2 = _interopRequireDefault(_express);
+
+var _http = require('http');
+
+var _http2 = _interopRequireDefault(_http);
 
 var _apolloServerExpress = require('apollo-server-express');
 
@@ -35,6 +39,10 @@ var _user = require('./graphql/user');
 var _email = require('./graphql/email');
 
 var _pushNotification = require('./graphql/pushNotification');
+
+var _moment = require('moment');
+
+var _moment2 = _interopRequireDefault(_moment);
 
 var _workspace = require('./graphql/workspace');
 
@@ -62,41 +70,67 @@ var resolver = {
             return new Date(value); // value from the client
         },
         serialize: function serialize(value) {
-            return new Date(value).toString(); // value sent to the client
+            var date = new Date(value);
+            return (0, _moment2.default)(date).format('DD-MM-YYYY');
         },
         parseLiteral: function parseLiteral(ast) {
-            if (ast.kind === Kind.INT) {
+            if (ast.kind === _graphql.Kind.INT) {
                 return parseInt(ast.value, 10); // ast value is always in string format
+            }
+            if (ast.kind === _graphql.Kind.STRING) {
+                var date = new Date(ast.value);
+                return date;
+            }
+            return null;
+        }
+    }),
+    DateTime: new _graphql.GraphQLScalarType({
+        name: 'DateTime',
+        description: 'DateTime custom scalar type',
+        parseValue: function parseValue(value) {
+            return new Date(value); // value from the client
+        },
+        serialize: function serialize(value) {
+            return new Date(value); // value sent to the client
+        },
+        parseLiteral: function parseLiteral(ast) {
+            if (ast.kind === _graphql.Kind.INT) {
+                return parseInt(ast.value, 10); // ast value is always in string format
+            }
+            if (ast.kind === _graphql.Kind.STRING) {
+                return ast.value;
             }
             return null;
         }
     }),
     Timestamp: new _graphql.GraphQLScalarType({
         name: 'Timestamp',
-        serialize: function serialize(date) {
-            console.log("serialize", date);
-            return date instanceof Date ? date.getTime() : null;
+        serialize: function serialize(value) {
+            return new Date(value).getTime(); // value sent to the client
         },
         parseValue: function parseValue(value) {
             try {
 
                 var valid = new Date(value).getTime() > 0;
                 if (!valid) {
-                    throw new UserInputError("Date is not valid");
+                    throw new _apolloServerExpress.UserInputError("Date is not valid");
                 }
                 return value;
             } catch (error) {
-                throw new UserInputError("Date is not valid");
+                console.log("err", error);
+                throw new _apolloServerExpress.UserInputError("Date is not valid");
             }
         },
         parseLiteral: function parseLiteral(ast) {
-            console.log("ast", ast);
-            if (ast.kind === Kind.INT) {
-                return new Date(parseInt(ast.value, 10));
-            } else if (ast.kind === Kind.STRING) {
-                return this.parseValue(ast.value);
-            } else {
-                return null;
+            try {
+                var valid = new Date(Number(ast.value)).getTime() > 0;
+                if (!valid) {
+                    throw new _apolloServerExpress.UserInputError("Date is not valid");
+                }
+                return ast.value;
+            } catch (error) {
+                console.log("err", error);
+                throw new _apolloServerExpress.UserInputError("Date is not valid");
             }
         }
     })
@@ -164,10 +198,10 @@ var context = function context(_ref) {
         connection = _ref.connection;
 
     return {
-        bucket: _config.BUCKET,
+        bucket: _config.S3_BUCKET_NAME,
         uuid: uuid,
-        ip: req.ip,
-        storageUrl: "https://" + _config.BUCKET + ".s3-ap-southeast-1.amazonaws.com/",
+        ip: req ? req.ip : '',
+        storageUrl: "https://" + _config.S3_BUCKET_NAME + ".s3-ap-southeast-1.amazonaws.com/",
         headers: !connection && parseBearerToken(req.headers),
         userRequester: userRequester,
         storageRequester: storageRequester,
@@ -181,7 +215,8 @@ var context = function context(_ref) {
 
 var server = new _apolloServerExpress.ApolloServer({
     schema: schema,
-    context: context
+    context: context,
+    playground: _config.GRAPHQL_PLAYGROUND === "true"
 });
 
 var app = (0, _express2.default)();
@@ -200,6 +235,11 @@ Prometheus.injectMetricsRoute(app);
 Prometheus.startCollection();
 server.applyMiddleware({ app: app });
 
-app.listen({ port: _config.GRAPHQL_PORT }, function () {
-    return console.log('🚀 Server ready at http://localhost:' + _config.GRAPHQL_PORT + server.graphqlPath);
+var httpServer = _http2.default.createServer(app);
+
+server.installSubscriptionHandlers(httpServer);
+
+httpServer.listen(_config.GRAPHQL_PORT, function () {
+    console.log('🚀 Server ready at http://localhost:' + _config.GRAPHQL_PORT + server.graphqlPath);
+    console.log('🚀 Subscriptions ready at ws://localhost:' + _config.GRAPHQL_PORT + server.subscriptionsPath);
 });
